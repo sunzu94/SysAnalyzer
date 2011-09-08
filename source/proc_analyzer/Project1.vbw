@@ -1,0 +1,10 @@
+frmMain = 26, 14, 750, 640, Z, 22, 22, 637, 509, C
+CProcessInfo = 154, 154, 621, 596, 
+CProcess = 176, 176, 643, 618, 
+CModule = 198, 198, 665, 640, 
+frmReport = 132, 132, 662, 574, , 22, 22, 489, 464, C
+CDumpFix = 85, 37, 594, 479, 
+Module1 = 88, 88, 618, 530, 
+FileProps = 86, 111, 553, 553, 
+CStrings = 17, 8, 671, 607, 
+CExploitScanner = 0, 0, 422, 442, 
