@@ -1,9 +1,9 @@
-frmMain = 16, 9, 800, 633, Z, -3, 7, 876, 658, C
+frmMain = 16, 9, 800, 633, , -3, 7, 876, 658, C
 CProcessPorts = 49, 91, 524, 544, 
 CProcessPort = 48, 87, 556, 621, 
-CProcessInfo = 88, 88, 605, 541, C
+CProcessInfo = 88, 88, 605, 541, Z
 CProcess = 110, 110, 605, 563, 
-frmReport = 22, 9, 490, 462, , 22, 22, 681, 629, C
+frmReport = 22, 9, 892, 585, , 22, 22, 681, 629, C
 CModule = 132, 132, 585, 585, C
 FileProps = 3, 10, 709, 629, 
 CRegDiff = 38, 18, 601, 613, 

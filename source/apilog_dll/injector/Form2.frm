@@ -10,6 +10,22 @@ Begin VB.Form Form2
    ScaleHeight     =   6630
    ScaleWidth      =   7515
    StartUpPosition =   3  'Windows Default
+   Begin VB.CommandButton Command3 
+      Caption         =   "Copy"
+      Height          =   255
+      Left            =   6120
+      TabIndex        =   16
+      Top             =   2880
+      Width           =   1215
+   End
+   Begin VB.CommandButton Command2 
+      Caption         =   "Clear"
+      Height          =   255
+      Left            =   4560
+      TabIndex        =   15
+      Top             =   2880
+      Width           =   1095
+   End
    Begin VB.TextBox txtIgnore 
       Height          =   315
       Left            =   960
@@ -311,6 +327,21 @@ Private Sub Command1_Click()
         Command1.Caption = "Stop Logging"
     End If
     
+End Sub
+
+Private Sub Command2_Click()
+    List1.Clear
+End Sub
+
+Private Sub Command3_Click()
+    On Error Resume Next
+    Dim i As Long, t
+    For i = 0 To List1.ListCount
+        t = t & List1.List(i) & vbCrLf
+    Next
+    Clipboard.Clear
+    Clipboard.SetText t
+    MsgBox Len(t) & " bytes copied"
 End Sub
 
 Private Sub Form_Load()

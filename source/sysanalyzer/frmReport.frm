@@ -1,14 +1,11 @@
 VERSION 5.00
 Begin VB.Form frmReport 
-   BorderStyle     =   1  'Fixed Single
    Caption         =   "List Data"
    ClientHeight    =   6210
-   ClientLeft      =   45
-   ClientTop       =   330
+   ClientLeft      =   60
+   ClientTop       =   345
    ClientWidth     =   11085
    LinkTopic       =   "Form1"
-   MaxButton       =   0   'False
-   MinButton       =   0   'False
    ScaleHeight     =   6210
    ScaleWidth      =   11085
    StartUpPosition =   2  'CenterScreen
@@ -81,9 +78,19 @@ Private Declare Sub SetWindowPos Lib "user32" (ByVal Hwnd As Long, ByVal _
     
 Private Const HWND_TOPMOST = -1
 Private Const HWND_NOTOPMOST = -2
+
+Private filesaveName As String
     
+Function ShowList(list, Optional modal As Boolean = False, Optional saveName As String, Optional topMost As Boolean = True)
     
-Function ShowList(list, Optional modal As Boolean = False)
+    filesaveName = saveName
+    
+    If topMost Then
+        SetWindowPos Me.Hwnd, HWND_TOPMOST, Me.Left / 15, _
+            Me.top / 15, Me.Width / 15, _
+            Me.Height / 15, 0
+    End If
+    
     If IsArray(list) Then
         Text1 = Join(list, vbCrLf)
     Else
@@ -102,32 +109,39 @@ Function ShowList(list, Optional modal As Boolean = False)
 End Function
 
  
+ 
+
 Private Sub Command2_Click()
     Dim base As String
     On Error Resume Next
-    base = fso.GetBaseName(frmMain.samplePath)
-    base = UserDeskTopFolder & "\" & base & "_report.txt"
+    
+    If Len(filesaveName) = 0 Then
+        base = fso.GetBaseName(frmMain.samplePath)
+        base = UserDeskTopFolder & "\" & base & "_report.txt"
+    Else
+        base = UserDeskTopFolder & "\" & filesaveName
+    End If
+    
     fso.WriteFile base, Text1
     If Err.Number = 0 Then MsgBox "Saved Successfully as:" & vbCrLf & vbCrLf & base
+    
 End Sub
 
-'Private Sub Command1_Click()
-'    Clipboard.Clear
-'    Clipboard.SetText Text1
-'End Sub
+Private Sub Command1_Click()
+    Clipboard.Clear
+    Clipboard.SetText Text1
+End Sub
 
 Private Sub Form_Load()
     
     On Error Resume Next
     Me.Icon = frmMain.Icon
     
-    SetWindowPos Me.Hwnd, HWND_TOPMOST, Me.Left / 15, _
-            Me.Top / 15, Me.Width / 15, _
-            Me.Height / 15, 0
+    
 End Sub
 
-'Private Sub Form_Resize()
-'    On Error Resume Next
-'    Text1.Height = Me.Height - Text1.top
-'    Text1.Width = Me.Width
-'End Sub
+Private Sub Form_Resize()
+    On Error Resume Next
+    Text1.Height = Me.Height - Text1.top
+    Text1.Width = Me.Width
+End Sub

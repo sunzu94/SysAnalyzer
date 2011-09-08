@@ -134,14 +134,14 @@ Begin VB.Form frmMain
       TabCaption(6)   =   "Directory Watch Data"
       TabPicture(6)   =   "Form1.frx":04EA
       Tab(6).ControlEnabled=   0   'False
-      Tab(6).Control(0)=   "Label3(1)"
-      Tab(6).Control(1)=   "Label3(0)"
-      Tab(6).Control(2)=   "lvDirWatch"
-      Tab(6).Control(3)=   "cmdSaveDirWatchFile"
-      Tab(6).Control(4)=   "cmdDelLike"
-      Tab(6).Control(5)=   "txtDeleteLike"
-      Tab(6).Control(6)=   "txtIgnore"
-      Tab(6).Control(7)=   "cmdDirWatch"
+      Tab(6).Control(0)=   "cmdDirWatch"
+      Tab(6).Control(1)=   "txtIgnore"
+      Tab(6).Control(2)=   "txtDeleteLike"
+      Tab(6).Control(3)=   "cmdDelLike"
+      Tab(6).Control(4)=   "cmdSaveDirWatchFile"
+      Tab(6).Control(5)=   "lvDirWatch"
+      Tab(6).Control(6)=   "Label3(0)"
+      Tab(6).Control(7)=   "Label3(1)"
       Tab(6).ControlCount=   8
       Begin VB.CommandButton cmdDirWatch 
          Caption         =   "Stop Monitor"
@@ -683,6 +683,15 @@ Begin VB.Form frmMain
    Begin VB.Menu mnuTools 
       Caption         =   "mnuTools"
       Visible         =   0   'False
+      Begin VB.Menu mnuSearch 
+         Caption         =   "Search All Tabs"
+      End
+      Begin VB.Menu mnuCopySelected 
+         Caption         =   "Copy All Selected Entries"
+      End
+      Begin VB.Menu mnuSpacer 
+         Caption         =   "-"
+      End
       Begin VB.Menu mnuToolItem 
          Caption         =   "Show Snapshot 1"
          Index           =   0
@@ -848,6 +857,14 @@ Private Sub Form_Load()
         mnuHideKnown.Checked = True
         mnuListUnknown.Enabled = True
     End If
+    
+    Dim alv As ListView, i As Long
+    For i = 0 To 6
+        Set alv = GetActiveLV(i)
+        alv.MultiSelect = True
+        alv.HideSelection = False
+    Next
+    
 End Sub
 
 Private Sub Form_Resize()
@@ -866,6 +883,34 @@ End Sub
 
 
 
+Private Sub mnuCopySelected_Click()
+    
+    Dim active_lv As ListView
+    
+    Dim i As Integer, tmp As String, match As Long, j As Long
+    Dim li As ListItem, search As String, ret() As String
+    
+    For j = 0 To 6
+        Set active_lv = GetActiveLV(j)
+        For Each li In active_lv.ListItems
+            If li.Selected Then
+                tmp = li.Text & vbTab
+                For i = 1 To active_lv.ColumnHeaders.Count - 1
+                    tmp = tmp & li.SubItems(i) & vbTab
+                Next
+                li.Selected = True
+                match = match + 1
+                push ret(), active_lv.name & "> " & tmp
+            End If
+        Next
+    Next
+    
+    If match > 0 Then
+        frmReport.ShowList ret, , "selected_items.txt", False
+    End If
+    
+End Sub
+
 Private Sub mnuHideKnown_Click()
     mnuHideKnown.Checked = Not mnuHideKnown.Checked
     known.HideKnownInDisplays = mnuHideKnown.Checked
@@ -882,6 +927,59 @@ End Sub
  
 
 
+
+Private Sub mnuSearch_Click()
+    
+    Dim active_lv As ListView
+    
+    Dim i As Integer, tmp As String, match As Long, j As Long
+    Dim li As ListItem, search As String, ret() As String
+    
+    search = InputBox("Enter text to search for")
+    If Len(search) = 0 Then Exit Sub
+    
+    For j = 0 To 6
+        Set active_lv = GetActiveLV(j)
+        For Each li In active_lv.ListItems
+            tmp = li.Text & vbTab
+            For i = 1 To active_lv.ColumnHeaders.Count - 1
+                tmp = tmp & li.SubItems(i) & vbTab
+            Next
+            If InStr(1, tmp, search, vbTextCompare) > 0 Then
+                li.Selected = True
+                match = match + 1
+                push ret(), active_lv.name & "> " & tmp
+            Else
+                li.Selected = False
+            End If
+        Next
+    Next
+    
+    If match > 0 Then
+        frmReport.ShowList ret, , "search_result.txt", False
+    End If
+    
+End Sub
+
+Function GetActiveLV(Optional index As Long = -1) As ListView
+
+    Dim active_lv As ListView
+    
+    If index = -1 Then index = SSTab1.TabIndex
+    
+    Select Case index
+        Case 0: Set active_lv = lvProcesses
+        Case 1: Set active_lv = lvPorts
+        Case 2: Set active_lv = lvExplorer ' , lvIE
+        Case 3: Set active_lv = lvDrivers
+        Case 4: Set active_lv = lvRegKeys
+        Case 5: Set active_lv = lvAPILog
+        Case 6: Set active_lv = lvDirWatch
+    End Select
+    
+    Set GetActiveLV = active_lv
+    
+End Function
 
 Private Sub tmrCountDown_Timer()
         
