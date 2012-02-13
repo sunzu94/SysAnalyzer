@@ -360,6 +360,12 @@ Private Sub Form_Load()
     
 End Sub
 
+Private Sub Form_Resize()
+    On Error Resume Next
+    List1.Width = Me.Width - List1.Left - 200
+    List1.Height = Me.Height - List1.Top - 400
+End Sub
+
 Private Sub Form_Unload(Cancel As Integer)
     SaveMySetting "Ignore", txtIgnore
 End Sub

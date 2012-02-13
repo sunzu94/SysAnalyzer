@@ -478,13 +478,15 @@ size_t __stdcall My_fwrite(const void* a0, size_t a1, size_t a2, FILE* a3)
 
 HANDLE __stdcall My_OpenProcess(DWORD a0,BOOL a1,DWORD a2)
 {
-	LogAPI("%x     OpenProcess(pid=%ld)", CalledFrom(), a2);
 
+	//todo get process name from pid and log it as well...
     HANDLE ret = 0;
     try {
         ret = Real_OpenProcess(a0, a1, a2);
     }
 	catch(...){	} 
+
+	LogAPI("%x     OpenProcess(pid=%ld) = 0x%x", CalledFrom(), a2, ret);
 
     return ret;
 }
@@ -615,7 +617,26 @@ HANDLE __stdcall My_CreateRemoteThread(HANDLE a0,LPSECURITY_ATTRIBUTES a1,DWORD 
 BOOL __stdcall My_WriteProcessMemory(HANDLE a0,LPVOID a1,LPVOID a2,DWORD a3,LPDWORD a4)
 {
 
-	LogAPI("%x     WriteProcessMemory(h=%x,len=%x)", CalledFrom(), a0, a3);
+	/*  
+	    BOOL WINAPI WriteProcessMemory(
+		  __in   HANDLE hProcess,
+		  __in   LPVOID lpBaseAddress,
+		  __in   LPCVOID lpBuffer,
+		  __in   SIZE_T nSize,
+		  __out  SIZE_T *lpNumberOfBytesWritten
+		);
+	*/
+
+	char buf[255];
+	DWORD written=0;
+
+	sprintf(buf, "c:\\wpm_%x.bin",a1);
+	HANDLE h = Real_CreateFileA(buf, GENERIC_READ|GENERIC_WRITE ,0,0,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,0); 
+	Real_WriteFile(h,a2,a3,&written,0);
+	CloseHandle(h);
+
+	LogAPI("%x     WriteProcessMemory(h=%x,base=%x,buf=%x,len=%x) Saved as %s", CalledFrom(), a0,a1,a2,a3,buf);
+
 
     BOOL ret = 0;
     try {
