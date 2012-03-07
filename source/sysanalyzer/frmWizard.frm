@@ -201,7 +201,8 @@ Private Sub lblSkip_Click()
     
     With frmMain
         .Initalize
-        .SSTab1.TabVisible(6) = False
+        .SSTab1.TabVisible(6) = True 'False
+        .cmdDirWatch_Click
         .SSTab1.TabVisible(5) = False
         .lblTimer.Visible = False
         .lblDisplay = "Use the tools menu to manually proceede"
@@ -297,9 +298,10 @@ Private Sub Form_Load()
     cfgFile = App.path & "\cfg.dat"
     networkAnalyzer = App.path & "\sniff_hit.exe"
     
-    watchDirs.Add CStr(Environ("TEMP"))
-    watchDirs.Add CStr(Environ("WINDIR"))
-    watchDirs.Add CStr("C:\Program Files")
+    'watchDirs.Add CStr(Environ("TEMP"))
+    'watchDirs.Add CStr(Environ("WINDIR"))
+    'watchDirs.Add CStr("C:\Program Files")
+    watchDirs.Add CStr("C:\")
     
     Set cApiData = New Collection
     Set cLogData = New Collection
@@ -375,6 +377,8 @@ Private Sub tmrDelayShell_Timer()
             
         If VBA.Left(txtBinary, 4) = "pid:" Then
             exe = Replace(txtBinary, "pid:", Empty)
+        ElseIf LCase(VBA.Right(txtBinary, 4)) = ".dll" Then
+            exe = App.path & "\loadlib.exe """ & txtBinary & """"
         Else
             exe = txtBinary
         End If
@@ -397,7 +401,11 @@ Private Sub tmrDelayShell_Timer()
         StartProcessWithDLL exe, dll, tmp()
     Else
         frmMain.SSTab1.TabVisible(5) = False
-        Shell txtBinary
+        If LCase(VBA.Right(txtBinary, 4)) = ".dll" Then
+            Shell App.path & "\loadlib.exe """ & txtBinary & """"
+        Else
+            Shell txtBinary
+        End If
     End If
     
     frmMain.samplePath = txtBinary

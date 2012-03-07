@@ -1,15 +1,15 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
 Begin VB.Form frmMain 
    Caption         =   "SysAnalyzer"
-   ClientHeight    =   4905
+   ClientHeight    =   6090
    ClientLeft      =   60
    ClientTop       =   345
    ClientWidth     =   10230
    Icon            =   "Form1.frx":0000
    LinkMode        =   1  'Source
    LinkTopic       =   "frmMain"
-   ScaleHeight     =   4905
+   ScaleHeight     =   6090
    ScaleWidth      =   10230
    StartUpPosition =   2  'CenterScreen
    Visible         =   0   'False
@@ -18,7 +18,7 @@ Begin VB.Form frmMain
       Height          =   315
       Left            =   4320
       TabIndex        =   6
-      Top             =   4500
+      Top             =   360
       Width           =   1155
    End
    Begin VB.CommandButton cmdCopyList 
@@ -26,7 +26,7 @@ Begin VB.Form frmMain
       Height          =   315
       Left            =   5640
       TabIndex        =   5
-      Top             =   4500
+      Top             =   360
       Width           =   1335
    End
    Begin VB.CommandButton cmdSaveDirWatchFile 
@@ -34,14 +34,14 @@ Begin VB.Form frmMain
       Height          =   315
       Left            =   7140
       TabIndex        =   2
-      Top             =   4500
+      Top             =   360
       Width           =   1575
    End
    Begin VB.TextBox txtIgnore 
       Height          =   315
       Left            =   660
       TabIndex        =   1
-      Top             =   4140
+      Top             =   0
       Width           =   9495
    End
    Begin VB.CommandButton cmdDirWatch 
@@ -49,17 +49,17 @@ Begin VB.Form frmMain
       Height          =   315
       Left            =   8940
       TabIndex        =   0
-      Top             =   4500
+      Top             =   360
       Width           =   1215
    End
    Begin MSComctlLib.ListView lvDirWatch 
-      Height          =   4035
-      Left            =   0
+      Height          =   5355
+      Left            =   60
       TabIndex        =   3
-      Top             =   0
+      Top             =   720
       Width           =   10155
       _ExtentX        =   17912
-      _ExtentY        =   7117
+      _ExtentY        =   9446
       View            =   3
       LabelEdit       =   1
       LabelWrap       =   -1  'True
@@ -80,8 +80,14 @@ Begin VB.Form frmMain
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      NumItems        =   1
+      NumItems        =   2
       BeginProperty ColumnHeader(1) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+         Text            =   "Action"
+         Object.Width           =   2540
+      EndProperty
+      BeginProperty ColumnHeader(2) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+         SubItemIndex    =   1
+         Text            =   "File"
          Object.Width           =   2540
       EndProperty
    End
@@ -91,7 +97,7 @@ Begin VB.Form frmMain
       Index           =   0
       Left            =   0
       TabIndex        =   4
-      Top             =   4140
+      Top             =   0
       Width           =   555
    End
    Begin VB.Menu mnuProcessesPopup 
@@ -220,14 +226,16 @@ Dim WithEvents subclass As clsSubClass
 Attribute subclass.VB_VarHelpID = -1
 
 Dim liDirWatch As ListItem
+Dim dlg As New clsCmnDlg2
+Dim fso As New CFileSystem2
 
 Sub Initalize()
     
     Set subclass = New clsSubClass
    
-    subclass.AttachMessage frmDirWatch.Hwnd, WM_COPYDATA
+    subclass.AttachMessage frmDirWatch.hwnd, WM_COPYDATA
     
-    lvDirWatch.ColumnHeaders(1).Width = lvDirWatch.Width - 100
+    lvDirWatch.ColumnHeaders(2).Width = lvDirWatch.Width - 100 - lvDirWatch.ColumnHeaders(1).Width
     
     txtIgnore = GetSetting(App.EXEName, "Settings", "txtIgnore", "\config\software , modified:, ")
 
@@ -299,13 +307,22 @@ Private Sub cmdSaveDirWatchFile_Click()
     If liDirWatch Is Nothing Then Exit Sub
     
     On Error Resume Next
-    Dim f As String
+    Dim f As String, d As String
+    
     f = liDirWatch.SubItems(1)
     
     If Not fso.FileExists(f) Then
         MsgBox "File not found: " & f
     Else
-        FileCopy f, UserDeskTopFolder & "\"
+        ' f, UserDeskTopFolder & "\"
+        d = dlg.SaveDialog(AllFiles, , , , , fso.FileNameFromPath(f))
+        FileCopy f, d
+    End If
+    
+    If Err.Number <> 0 Then
+        MsgBox "Error: " & Err.Description
+    Else
+        MsgBox FileLen(f) & " bytes saved successfully!", vbInformation
     End If
     
 End Sub
@@ -315,10 +332,19 @@ End Sub
 
 
 
+Private Sub Form_Resize()
+    On Error Resume Next
+    lvDirWatch.Width = Me.Width - lvDirWatch.Left - 200
+    With lvDirWatch
+        .Height = Me.Height - .Top - 500
+    End With
+End Sub
+
 Private Sub Form_Unload(Cancel As Integer)
     On Error Resume Next
      
-    subclass.DetatchMessage frmDirWatch.Hwnd, WM_COPYDATA
+    DirWatchCtl False
+    subclass.DetatchMessage frmDirWatch.hwnd, WM_COPYDATA
     Unload frmDirWatch
     
 End Sub
@@ -329,8 +355,10 @@ Private Sub lvDirWatch_ItemClick(ByVal Item As MSComctlLib.ListItem)
 End Sub
 
 
-Private Sub subclass_MessageReceived(Hwnd As Long, wMsg As Long, wParam As Long, lParam As Long, Cancel As Boolean)
+Private Sub subclass_MessageReceived(hwnd As Long, wMsg As Long, wParam As Long, lParam As Long, Cancel As Boolean)
     Dim msg As String
+    Dim li As ListItem
+    Dim tmp
     
     If wMsg = WM_COPYDATA Then
         If RecieveTextMessage(lParam, msg) Then
@@ -339,7 +367,9 @@ Private Sub subclass_MessageReceived(Hwnd As Long, wMsg As Long, wParam As Long,
                 If KeyExistsInCollection(cLogData, msg) Then Exit Sub
                 On Error Resume Next
                 cLogData.Add msg, msg
-                lvDirWatch.ListItems.Add , , msg
+                tmp = Split(msg, ":", 2)
+                Set li = lvDirWatch.ListItems.Add(, , tmp(0))
+                li.SubItems(1) = Replace(Replace(Trim(tmp(1)), "\\", "\"), Chr(0), Empty)
                 
         End If
     End If

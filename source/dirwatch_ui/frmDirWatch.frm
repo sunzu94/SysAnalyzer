@@ -1,13 +1,13 @@
 VERSION 5.00
 Begin VB.Form frmDirWatch 
    Caption         =   "DirWatchTargetWindow"
-   ClientHeight    =   45
+   ClientHeight    =   0
    ClientLeft      =   60
    ClientTop       =   345
-   ClientWidth     =   3255
+   ClientWidth     =   1740
    LinkTopic       =   "Form1"
-   ScaleHeight     =   45
-   ScaleWidth      =   3255
+   ScaleHeight     =   0
+   ScaleWidth      =   1740
    StartUpPosition =   3  'Windows Default
    Visible         =   0   'False
 End

@@ -72,12 +72,13 @@ Begin VB.Form frmMain
       TabOrientation  =   1
       Style           =   1
       Tabs            =   7
+      Tab             =   6
       TabsPerRow      =   10
       TabHeight       =   520
       ShowFocusRect   =   0   'False
       TabCaption(0)   =   "Running Processes"
       TabPicture(0)   =   "Form1.frx":0442
-      Tab(0).ControlEnabled=   -1  'True
+      Tab(0).ControlEnabled=   0   'False
       Tab(0).Control(0)=   "Label4"
       Tab(0).Control(0).Enabled=   0   'False
       Tab(0).Control(1)=   "lblTimer"
@@ -133,20 +134,28 @@ Begin VB.Form frmMain
       Tab(5).ControlCount=   7
       TabCaption(6)   =   "Directory Watch Data"
       TabPicture(6)   =   "Form1.frx":04EA
-      Tab(6).ControlEnabled=   0   'False
-      Tab(6).Control(0)=   "cmdDirWatch"
-      Tab(6).Control(1)=   "txtIgnore"
-      Tab(6).Control(2)=   "txtDeleteLike"
-      Tab(6).Control(3)=   "cmdDelLike"
-      Tab(6).Control(4)=   "cmdSaveDirWatchFile"
-      Tab(6).Control(5)=   "lvDirWatch"
-      Tab(6).Control(6)=   "Label3(0)"
-      Tab(6).Control(7)=   "Label3(1)"
+      Tab(6).ControlEnabled=   -1  'True
+      Tab(6).Control(0)=   "Label3(1)"
+      Tab(6).Control(0).Enabled=   0   'False
+      Tab(6).Control(1)=   "Label3(0)"
+      Tab(6).Control(1).Enabled=   0   'False
+      Tab(6).Control(2)=   "lvDirWatch"
+      Tab(6).Control(2).Enabled=   0   'False
+      Tab(6).Control(3)=   "cmdSaveDirWatchFile"
+      Tab(6).Control(3).Enabled=   0   'False
+      Tab(6).Control(4)=   "cmdDelLike"
+      Tab(6).Control(4).Enabled=   0   'False
+      Tab(6).Control(5)=   "txtDeleteLike"
+      Tab(6).Control(5).Enabled=   0   'False
+      Tab(6).Control(6)=   "txtIgnore"
+      Tab(6).Control(6).Enabled=   0   'False
+      Tab(6).Control(7)=   "cmdDirWatch"
+      Tab(6).Control(7).Enabled=   0   'False
       Tab(6).ControlCount=   8
       Begin VB.CommandButton cmdDirWatch 
          Caption         =   "Stop Monitor"
          Height          =   315
-         Left            =   -66000
+         Left            =   9000
          TabIndex        =   36
          Top             =   4500
          Width           =   1215
@@ -162,19 +171,19 @@ Begin VB.Form frmMain
       Begin VB.Timer tmrCountDown 
          Enabled         =   0   'False
          Interval        =   1000
-         Left            =   9840
+         Left            =   -65160
          Top             =   4560
       End
       Begin VB.TextBox txtIgnore 
          Height          =   315
-         Left            =   -74280
+         Left            =   720
          TabIndex        =   25
          Top             =   4140
          Width           =   9495
       End
       Begin VB.TextBox txtDeleteLike 
          Height          =   315
-         Left            =   -74280
+         Left            =   720
          TabIndex        =   24
          Top             =   4500
          Width           =   4755
@@ -182,7 +191,7 @@ Begin VB.Form frmMain
       Begin VB.CommandButton cmdDelLike 
          Caption         =   "Delete Lines Like"
          Height          =   315
-         Left            =   -69420
+         Left            =   5580
          TabIndex        =   23
          Top             =   4500
          Width           =   1575
@@ -190,7 +199,7 @@ Begin VB.Form frmMain
       Begin VB.CommandButton cmdSaveDirWatchFile 
          Caption         =   "Save Selected file"
          Height          =   315
-         Left            =   -67800
+         Left            =   7200
          TabIndex        =   22
          Top             =   4500
          Width           =   1575
@@ -243,14 +252,14 @@ Begin VB.Form frmMain
       Begin VB.CommandButton cmdAnalyze 
          Caption         =   "Analyze Process"
          Height          =   315
-         Left            =   2460
+         Left            =   -72540
          TabIndex        =   5
          Top             =   4560
          Width           =   1875
       End
       Begin VB.TextBox txtProcess 
          Height          =   315
-         Left            =   1140
+         Left            =   -73860
          TabIndex        =   3
          Top             =   4560
          Width           =   1215
@@ -297,7 +306,7 @@ Begin VB.Form frmMain
       End
       Begin MSComctlLib.ListView lvProcesses 
          Height          =   4455
-         Left            =   60
+         Left            =   -74940
          TabIndex        =   1
          Top             =   60
          Width           =   10155
@@ -523,7 +532,7 @@ Begin VB.Form frmMain
       End
       Begin MSComctlLib.ListView lvDirWatch 
          Height          =   4035
-         Left            =   -74940
+         Left            =   60
          TabIndex        =   26
          Top             =   0
          Width           =   10155
@@ -549,8 +558,19 @@ Begin VB.Form frmMain
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         NumItems        =   1
+         NumItems        =   3
          BeginProperty ColumnHeader(1) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+            Text            =   "Action"
+            Object.Width           =   2540
+         EndProperty
+         BeginProperty ColumnHeader(2) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+            SubItemIndex    =   1
+            Text            =   "SIze"
+            Object.Width           =   2540
+         EndProperty
+         BeginProperty ColumnHeader(3) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+            SubItemIndex    =   2
+            Text            =   "File"
             Object.Width           =   2540
          EndProperty
       End
@@ -558,7 +578,7 @@ Begin VB.Form frmMain
          Caption         =   "Currently displaying  base snapshot"
          ForeColor       =   &H00C00000&
          Height          =   255
-         Left            =   6240
+         Left            =   -68760
          TabIndex        =   31
          Top             =   4620
          Width           =   3675
@@ -566,7 +586,7 @@ Begin VB.Form frmMain
       Begin VB.Label lblTimer 
          Caption         =   "Seconds Remaining: "
          Height          =   315
-         Left            =   4500
+         Left            =   -70500
          TabIndex        =   30
          Top             =   4620
          Width           =   2955
@@ -575,7 +595,7 @@ Begin VB.Form frmMain
          Caption         =   "Ignore"
          Height          =   315
          Index           =   0
-         Left            =   -74940
+         Left            =   60
          TabIndex        =   28
          Top             =   4140
          Width           =   555
@@ -584,7 +604,7 @@ Begin VB.Form frmMain
          Caption         =   "Prune"
          Height          =   315
          Index           =   1
-         Left            =   -74940
+         Left            =   60
          TabIndex        =   27
          Top             =   4500
          Width           =   555
@@ -635,7 +655,7 @@ Begin VB.Form frmMain
       Begin VB.Label Label4 
          Caption         =   "Analyze PID"
          Height          =   315
-         Left            =   120
+         Left            =   -74880
          TabIndex        =   4
          Top             =   4560
          Width           =   1215
@@ -776,6 +796,7 @@ Attribute subclass.VB_VarHelpID = -1
 Dim liProc As ListItem
 Dim liDirWatch As ListItem
 
+
 Dim tickCount As Long
 Dim seconds As Long
 
@@ -801,7 +822,7 @@ Sub Initalize()
         subclass.AttachMessage frmApiLogger.Hwnd, WM_COPYDATA
     End If
     
-    lvDirWatch.ColumnHeaders(1).Width = lvDirWatch.Width - 100
+    lvDirWatch.ColumnHeaders(3).Width = lvDirWatch.Width - 100 - lvDirWatch.ColumnHeaders(3).Left
     lvAPILog.ColumnHeaders(1).Width = lvAPILog.Width - 100
     
     txtIgnore = GetSetting(App.exename, "Settings", "txtIgnore", "\config\software , modified:, ")
@@ -822,7 +843,7 @@ Sub StartCountDown(xSecs As Integer)
     
 End Sub
 
-Private Sub cmdDirWatch_Click()
+Sub cmdDirWatch_Click()
     
     With cmdDirWatch
         If Len(.Tag) = 0 Then
@@ -1082,13 +1103,21 @@ Private Sub cmdSaveDirWatchFile_Click()
     If liDirWatch Is Nothing Then Exit Sub
     
     On Error Resume Next
-    Dim f As String
-    f = liDirWatch.SubItems(1)
+    Dim f As String, d As String
+    
+    f = liDirWatch.SubItems(2)
     
     If Not fso.FileExists(f) Then
         MsgBox "File not found: " & f
     Else
-        FileCopy f, UserDeskTopFolder & "\"
+        d = UserDeskTopFolder & "\" & fso.FileNameFromPath(f)
+        FileCopy f, d
+    End If
+    
+    If Err.Number <> 0 Then
+        MsgBox "Error: " & Err.Description
+    Else
+        MsgBox FileLen(f) & " bytes saved successfully as: " & vbCrLf & vbCrLf & d, vbInformation
     End If
     
 End Sub
@@ -1239,7 +1268,9 @@ End Sub
 
 Private Sub subclass_MessageReceived(Hwnd As Long, wMsg As Long, wParam As Long, lParam As Long, Cancel As Boolean)
     Dim msg As String
-    
+    Dim tmp
+    Dim li As ListItem
+                
     If wMsg = WM_COPYDATA Then
         If RecieveTextMessage(lParam, msg) Then
             If Hwnd = Me.Hwnd Then
@@ -1265,12 +1296,15 @@ Private Sub subclass_MessageReceived(Hwnd As Long, wMsg As Long, wParam As Long,
             ElseIf wParam = 0 Then 'analyzer report
                 
             Else
-                
+               
                 If AnyOfTheseInstr(msg, txtIgnore) Then Exit Sub
                 If KeyExistsInCollection(cLogData, msg) Then Exit Sub
                 On Error Resume Next
                 cLogData.Add msg, msg
-                lvDirWatch.ListItems.Add , , msg
+                tmp = Split(msg, ":", 2)
+                Set li = lvDirWatch.ListItems.Add(, , tmp(0))
+                li.SubItems(2) = Replace(Replace(Trim(tmp(1)), "\\", "\"), Chr(0), Empty)
+                li.SubItems(1) = Hex(FileLen(li.SubItems(2)))
                 
             End If
         End If
