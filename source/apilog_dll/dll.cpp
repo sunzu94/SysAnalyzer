@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <wininet.h>
+#include <tlhelp32.h>
 
 void InstallHooks(void);
 
@@ -36,7 +37,8 @@ extern "C" void __setargv(void);
 #include "hooker.h"
 #include "main.h"   //contains a bunch of library functions in it too..
 
-
+//todo:  
+//      block everyway you can find to delete files
 
 bool Installed =false;
 
@@ -62,6 +64,25 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 }
 
 
+char* findProcessByPid(int pid){
+	
+	PROCESSENTRY32 pe;
+    HANDLE hSnap;
+	int cnt=0;
+    
+    pe.dwSize = sizeof(pe);
+    hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    
+    Process32First( hSnap, &pe);
+    if( pe.th32ProcessID == pid ) return strdup(pe.szExeFile);
+
+    while( Process32Next(hSnap, &pe) ){
+		if( pe.th32ProcessID == pid ) return strdup(pe.szExeFile);
+	}
+
+	return strdup("-- Could not find pid with ToolHelp Api! --");
+
+}
 
 
 //___________________________________________________hook implementations _________
@@ -486,7 +507,7 @@ HANDLE __stdcall My_OpenProcess(DWORD a0,BOOL a1,DWORD a2)
     }
 	catch(...){	} 
 
-	LogAPI("%x     OpenProcess(pid=%ld) = 0x%x", CalledFrom(), a2, ret);
+	LogAPI("%x     OpenProcess(pid=%ld) = 0x%x  - %s", CalledFrom(), a2, ret, findProcessByPid(a2) );
 
     return ret;
 }
