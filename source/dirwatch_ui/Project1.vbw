@@ -1,4 +1,4 @@
 frmMain = 16, 9, 800, 633, , -3, 7, 876, 658, C
-FileProps = 3, 10, 709, 629, 
+FileProps = 3, 10, 709, 629, Z
 frmDirWatch = 132, 132, 603, 585, , 44, 44, 524, 497, C
 clsCmnDlg2 = 0, 0, 0, 0, C

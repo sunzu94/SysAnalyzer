@@ -83,7 +83,7 @@ Begin VB.Form frmMain
       NumItems        =   2
       BeginProperty ColumnHeader(1) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
          Text            =   "Action"
-         Object.Width           =   2540
+         Object.Width           =   3528
       EndProperty
       BeginProperty ColumnHeader(2) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
          SubItemIndex    =   1
@@ -368,6 +368,7 @@ Private Sub subclass_MessageReceived(hwnd As Long, wMsg As Long, wParam As Long,
                 On Error Resume Next
                 cLogData.Add msg, msg
                 tmp = Split(msg, ":", 2)
+                tmp(0) = VBA.Left(tmp(0), 1) & ":" & Format(Now, "h:m:s")
                 Set li = lvDirWatch.ListItems.Add(, , tmp(0))
                 li.SubItems(1) = Replace(Replace(Trim(tmp(1)), "\\", "\"), Chr(0), Empty)
                 
