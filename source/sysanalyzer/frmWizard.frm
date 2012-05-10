@@ -3,14 +3,14 @@ Begin VB.Form frmWizard
    BackColor       =   &H005A5963&
    BorderStyle     =   3  'Fixed Dialog
    Caption         =   "SysAnalyzer Configuration Wizard"
-   ClientHeight    =   2955
+   ClientHeight    =   3855
    ClientLeft      =   45
    ClientTop       =   330
    ClientWidth     =   7770
    LinkTopic       =   "Form2"
    MaxButton       =   0   'False
    MinButton       =   0   'False
-   ScaleHeight     =   2955
+   ScaleHeight     =   3855
    ScaleWidth      =   7770
    ShowInTaskbar   =   0   'False
    StartUpPosition =   2  'CenterScreen
@@ -18,11 +18,36 @@ Begin VB.Form frmWizard
       BackColor       =   &H005A5963&
       Caption         =   " Options "
       ForeColor       =   &H00E0E0E0&
-      Height          =   1455
+      Height          =   2325
       Left            =   3840
       TabIndex        =   8
       Top             =   900
       Width           =   3795
+      Begin VB.ComboBox cboIp 
+         Height          =   315
+         Left            =   1140
+         TabIndex        =   17
+         Top             =   1890
+         Width           =   2475
+      End
+      Begin VB.TextBox txtInterface 
+         Height          =   285
+         Left            =   2610
+         TabIndex        =   14
+         Text            =   "1"
+         Top             =   1590
+         Width           =   405
+      End
+      Begin VB.CheckBox chkPacketCapture 
+         BackColor       =   &H005A5963&
+         Caption         =   "Full Packet Capture"
+         ForeColor       =   &H00E0E0E0&
+         Height          =   255
+         Left            =   480
+         TabIndex        =   12
+         Top             =   1320
+         Width           =   1755
+      End
       Begin VB.CheckBox chkNetworkAnalyzer 
          BackColor       =   &H005A5963&
          Caption         =   "Use SniffHit"
@@ -35,12 +60,12 @@ Begin VB.Form frmWizard
       End
       Begin VB.CheckBox chkApiLog 
          BackColor       =   &H005A5963&
-         Caption         =   "Use Api Logger"
+         Caption         =   "Use Api Logger (Sleep ignored)"
          ForeColor       =   &H00E0E0E0&
          Height          =   315
          Left            =   480
          TabIndex        =   10
-         Top             =   600
+         Top             =   570
          Width           =   2775
       End
       Begin VB.CheckBox chkWatchDirs 
@@ -50,8 +75,57 @@ Begin VB.Form frmWizard
          Height          =   255
          Left            =   480
          TabIndex        =   9
-         Top             =   1020
+         Top             =   960
          Width           =   2835
+      End
+      Begin VB.Label lblip 
+         BackColor       =   &H005A5963&
+         Caption         =   "IP"
+         ForeColor       =   &H00E0E0E0&
+         Height          =   255
+         Left            =   840
+         TabIndex        =   16
+         Top             =   1950
+         Width           =   285
+      End
+      Begin VB.Label lblLaunchTcpDump 
+         BackColor       =   &H005A5963&
+         Caption         =   "( launch now )"
+         BeginProperty Font 
+            Name            =   "MS Sans Serif"
+            Size            =   8.25
+            Charset         =   0
+            Weight          =   400
+            Underline       =   -1  'True
+            Italic          =   0   'False
+            Strikethrough   =   0   'False
+         EndProperty
+         ForeColor       =   &H00E0E0E0&
+         Height          =   255
+         Left            =   2640
+         TabIndex        =   15
+         Top             =   1320
+         Width           =   1005
+      End
+      Begin VB.Label lblInterfaces 
+         BackColor       =   &H005A5963&
+         Caption         =   "Interface Index: "
+         BeginProperty Font 
+            Name            =   "MS Sans Serif"
+            Size            =   8.25
+            Charset         =   0
+            Weight          =   400
+            Underline       =   -1  'True
+            Italic          =   0   'False
+            Strikethrough   =   0   'False
+         EndProperty
+         ForeColor       =   &H00E0E0E0&
+         Height          =   255
+         Index           =   1
+         Left            =   1380
+         TabIndex        =   13
+         Top             =   1620
+         Width           =   1245
       End
    End
    Begin VB.TextBox txtDelay 
@@ -66,23 +140,23 @@ Begin VB.Form frmWizard
    Begin VB.Timer tmrDelayShell 
       Enabled         =   0   'False
       Interval        =   1500
-      Left            =   7200
-      Top             =   3120
+      Left            =   90
+      Top             =   3000
    End
    Begin VB.CommandButton cmdReadme 
       Caption         =   "Help"
       Height          =   375
       Left            =   3300
       TabIndex        =   4
-      Top             =   2520
+      Top             =   3420
       Width           =   1155
    End
    Begin VB.CommandButton cmdStart 
       Caption         =   "Start"
       Height          =   375
-      Left            =   6540
+      Left            =   6570
       TabIndex        =   3
-      Top             =   2520
+      Top             =   3420
       Width           =   1155
    End
    Begin VB.CommandButton cmdBrowse 
@@ -126,7 +200,7 @@ Begin VB.Form frmWizard
       Height          =   255
       Left            =   5280
       TabIndex        =   7
-      Top             =   2640
+      Top             =   3480
       Width           =   435
    End
    Begin VB.Image Image1 
@@ -151,6 +225,7 @@ Begin VB.Form frmWizard
       Caption         =   "Executable: "
       ForeColor       =   &H00E0E0E0&
       Height          =   255
+      Index           =   0
       Left            =   3360
       TabIndex        =   0
       Top             =   240
@@ -188,13 +263,35 @@ Private Type config
     apilog As Byte
     dirwatch As Byte
     delay As Long
+    tcpdump As Byte
+    interface As Byte
 End Type
  
 Private cfg As config
 Private cfgFile As String
 
+Private going_toMainUI As Boolean
+
 Private Sub Form_Unload(Cancel As Integer)
     SaveConfig
+    If Not going_toMainUI Then End
+End Sub
+
+Private Sub lblInterfaces_Click(Index As Integer)
+    On Error Resume Next
+    Dim f As String
+    If IsIde() Then
+        f = App.path & "\..\..\windump.exe"
+    Else
+        f = App.path & "\windump.exe"
+    End If
+    
+    Shell "cmd /k echo. && """ & f & """ -D && echo. && echo *** Use the interface index from the above list *** && echo.  ", vbNormalFocus
+    
+End Sub
+
+Private Sub lblLaunchTcpDump_Click()
+    launchtcpdump
 End Sub
 
 Private Sub lblSkip_Click()
@@ -208,6 +305,8 @@ Private Sub lblSkip_Click()
         .lblDisplay = "Use the tools menu to manually proceede"
         .Visible = True
     End With
+    
+    going_toMainUI = True
     
     Unload Me
     
@@ -226,6 +325,8 @@ Sub LoadConfig()
             .delay = 30
             .dirwatch = 1
             .sniffer = 1
+            .interface = 1
+            .tcpdump = 1
         End With
         SaveConfig
     Else
@@ -241,12 +342,16 @@ Sub LoadConfig()
         chkNetworkAnalyzer = .sniffer
         chkWatchDirs = .dirwatch
         txtDelay = .delay
+        txtInterface = .interface
+        chkPacketCapture.value = .tcpdump
     End With
     
 End Sub
 
 Sub SaveConfig()
         
+    On Error Resume Next
+    
     If Len(txtDelay) = 0 Or Not IsNumeric(txtDelay) Then txtDelay = 30
             
     With cfg
@@ -254,6 +359,8 @@ Sub SaveConfig()
         .sniffer = chkNetworkAnalyzer
         .dirwatch = chkWatchDirs
         .delay = CLng(txtDelay)
+        .interface = CByte(txtInterface)
+        .tcpdump = chkPacketCapture.value
     End With
     
     Dim f As Long
@@ -292,12 +399,40 @@ End Sub
 Private Sub Form_Load()
         
     On Error GoTo hell
- 
+    
+    Dim c As Collection
+    Dim ip
+    
     'txtBinary = "D:\work_data\SysAnalyzer_2\examples\safe_test1.exe"
     
     cfgFile = App.path & "\cfg.dat"
     networkAnalyzer = App.path & "\sniff_hit.exe"
+    tcpdump = App.path & "\windump.exe"
     
+    If Not fso.FileExists(tcpdump) Then
+        tcpdump = App.path & "\..\..\windump.exe"
+    End If
+    
+    Set c = AvailableInterfaces()
+    For Each ip In c
+        If ip <> "127.0.0.1" Then
+            cboIp.AddItem ip
+        End If
+    Next
+            
+    If cboIp.ListCount = 0 Then  'no active interfaces ?
+        chkPacketCapture.Enabled = False
+        chkPacketCapture.value = 0
+        chkNetworkAnalyzer.value = 0
+        chkNetworkAnalyzer.Enabled = False
+    Else
+        cboIp.ListIndex = 0
+    End If
+    
+    cboIp.Visible = IIf(cboIp.ListCount > 1, True, False) 'try to keep config as easy as we can for them...
+    lblip.Visible = cboIp.Visible
+
+
     'watchDirs.Add CStr(Environ("TEMP"))
     'watchDirs.Add CStr(Environ("WINDIR"))
     'watchDirs.Add CStr("C:\Program Files")
@@ -328,7 +463,14 @@ End Sub
 Sub cmdStart_Click()
         
     On Error Resume Next
-            
+    
+    If chkPacketCapture.value = 1 Then
+        If Not IsNumeric(txtInterface.Text) Or txtInterface.Text = 0 Then
+            MsgBox "Interface for tcpdump must be numeric and non-zero", vbInformation
+            Exit Sub
+        End If
+    End If
+    
     If Not FileExists(txtBinary) Then
         MsgBox "Binary not found: " & txtBinary
         Exit Sub
@@ -348,7 +490,10 @@ Sub cmdStart_Click()
             End If
         End If
     End If
-            
+    
+    If chkPacketCapture.value = 1 Then launchtcpdump
+    
+    going_toMainUI = True
     frmMain.Initalize
     
     diff.DoSnap1
@@ -361,6 +506,55 @@ hell:
     
 End Sub
 
+Private Function launchtcpdump()
+ ' http://www.winpcap.org/windump/docs/manual.htm
+    '  -p not promiscious but not shortcut for ether host {local-hw-addr}
+    '  -q quiet (less output on cmdline)
+    '  -U write packets to file as received (not buffered)
+    '  -i [interface index]
+    '  -w [file path]
+    '  -l show activity to stdout during capture..
+    '  -s 0 capture entire packet do not truncate..
+    
+    On Error Resume Next
+    Dim args As String
+    Dim f As String
+    Dim i As Long
+    Dim c As Collection
+    Dim ip As String
+    
+    i = 1
+    
+    If Not IsNumeric(txtInterface.Text) Or txtInterface.Text = 0 Then
+        MsgBox "Interface for tcpdump must be numeric and non-zero", vbInformation
+        Exit Function
+    End If
+    
+    If fso.FileExists(tcpdump) Then
+                
+        f = UserDeskTopFolder() & "\capture.pcap"
+        If fso.FileExists(f) Then
+            While fso.FileExists(f)
+                i = i + 1
+                f = UserDeskTopFolder() & "\capture_" & i & ".pcap"
+                If i = 100 Then Exit Function 'wtf?
+            Wend
+        End If
+        
+        args = " -w ""[PATH]"" -q -U -l -s 0 -i " & txtInterface & " ip src [IP] or ip dst [IP]"
+        args = Replace(args, "[PATH]", f)
+        args = Replace(args, "[IP]", cboIp.Text)
+        args = "cmd /k """ & """" & tcpdump & """" & args & """"
+        
+        Clipboard.Clear
+        Clipboard.SetText args
+        Shell args, vbNormalNoFocus
+        
+    Else
+        MsgBox "Missing: " & tcpdump
+    End If
+    
+End Function
 
 Private Sub tmrDelayShell_Timer()
     tmrDelayShell.Enabled = False

@@ -1,21 +1,28 @@
 VERSION 5.00
 Begin VB.Form Form2 
    Caption         =   "ApiLogger"
-   ClientHeight    =   6630
+   ClientHeight    =   7050
    ClientLeft      =   60
    ClientTop       =   345
    ClientWidth     =   7515
    Icon            =   "Form2.frx":0000
    LinkTopic       =   "Form2"
-   ScaleHeight     =   6630
+   ScaleHeight     =   7050
    ScaleWidth      =   7515
    StartUpPosition =   3  'Windows Default
+   Begin VB.TextBox txtArgs 
+      Height          =   315
+      Left            =   960
+      TabIndex        =   18
+      Top             =   360
+      Width           =   5295
+   End
    Begin VB.CommandButton Command3 
       Caption         =   "Copy"
       Height          =   255
       Left            =   6120
       TabIndex        =   16
-      Top             =   2880
+      Top             =   3270
       Width           =   1215
    End
    Begin VB.CommandButton Command2 
@@ -23,14 +30,14 @@ Begin VB.Form Form2
       Height          =   255
       Left            =   4560
       TabIndex        =   15
-      Top             =   2880
+      Top             =   3270
       Width           =   1095
    End
    Begin VB.TextBox txtIgnore 
       Height          =   315
       Left            =   960
       TabIndex        =   14
-      Top             =   960
+      Top             =   1350
       Width           =   6255
    End
    Begin VB.CommandButton Command1 
@@ -38,7 +45,7 @@ Begin VB.Form Form2
       Height          =   315
       Left            =   6240
       TabIndex        =   12
-      Top             =   660
+      Top             =   1050
       Width           =   1335
    End
    Begin VB.CommandButton cmdContinue 
@@ -47,21 +54,21 @@ Begin VB.Form Form2
       Height          =   315
       Left            =   3000
       TabIndex        =   11
-      Top             =   660
+      Top             =   1050
       Width           =   975
    End
    Begin VB.TextBox txtDumpAt 
       Height          =   285
       Left            =   960
       TabIndex        =   9
-      Top             =   660
+      Top             =   1050
       Width           =   1875
    End
    Begin VB.ListBox List2 
       Height          =   1230
       Left            =   -60
       TabIndex        =   8
-      Top             =   1560
+      Top             =   1950
       Width           =   7455
    End
    Begin VB.TextBox txtDll 
@@ -69,7 +76,7 @@ Begin VB.Form Form2
       Left            =   960
       OLEDropMode     =   1  'Manual
       TabIndex        =   6
-      Top             =   360
+      Top             =   750
       Width           =   5295
    End
    Begin VB.CommandButton cmdStart 
@@ -77,7 +84,7 @@ Begin VB.Form Form2
       Height          =   315
       Left            =   6420
       TabIndex        =   3
-      Top             =   300
+      Top             =   690
       Width           =   1095
    End
    Begin VB.TextBox txtPacked 
@@ -101,15 +108,23 @@ Begin VB.Form Form2
       Height          =   3420
       Left            =   0
       TabIndex        =   0
-      Top             =   3180
+      Top             =   3570
       Width           =   7455
+   End
+   Begin VB.Label Label7 
+      Caption         =   "Args"
+      Height          =   285
+      Left            =   0
+      TabIndex        =   17
+      Top             =   360
+      Width           =   945
    End
    Begin VB.Label Label6 
       Caption         =   "Ignore"
       Height          =   255
       Left            =   0
       TabIndex        =   13
-      Top             =   1020
+      Top             =   1410
       Width           =   975
    End
    Begin VB.Label Label5 
@@ -117,7 +132,7 @@ Begin VB.Form Form2
       Height          =   255
       Left            =   0
       TabIndex        =   10
-      Top             =   720
+      Top             =   1110
       Width           =   915
    End
    Begin VB.Label Label4 
@@ -125,7 +140,7 @@ Begin VB.Form Form2
       Height          =   315
       Left            =   0
       TabIndex        =   7
-      Top             =   1320
+      Top             =   1710
       Width           =   915
    End
    Begin VB.Label Label3 
@@ -133,7 +148,7 @@ Begin VB.Form Form2
       Height          =   315
       Left            =   0
       TabIndex        =   5
-      Top             =   360
+      Top             =   750
       Width           =   975
    End
    Begin VB.Label Label2 
@@ -141,7 +156,7 @@ Begin VB.Form Form2
       Height          =   255
       Left            =   0
       TabIndex        =   4
-      Top             =   2880
+      Top             =   3270
       Width           =   1035
    End
    Begin VB.Label Label1 
@@ -313,6 +328,7 @@ Private Sub cmdStart_Click()
         Exit Sub
     End If
     
+    If Len(txtArgs) > 0 Then exe = exe & " " & txtArgs
     StartProcessWithDLL exe, txtDll
     
 End Sub
@@ -357,6 +373,10 @@ Private Sub Form_Load()
     If FileExists(defaultexe) Then txtPacked = defaultexe
     
     txtIgnore = GetMySetting("Ignore", "")
+    
+    If Len(Command) > 0 Then
+        txtPacked = Replace(Command, """", Empty)
+    End If
     
 End Sub
 

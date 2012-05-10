@@ -38,6 +38,7 @@ Global hash As New CWinHash
     Global known As New CKnownFile
 #End If
 
+Global tcpdump As String
 Global networkAnalyzer As String
 Global watchIDs() As Long
 Global watchDirs As New Collection
@@ -57,7 +58,7 @@ Private Declare Sub MoveMemory Lib "kernel32" Alias "RtlMoveMemory" (Dest As Any
 Private Declare Function lstrcpy Lib "kernel32" Alias "lstrcpyA" (ByVal lpString1 As String, ByVal lpString2 As Long) As Long
 Public Declare Function FindWindow Lib "user32" Alias "FindWindowA" (ByVal lpClassName As String, ByVal lpWindowName As String) As Long
 Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (hpvDest As Any, hpvSource As Any, ByVal cbCopy As Long)
-Public Declare Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteA" (ByVal Hwnd As Long, ByVal lpOperation As String, ByVal lpFile As String, ByVal lpParameters As String, ByVal lpDirectory As String, ByVal nShowCmd As Long) As Long
+Public Declare Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteA" (ByVal hWnd As Long, ByVal lpOperation As String, ByVal lpFile As String, ByVal lpParameters As String, ByVal lpDirectory As String, ByVal nShowCmd As Long) As Long
 
 
 Public Type FILEPROPERTIE
@@ -109,6 +110,84 @@ Private Const LANG_SPANISH = &HA
 Private Const LANG_SWEDISH = &H1D
 Private Const LANG_TURKISH = &H1F
 
+Private Type sockaddr_in
+    sin_family As Integer
+    sin_port As Integer
+    sin_addr As Long
+    sin_zero As String * 8
+End Type
+
+Private Type sockaddr_gen
+    AddressIn As sockaddr_in
+    filler(0 To 7) As Byte
+End Type
+
+Private Type INTERFACE_INFO
+    iiFlags  As Long
+    iiAddress As sockaddr_gen
+    iiBroadcastAddress As sockaddr_gen
+    iiNetmask As sockaddr_gen
+End Type
+
+Private Type INTERFACEINFO
+    iInfo(0 To 7) As INTERFACE_INFO
+End Type
+
+Private Const WSADESCRIPTION_LEN As Long = 256
+Private Const WSASYS_STATUS_LEN  As Long = 128
+
+Private Type WSAData
+    wVersion As Integer
+    wHighVersion As Integer
+    szDescription As String * WSADESCRIPTION_LEN
+    szSystemStatus As String * WSASYS_STATUS_LEN
+    iMaxSockets As Integer
+    iMaxUdpDg As Integer
+    lpVendorInfo As Long
+End Type
+
+Private Declare Function socket Lib "ws2_32.dll" (ByVal af As Long, ByVal s_type As Long, ByVal Protocol As Long) As Long
+Private Declare Function closesocket Lib "ws2_32.dll" (ByVal s As Long) As Long
+Private Declare Function WSAIoctl Lib "ws2_32.dll" (ByVal s As Long, ByVal dwIoControlCode As Long, lpvInBuffer As Any, ByVal cbInBuffer As Long, lpvOutBuffer As Any, ByVal cbOutBuffer As Long, lpcbBytesReturned As Long, lpOverlapped As Long, lpCompletionRoutine As Long) As Long
+Private Declare Sub CopyMemory2 Lib "kernel32" Alias "RtlMoveMemory" (pDst As Any, ByVal pSrc As Long, ByVal ByteLen As Long)
+Private Declare Function WSAStartup Lib "ws2_32.dll" (ByVal wVR As Long, lpWSAD As WSAData) As Long
+
+
+Function AvailableInterfaces() As Collection
+  
+    Dim hSocket As Long, size As Long, count As Integer
+    Dim i As Integer, lngIp As Long, ip(3) As Byte
+    Dim sIp As String
+    Dim ret As New Collection
+    Dim buf As INTERFACEINFO
+    Dim WSAInfo As WSAData
+    
+    Const SIO_GET_INTERFACE_LIST As Long = &H4004747F
+    Const INVALID_SOCKET As Long = 0
+    Const SOCKET_ERROR As Long = -1
+    Const AF_INET As Long = 2
+
+    On Error GoTo failed
+    Set AvailableInterfaces = ret
+      
+    WSAStartup &H202, WSAInfo
+    hSocket = socket(AF_INET, 1, 0)
+    If hSocket = INVALID_SOCKET Then Exit Function
+    If WSAIoctl(hSocket, SIO_GET_INTERFACE_LIST, ByVal 0, 0, buf, 1024, size, ByVal 0, ByVal 0) Then GoTo failed
+    
+    count = CInt(size / 76) - 1
+     
+    For i = 0 To count
+        lngIp = buf.iInfo(i).iiAddress.AddressIn.sin_addr
+        CopyMemory2 ByVal VarPtr(ip(0)), VarPtr(lngIp), 4
+        sIp = ip(0) & "." & ip(1) & "." & ip(2) & "." & ip(3)
+        ret.Add sIp, sIp
+    Next i
+    
+failed:
+    closesocket hSocket
+    
+End Function
 
 Sub DirWatchCtl(enable As Boolean)
     Dim i As Integer, d
@@ -326,7 +405,7 @@ Function GetAllElements(lv As ListView) As String
     Dim ret() As String, i As Integer, tmp As String
     Dim li As ListItem
 
-    For i = 1 To lv.ColumnHeaders.Count
+    For i = 1 To lv.ColumnHeaders.count
         tmp = tmp & lv.ColumnHeaders(i).Text & vbTab
     Next
 
@@ -335,7 +414,7 @@ Function GetAllElements(lv As ListView) As String
 
     For Each li In lv.ListItems
         tmp = li.Text & vbTab
-        For i = 1 To lv.ColumnHeaders.Count - 1
+        For i = 1 To lv.ColumnHeaders.count - 1
             tmp = tmp & li.SubItems(i) & vbTab
         Next
         push ret, tmp
@@ -349,7 +428,7 @@ Function GetAllText(lv As ListView, Optional subItemRow As Long = 0) As String
     Dim i As Long
     Dim tmp As String, x As String
     
-    For i = 1 To lv.ListItems.Count
+    For i = 1 To lv.ListItems.count
         If subItemRow = 0 Then
             x = lv.ListItems(i).Text
             If Len(x) > 0 Then

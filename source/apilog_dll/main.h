@@ -101,6 +101,7 @@ ALLOC_THUNK( int __stdcall Real_RegOpenKeyExA ( HKEY a0, LPCSTR a1, DWORD a2, RE
 ALLOC_THUNK( int __stdcall Real_RegQueryValueExA ( HKEY a0, LPCSTR a1, LPDWORD a2, LPDWORD a3, LPBYTE a4, LPDWORD a5 ) );
 ALLOC_THUNK( int __stdcall Real_RegSetValueExA ( HKEY a0, LPCSTR a1, DWORD a2, DWORD a3, CONST BYTE* a4, DWORD a5 ) );
 
+ALLOC_THUNK( VOID __stdcall Real_Sleep( DWORD a0 ) );
 
 void msg(char);
 void LogAPI(const char*, ...);

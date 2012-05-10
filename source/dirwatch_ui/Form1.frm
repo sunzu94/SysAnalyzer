@@ -363,6 +363,10 @@ Private Sub subclass_MessageReceived(hwnd As Long, wMsg As Long, wParam As Long,
     If wMsg = WM_COPYDATA Then
         If RecieveTextMessage(lParam, msg) Then
                 
+                If InStr(msg, "NTUSER.DAT") > 0 Then Exit Sub
+                If InStr(msg, "\Prefetch\") > 0 Then Exit Sub
+                If Right(msg, 4) = ".lnk" Then Exit Sub
+                
                 If AnyOfTheseInstr(msg, txtIgnore) Then Exit Sub
                 If KeyExistsInCollection(cLogData, msg) Then Exit Sub
                 On Error Resume Next

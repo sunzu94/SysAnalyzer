@@ -44,7 +44,6 @@ Source: ./\source\proc_analyzer\Module1.bas; DestDir: {app}\source\proc_analyzer
 Source: ./\source\proc_analyzer\CStrings.cls; DestDir: {app}\source\proc_analyzer
 Source: ./\source\proc_analyzer\CExploitScanner.cls; DestDir: {app}\source\proc_analyzer
 Source: ./\source\proc_analyzer\Form1.frx; DestDir: {app}\source\proc_analyzer
-Source: ./\source\sysanalyzer\cfg.dat; DestDir: {app}\source\sysanalyzer
 Source: ./\source\sysanalyzer\wormy.ico; DestDir: {app}\source\sysanalyzer
 Source: ./\source\sysanalyzer\CModule.cls; DestDir: {app}\source\sysanalyzer
 Source: ./\source\sysanalyzer\CProcess.cls; DestDir: {app}\source\sysanalyzer
@@ -83,7 +82,7 @@ Source: ./\sniff_hit.exe; DestDir: {app}; Flags: ignoreversion
 Source: ./\sysAnalyzer.exe; DestDir: {app}; Flags: ignoreversion
 Source: ./\SysAnalyzer_help.chm; DestDir: {app}
 Source: ./\SysAnalyzer.pdb; DestDir: {app}
-Source: ./\known_files.mdb; DestDir: {app}
+Source: ./\known_files.mdb; DestDir: {app}; Flags: uninsneveruninstall
 Source: dirwatch_ui.exe; DestDir: {app}; Flags: ignoreversion
 Source: source\dirwatch_ui\clsCmnDlg.cls; DestDir: {app}\source\dirwatch_ui
 Source: source\dirwatch_ui\dir_watch.dll; DestDir: {app}\source\dirwatch_ui
@@ -94,6 +93,9 @@ Source: source\dirwatch_ui\frmDirWatch.frm; DestDir: {app}\source\dirwatch_ui
 Source: source\dirwatch_ui\Project1.vbp; DestDir: {app}\source\dirwatch_ui
 Source: source\dirwatch_ui\Project1.vbw; DestDir: {app}\source\dirwatch_ui
 Source: source\dirwatch_ui\simple-fso..bas; DestDir: {app}\source\dirwatch_ui
+Source: windump.exe; DestDir: {app}
+Source: WinPcap_4_1_2.exe; DestDir: {app}
+Source: loadlib.exe; DestDir: {app}
 
 [Dirs]
 Name: {app}\source
@@ -134,3 +136,5 @@ UninstallProgram=Uninstall %1
 LaunchProgram=Launch %1
 AssocFileExtension=&Associate %1 with the %2 file extension
 AssocingFileExtension=Associating %1 with the %2 file extension...
+[Run]
+Filename: {app}\WinPcap_4_1_2.exe; StatusMsg: Installing WinPcap Packet Sniffer Driver; Flags: postinstall

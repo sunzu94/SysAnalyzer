@@ -6,12 +6,12 @@ Begin VB.Form frmMain
    ClientHeight    =   5400
    ClientLeft      =   60
    ClientTop       =   345
-   ClientWidth     =   10350
+   ClientWidth     =   10335
    Icon            =   "Form1.frx":0000
    LinkMode        =   1  'Source
    LinkTopic       =   "frmMain"
    ScaleHeight     =   5400
-   ScaleWidth      =   10350
+   ScaleWidth      =   10335
    StartUpPosition =   2  'CenterScreen
    Visible         =   0   'False
    Begin VB.PictureBox Picture1 
@@ -72,13 +72,12 @@ Begin VB.Form frmMain
       TabOrientation  =   1
       Style           =   1
       Tabs            =   7
-      Tab             =   6
       TabsPerRow      =   10
       TabHeight       =   520
       ShowFocusRect   =   0   'False
       TabCaption(0)   =   "Running Processes"
       TabPicture(0)   =   "Form1.frx":0442
-      Tab(0).ControlEnabled=   0   'False
+      Tab(0).ControlEnabled=   -1  'True
       Tab(0).Control(0)=   "Label4"
       Tab(0).Control(0).Enabled=   0   'False
       Tab(0).Control(1)=   "lblTimer"
@@ -134,28 +133,20 @@ Begin VB.Form frmMain
       Tab(5).ControlCount=   7
       TabCaption(6)   =   "Directory Watch Data"
       TabPicture(6)   =   "Form1.frx":04EA
-      Tab(6).ControlEnabled=   -1  'True
-      Tab(6).Control(0)=   "Label3(1)"
-      Tab(6).Control(0).Enabled=   0   'False
-      Tab(6).Control(1)=   "Label3(0)"
-      Tab(6).Control(1).Enabled=   0   'False
-      Tab(6).Control(2)=   "lvDirWatch"
-      Tab(6).Control(2).Enabled=   0   'False
-      Tab(6).Control(3)=   "cmdSaveDirWatchFile"
-      Tab(6).Control(3).Enabled=   0   'False
-      Tab(6).Control(4)=   "cmdDelLike"
-      Tab(6).Control(4).Enabled=   0   'False
-      Tab(6).Control(5)=   "txtDeleteLike"
-      Tab(6).Control(5).Enabled=   0   'False
-      Tab(6).Control(6)=   "txtIgnore"
-      Tab(6).Control(6).Enabled=   0   'False
-      Tab(6).Control(7)=   "cmdDirWatch"
-      Tab(6).Control(7).Enabled=   0   'False
+      Tab(6).ControlEnabled=   0   'False
+      Tab(6).Control(0)=   "cmdDirWatch"
+      Tab(6).Control(1)=   "txtIgnore"
+      Tab(6).Control(2)=   "txtDeleteLike"
+      Tab(6).Control(3)=   "cmdDelLike"
+      Tab(6).Control(4)=   "cmdSaveDirWatchFile"
+      Tab(6).Control(5)=   "lvDirWatch"
+      Tab(6).Control(6)=   "Label3(0)"
+      Tab(6).Control(7)=   "Label3(1)"
       Tab(6).ControlCount=   8
       Begin VB.CommandButton cmdDirWatch 
          Caption         =   "Stop Monitor"
          Height          =   315
-         Left            =   9000
+         Left            =   -66000
          TabIndex        =   36
          Top             =   4500
          Width           =   1215
@@ -171,19 +162,19 @@ Begin VB.Form frmMain
       Begin VB.Timer tmrCountDown 
          Enabled         =   0   'False
          Interval        =   1000
-         Left            =   -65160
+         Left            =   9840
          Top             =   4560
       End
       Begin VB.TextBox txtIgnore 
          Height          =   315
-         Left            =   720
+         Left            =   -74280
          TabIndex        =   25
          Top             =   4140
          Width           =   9495
       End
       Begin VB.TextBox txtDeleteLike 
          Height          =   315
-         Left            =   720
+         Left            =   -74280
          TabIndex        =   24
          Top             =   4500
          Width           =   4755
@@ -191,7 +182,7 @@ Begin VB.Form frmMain
       Begin VB.CommandButton cmdDelLike 
          Caption         =   "Delete Lines Like"
          Height          =   315
-         Left            =   5580
+         Left            =   -69420
          TabIndex        =   23
          Top             =   4500
          Width           =   1575
@@ -199,7 +190,7 @@ Begin VB.Form frmMain
       Begin VB.CommandButton cmdSaveDirWatchFile 
          Caption         =   "Save Selected file"
          Height          =   315
-         Left            =   7200
+         Left            =   -67800
          TabIndex        =   22
          Top             =   4500
          Width           =   1575
@@ -252,14 +243,14 @@ Begin VB.Form frmMain
       Begin VB.CommandButton cmdAnalyze 
          Caption         =   "Analyze Process"
          Height          =   315
-         Left            =   -72540
+         Left            =   2460
          TabIndex        =   5
          Top             =   4560
          Width           =   1875
       End
       Begin VB.TextBox txtProcess 
          Height          =   315
-         Left            =   -73860
+         Left            =   1140
          TabIndex        =   3
          Top             =   4560
          Width           =   1215
@@ -306,7 +297,7 @@ Begin VB.Form frmMain
       End
       Begin MSComctlLib.ListView lvProcesses 
          Height          =   4455
-         Left            =   -74940
+         Left            =   60
          TabIndex        =   1
          Top             =   60
          Width           =   10155
@@ -532,7 +523,7 @@ Begin VB.Form frmMain
       End
       Begin MSComctlLib.ListView lvDirWatch 
          Height          =   4035
-         Left            =   60
+         Left            =   -74940
          TabIndex        =   26
          Top             =   0
          Width           =   10155
@@ -578,7 +569,7 @@ Begin VB.Form frmMain
          Caption         =   "Currently displaying  base snapshot"
          ForeColor       =   &H00C00000&
          Height          =   255
-         Left            =   -68760
+         Left            =   6240
          TabIndex        =   31
          Top             =   4620
          Width           =   3675
@@ -586,7 +577,7 @@ Begin VB.Form frmMain
       Begin VB.Label lblTimer 
          Caption         =   "Seconds Remaining: "
          Height          =   315
-         Left            =   -70500
+         Left            =   4500
          TabIndex        =   30
          Top             =   4620
          Width           =   2955
@@ -595,7 +586,7 @@ Begin VB.Form frmMain
          Caption         =   "Ignore"
          Height          =   315
          Index           =   0
-         Left            =   60
+         Left            =   -74940
          TabIndex        =   28
          Top             =   4140
          Width           =   555
@@ -604,7 +595,7 @@ Begin VB.Form frmMain
          Caption         =   "Prune"
          Height          =   315
          Index           =   1
-         Left            =   60
+         Left            =   -74940
          TabIndex        =   27
          Top             =   4500
          Width           =   555
@@ -655,7 +646,7 @@ Begin VB.Form frmMain
       Begin VB.Label Label4 
          Caption         =   "Analyze PID"
          Height          =   315
-         Left            =   -74880
+         Left            =   120
          TabIndex        =   4
          Top             =   4560
          Width           =   1215
@@ -803,12 +794,14 @@ Dim seconds As Long
 Public samplePath As String
 Private ignoreAPILOG As Boolean
 Private doCopy As Boolean
-
+Private user_desktop As String
  
 
 Dim lastViewMode As Integer
 
 Sub Initalize()
+    
+    user_desktop = UserDeskTopFolder()
     
     Set subclass = New clsSubClass
    
@@ -982,13 +975,13 @@ Private Sub mnuSearch_Click()
     
 End Sub
 
-Function GetActiveLV(Optional index As Long = -1) As ListView
+Function GetActiveLV(Optional Index As Long = -1) As ListView
 
     Dim active_lv As ListView
     
-    If index = -1 Then index = SSTab1.TabIndex
+    If Index = -1 Then Index = SSTab1.TabIndex
     
-    Select Case index
+    Select Case Index
         Case 0: Set active_lv = lvProcesses
         Case 1: Set active_lv = lvPorts
         Case 2: Set active_lv = lvExplorer ' , lvIE
@@ -1216,14 +1209,14 @@ End Sub
  
 
 
-Private Sub mnuToolItem_Click(index As Integer)
+Private Sub mnuToolItem_Click(Index As Integer)
     
     'show1, show2, diff, - , take1, take2, - , startover, report
     
     Dim c As String
     
     With diff
-        Select Case index
+        Select Case Index
             Case 0: .ShowBaseSnap
             Case 1: .ShowSnap2
             Case 2: .ShowDiffReport
@@ -1244,7 +1237,7 @@ Private Sub mnuToolItem_Click(index As Integer)
         End Select
     End With
     
-    Select Case index
+    Select Case Index
         Case 0: c = "Showing base snapshot"
         Case 1: c = "Showing snapshot 2"
         Case 2: c = "Showing snapshot diff"
@@ -1253,7 +1246,7 @@ Private Sub mnuToolItem_Click(index As Integer)
     End Select
     
     If lastViewMode <= 5 Then
-        lastViewMode = index
+        lastViewMode = Index
     Else
         lastViewMode = -1
     End If
@@ -1296,7 +1289,12 @@ Private Sub subclass_MessageReceived(Hwnd As Long, wMsg As Long, wParam As Long,
             ElseIf wParam = 0 Then 'analyzer report
                 
             Else
-               
+                
+                If InStr(1, msg, "c:\iDEFENSE\Sysanalyzer", vbTextCompare) > 0 Then Exit Sub
+                If InStr(1, msg, user_desktop) > 0 Then Exit Sub
+                If InStr(1, msg, "\Prefetch\") > 0 Then Exit Sub
+                If InStr(1, msg, "NTUSER.DAT") > 0 Then Exit Sub
+                
                 If AnyOfTheseInstr(msg, txtIgnore) Then Exit Sub
                 If KeyExistsInCollection(cLogData, msg) Then Exit Sub
                 On Error Resume Next
@@ -1357,7 +1355,7 @@ Private Sub mnuDumpProcess_Click()
     If liProc Is Nothing Then Exit Sub
 
     Dim pth As String
-    pth = InputBox("Enter path to save dump as", , "C:\dmp.bin")
+    pth = InputBox("Enter path to dump file as:", , UserDeskTopFolder & "\file.dmp")
     If Len(pth) = 0 Then Exit Sub
 
     Dim cmod As CModule
@@ -1376,7 +1374,7 @@ Private Sub mnuKillProcess_Click()
     On Error Resume Next
     If liProc Is Nothing Then Exit Sub
     If diff.CProc.TerminateProces(CLng(liProc.Tag)) Then
-        lvProcesses.ListItems.Remove liProc.index
+        lvProcesses.ListItems.Remove liProc.Index
         MsgBox "Process Killed", vbInformation
     Else
         MsgBox "Unable to kill Process", vbInformation

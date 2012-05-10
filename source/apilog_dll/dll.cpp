@@ -88,6 +88,15 @@ char* findProcessByPid(int pid){
 //___________________________________________________hook implementations _________
 
 
+VOID __stdcall My_Sleep( DWORD a0 )
+{
+
+	//to much spam but we do want to ignore calls to it so we wont call the real one...
+	//LogAPI("%x     Sleep(%x) (ignored)", CalledFrom(), a0);  
+	return;
+
+}
+
 HANDLE __stdcall My_CreateFileA(LPCSTR a0,DWORD a1,DWORD a2,LPSECURITY_ATTRIBUTES a3,DWORD a4,DWORD a5,HANDLE a6)
 {
 	
@@ -1179,6 +1188,7 @@ void InstallHooks(void)
 	ADDHOOK(RegOpenKeyExA)
 	//ADDHOOK(RegQueryValueExA) spamy
 	ADDHOOK(RegSetValueExA)
+	ADDHOOK(Sleep)
 
 	 	
 }
