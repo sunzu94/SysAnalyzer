@@ -45,7 +45,7 @@ Private Type SYSTEM_MODULE_INFORMATION
     base As Long                       'PVOID Base;
     size As Long                       'ULONG Size;
     flags As Long                      'ULONG Flags;
-    index As Integer                   'USHORT Index;
+    Index As Integer                   'USHORT Index;
     unkn As Integer                    'USHORT Unknown;
     lcount As Integer                  'USHORT LoadCount;
     modoffset As Integer               'USHORT ModuleNameOffset;
@@ -196,6 +196,7 @@ Function GetRunningProcesses() As Collection 'of CProcess classes
     Dim myProcess As PROCESSENTRY32
     Dim mySnapshot As Long
     Dim proc As CProcess
+    Dim n As Long
     
     myProcess.dwSize = Len(myProcess)
     mySnapshot = CreateToolhelpSnapshot(TH32CS_SNAPPROCESS, 0&)
@@ -223,6 +224,11 @@ Function GetRunningProcesses() As Collection 'of CProcess classes
             '.CmdLine = GetProcessCmdLine(.pid)
             .User = GetProcessUser(.pid)
         End With
+        
+        n = InStr(proc.path, Chr(0))
+        If n > 0 Then proc.path = Mid(proc.path, 1, n)
+        proc.path = Replace(proc.path, "\??\", Empty)
+        proc.path = Replace(proc.path, "\SystemRoot", Environ("Windir"))
         
         m_col.Add proc, "pid:" & myProcess.th32ProcessID
     Wend
@@ -413,6 +419,8 @@ Function GetProcessPath(pid As Long) As String
     Dim hProc As Long
     Dim hMods() As Long, ret As Long, retMax As Long
     Dim sPath As String
+    Dim n As Long
+    
     hProc = OpenProcess(PROCESS_QUERY_INFORMATION Or PROCESS_VM_READ, False, pid)
     If hProc <> 0 Then
         ReDim hMods(900)
@@ -423,6 +431,8 @@ Function GetProcessPath(pid As Long) As String
         GetProcessPath = Left$(sPath, ret)
         GetProcessPath = Replace(GetProcessPath, "\??\", Empty)
         GetProcessPath = Replace(GetProcessPath, "\SystemRoot", Environ("Windir"))
+        n = InStr(GetProcessPath, Chr(0))
+        If n > 0 Then GetProcessPath = Mid(GetProcessPath, 1, n)
         
         Call CloseHandle(hProc)
     End If

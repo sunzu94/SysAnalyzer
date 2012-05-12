@@ -3,17 +3,24 @@ Begin VB.Form frmWizard
    BackColor       =   &H005A5963&
    BorderStyle     =   3  'Fixed Dialog
    Caption         =   "SysAnalyzer Configuration Wizard"
-   ClientHeight    =   3855
+   ClientHeight    =   4305
    ClientLeft      =   45
    ClientTop       =   330
    ClientWidth     =   7770
    LinkTopic       =   "Form2"
    MaxButton       =   0   'False
    MinButton       =   0   'False
-   ScaleHeight     =   3855
+   ScaleHeight     =   4305
    ScaleWidth      =   7770
    ShowInTaskbar   =   0   'False
    StartUpPosition =   2  'CenterScreen
+   Begin VB.TextBox txtArgs 
+      Height          =   285
+      Left            =   4350
+      TabIndex        =   20
+      Top             =   570
+      Width           =   2865
+   End
    Begin VB.Frame Frame1 
       BackColor       =   &H005A5963&
       Caption         =   " Options "
@@ -21,7 +28,7 @@ Begin VB.Form frmWizard
       Height          =   2325
       Left            =   3840
       TabIndex        =   8
-      Top             =   900
+      Top             =   1290
       Width           =   3795
       Begin VB.ComboBox cboIp 
          Height          =   315
@@ -90,7 +97,7 @@ Begin VB.Form frmWizard
       End
       Begin VB.Label lblLaunchTcpDump 
          BackColor       =   &H005A5963&
-         Caption         =   "( launch now )"
+         Caption         =   "launch now"
          BeginProperty Font 
             Name            =   "MS Sans Serif"
             Size            =   8.25
@@ -102,10 +109,10 @@ Begin VB.Form frmWizard
          EndProperty
          ForeColor       =   &H00E0E0E0&
          Height          =   255
-         Left            =   2640
+         Left            =   2820
          TabIndex        =   15
          Top             =   1320
-         Width           =   1005
+         Width           =   915
       End
       Begin VB.Label lblInterfaces 
          BackColor       =   &H005A5963&
@@ -134,7 +141,7 @@ Begin VB.Form frmWizard
       Left            =   4320
       TabIndex        =   6
       Text            =   "3"
-      Top             =   540
+      Top             =   930
       Width           =   555
    End
    Begin VB.Timer tmrDelayShell 
@@ -148,7 +155,7 @@ Begin VB.Form frmWizard
       Height          =   375
       Left            =   3300
       TabIndex        =   4
-      Top             =   3420
+      Top             =   3810
       Width           =   1155
    End
    Begin VB.CommandButton cmdStart 
@@ -156,7 +163,7 @@ Begin VB.Form frmWizard
       Height          =   375
       Left            =   6570
       TabIndex        =   3
-      Top             =   3420
+      Top             =   3810
       Width           =   1155
    End
    Begin VB.CommandButton cmdBrowse 
@@ -184,6 +191,27 @@ Begin VB.Form frmWizard
       Top             =   180
       Width           =   2895
    End
+   Begin VB.Label Label1 
+      BackColor       =   &H005A5963&
+      Caption         =   "Arguments"
+      ForeColor       =   &H00E0E0E0&
+      Height          =   255
+      Index           =   2
+      Left            =   3390
+      TabIndex        =   19
+      Top             =   630
+      Width           =   915
+   End
+   Begin VB.Label Label1 
+      BackColor       =   &H005A5963&
+      ForeColor       =   &H00E0E0E0&
+      Height          =   1485
+      Index           =   1
+      Left            =   0
+      TabIndex        =   18
+      Top             =   2970
+      Width           =   3255
+   End
    Begin VB.Label lblSkip 
       BackColor       =   &H005A5963&
       Caption         =   "Skip"
@@ -200,7 +228,7 @@ Begin VB.Form frmWizard
       Height          =   255
       Left            =   5280
       TabIndex        =   7
-      Top             =   3480
+      Top             =   3870
       Width           =   435
    End
    Begin VB.Image Image1 
@@ -217,7 +245,7 @@ Begin VB.Form frmWizard
       Height          =   195
       Left            =   3360
       TabIndex        =   5
-      Top             =   600
+      Top             =   990
       Width           =   975
    End
    Begin VB.Label Label1 
@@ -302,7 +330,7 @@ Private Sub lblSkip_Click()
         .cmdDirWatch_Click
         .SSTab1.TabVisible(5) = False
         .lblTimer.Visible = False
-        .lblDisplay = "Use the tools menu to manually proceede"
+        .lblDisplay = "Use the tools menu to manually proceed"
         .Visible = True
     End With
     
@@ -318,6 +346,14 @@ Private Sub txtBinary_OLEDragDrop(Data As DataObject, Effect As Long, Button As 
 End Sub
 
 Sub LoadConfig()
+    
+    'If fso.FileExists(cfgFile) Then   doesnt work...
+    '    If FileLen(cfgFile) <> LenB(cfg) Then
+    '        'version must be old delete it..
+    '        Kill cfgFile
+    '        MsgBox "Old cfg file detected..deleting.."
+    '    End If
+    'End If
     
     If Not fso.FileExists(cfgFile) Then
         With cfg
@@ -592,13 +628,13 @@ Private Sub tmrDelayShell_Timer()
         
         Dim tmp() As String
         
-        StartProcessWithDLL exe, dll, tmp()
+        StartProcessWithDLL exe & " " & txtArgs, dll, tmp()
     Else
         frmMain.SSTab1.TabVisible(5) = False
         If LCase(VBA.Right(txtBinary, 4)) = ".dll" Then
             Shell App.path & "\loadlib.exe """ & txtBinary & """"
         Else
-            Shell txtBinary
+            Shell txtBinary & " " & txtArgs
         End If
     End If
     

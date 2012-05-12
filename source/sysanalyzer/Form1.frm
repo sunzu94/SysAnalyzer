@@ -6,12 +6,12 @@ Begin VB.Form frmMain
    ClientHeight    =   5400
    ClientLeft      =   60
    ClientTop       =   345
-   ClientWidth     =   10335
+   ClientWidth     =   10380
    Icon            =   "Form1.frx":0000
    LinkMode        =   1  'Source
    LinkTopic       =   "frmMain"
    ScaleHeight     =   5400
-   ScaleWidth      =   10335
+   ScaleWidth      =   10380
    StartUpPosition =   2  'CenterScreen
    Visible         =   0   'False
    Begin VB.PictureBox Picture1 
@@ -97,18 +97,27 @@ Begin VB.Form frmMain
       TabPicture(1)   =   "Form1.frx":045E
       Tab(1).ControlEnabled=   0   'False
       Tab(1).Control(0)=   "lvPorts"
+      Tab(1).Control(0).Enabled=   0   'False
       Tab(1).ControlCount=   1
       TabCaption(2)   =   "Process Dlls"
       TabPicture(2)   =   "Form1.frx":047A
       Tab(2).ControlEnabled=   0   'False
-      Tab(2).Control(0)=   "txtDllPath"
-      Tab(2).Control(1)=   "cmdDllProperties"
-      Tab(2).Control(2)=   "cmdCopyDll"
-      Tab(2).Control(3)=   "lvExplorer"
-      Tab(2).Control(4)=   "lvIE"
-      Tab(2).Control(5)=   "Label1(0)"
-      Tab(2).Control(6)=   "Label1(1)"
-      Tab(2).Control(7)=   "Label7"
+      Tab(2).Control(0)=   "Label7"
+      Tab(2).Control(0).Enabled=   0   'False
+      Tab(2).Control(1)=   "Label1(1)"
+      Tab(2).Control(1).Enabled=   0   'False
+      Tab(2).Control(2)=   "Label1(0)"
+      Tab(2).Control(2).Enabled=   0   'False
+      Tab(2).Control(3)=   "lvIE"
+      Tab(2).Control(3).Enabled=   0   'False
+      Tab(2).Control(4)=   "lvExplorer"
+      Tab(2).Control(4).Enabled=   0   'False
+      Tab(2).Control(5)=   "cmdCopyDll"
+      Tab(2).Control(5).Enabled=   0   'False
+      Tab(2).Control(6)=   "cmdDllProperties"
+      Tab(2).Control(6).Enabled=   0   'False
+      Tab(2).Control(7)=   "txtDllPath"
+      Tab(2).Control(7).Enabled=   0   'False
       Tab(2).ControlCount=   8
       TabCaption(3)   =   "Loaded Drivers"
       TabPicture(3)   =   "Form1.frx":0496
@@ -753,6 +762,13 @@ Begin VB.Form frmMain
          Caption         =   "Update Known Db"
          Enabled         =   0   'False
       End
+      Begin VB.Menu mnuScanForUnknownMods 
+         Caption         =   "Scan Procs for Unknown Dlls"
+         Enabled         =   0   'False
+      End
+      Begin VB.Menu mnuScanProcsForDll 
+         Caption         =   "Scan Procs For Dll"
+      End
    End
 End
 Attribute VB_Name = "frmMain"
@@ -805,14 +821,14 @@ Sub Initalize()
     
     Set subclass = New clsSubClass
    
-    subclass.AttachMessage Me.Hwnd, WM_COPYDATA            'for process_analyzer
+    subclass.AttachMessage Me.hWnd, WM_COPYDATA            'for process_analyzer
     
     If Me.SSTab1.TabVisible(6) Then
-        subclass.AttachMessage frmDirWatch.Hwnd, WM_COPYDATA
+        subclass.AttachMessage frmDirWatch.hWnd, WM_COPYDATA
     End If
     
     If Me.SSTab1.TabVisible(5) Then
-        subclass.AttachMessage frmApiLogger.Hwnd, WM_COPYDATA
+        subclass.AttachMessage frmApiLogger.hWnd, WM_COPYDATA
     End If
     
     lvDirWatch.ColumnHeaders(3).Width = lvDirWatch.Width - 100 - lvDirWatch.ColumnHeaders(3).Left
@@ -867,9 +883,11 @@ Private Sub cmdIgnoreApi_Click()
 End Sub
 
 Private Sub Form_Load()
+
     If known.HideKnownInDisplays Then
         mnuHideKnown.Checked = True
         mnuListUnknown.Enabled = True
+        mnuScanForUnknownMods.Enabled = True
     End If
     
     Dim alv As ListView, i As Long
@@ -909,7 +927,7 @@ Private Sub mnuCopySelected_Click()
         For Each li In active_lv.ListItems
             If li.Selected Then
                 tmp = li.Text & vbTab
-                For i = 1 To active_lv.ColumnHeaders.Count - 1
+                For i = 1 To active_lv.ColumnHeaders.count - 1
                     tmp = tmp & li.SubItems(i) & vbTab
                 Next
                 li.Selected = True
@@ -942,6 +960,126 @@ End Sub
 
 
 
+Private Sub mnuScanForUnknownMods_Click()
+    Dim cp As New CProcessInfo
+    Dim c As Collection
+    Dim m As Collection
+    Dim p As CProcess
+    Dim cm As CModule
+    Dim ret As String
+    Dim i As Long
+    Dim hit As Boolean
+    Dim tmp As String
+    Dim tmp2 As String
+    Dim mm As matchModes
+    
+    'On Error Resume Next
+    
+    If Not known.Loaded Then
+        MsgBox "Known database is not loaded..", vbInformation
+        Exit Sub
+    End If
+    
+    ado.OpenConnection
+    lblDisplay.Caption = "Starting scan..."
+    
+    i = 0
+    
+    Set c = cp.GetRunningProcesses()
+    For Each p In c
+        If p.pid <> 0 And p.pid <> 4 Then
+            lblDisplay.Caption = "Scanning " & i & "/" & c.count
+            Set m = cp.GetProcessModules(p.pid)
+            If Not m Is Nothing And m.count > 0 Then
+                tmp = "pid: " & p.pid & " " & p.path
+                hit = False
+                tmp2 = Empty
+                For Each cm In m
+                    mm = known.isFileKnown(cm.path)
+                    If mm <> exact_match Then
+                       tmp2 = tmp2 & vbCrLf & vbTab & IIf(mm = not_found, "Unknown Mod: ", "Hash Changed: ") & cm.path
+                       hit = True
+                    End If
+                Next
+                If hit Then ret = ret & tmp & tmp2 & vbCrLf & vbCrLf
+            End If
+            i = i + 1
+            DoEvents
+            lblDisplay.Refresh
+        End If
+    Next
+    
+    lblDisplay.Caption = ""
+    ado.CloseConnection
+    
+    Const header = "This list may also include files were locked at the time the database was created and could not be hashed for that reason."
+    
+    If Len(ret) > 0 Then
+        frmReport.ShowList vbCrLf & header & vbCrLf & vbCrLf & Replace(ret, Chr(0), Empty)
+    Else
+        MsgBox "No unknown modules found in any process..."
+    End If
+    
+    
+End Sub
+
+Private Sub mnuScanProcsForDll_Click()
+    Dim cp As New CProcessInfo
+    Dim c As Collection
+    Dim m As Collection
+    Dim p As CProcess
+    Dim cm As CModule
+    Dim ret As String
+    Dim i As Long
+    Dim hit As Boolean
+    Dim tmp As String
+    Dim tmp2 As String
+    Dim mm As matchModes
+    
+    'On Error Resume Next
+    
+    Dim find As String
+    find = InputBox("Enter string fragment of what to look for in dll name or path.")
+    If Len(find) = 0 Then Exit Sub
+    
+    lblDisplay.Caption = "Starting scan..."
+    
+    i = 0
+    
+    Set c = cp.GetRunningProcesses()
+    For Each p In c
+        If p.pid <> 0 And p.pid <> 4 Then
+            lblDisplay.Caption = "Scanning " & i & "/" & c.count
+            Set m = cp.GetProcessModules(p.pid)
+            If Not m Is Nothing And m.count > 0 Then
+                tmp = "pid: " & p.pid & " " & p.path
+                hit = False
+                tmp2 = Empty
+                For Each cm In m
+                    If InStr(1, cm.path, find, vbTextCompare) > 0 Then
+                       tmp2 = tmp2 & vbTab & Hex(cm.base) & vbTab & cm.path & vbCrLf
+                       hit = True
+                    End If
+                Next
+                If hit Then ret = ret & tmp & tmp2
+            End If
+            i = i + 1
+            DoEvents
+            lblDisplay.Refresh
+        End If
+    Next
+    
+    lblDisplay.Caption = ""
+    
+    If Len(ret) > 0 Then
+        frmReport.ShowList vbCrLf & Replace(ret, Chr(0), Empty)
+    Else
+        MsgBox "No modules found in any process matching your criteria"
+    End If
+    
+
+End Sub
+
 Private Sub mnuSearch_Click()
     
     Dim active_lv As ListView
@@ -956,7 +1094,7 @@ Private Sub mnuSearch_Click()
         Set active_lv = GetActiveLV(j)
         For Each li In active_lv.ListItems
             tmp = li.Text & vbTab
-            For i = 1 To active_lv.ColumnHeaders.Count - 1
+            For i = 1 To active_lv.ColumnHeaders.count - 1
                 tmp = tmp & li.SubItems(i) & vbTab
             Next
             If InStr(1, tmp, search, vbTextCompare) > 0 Then
@@ -1010,9 +1148,9 @@ Private Sub tmrCountDown_Timer()
         frmMain.lblDisplay = "Displaying Snapshot Diff report."
         If known.HideKnownInDisplays Then frmMain.lblDisplay = frmMain.lblDisplay & "  [HIDING TRUSTED FILES]"
         
-        If lvProcesses.ListItems.Count < 1 Then
+        If lvProcesses.ListItems.count < 1 Then
             MsgBox "No new processes detected look at the dlls or it may have exited", vbInformation
-        ElseIf lvProcesses.ListItems.Count = 1 Then
+        ElseIf lvProcesses.ListItems.count = 1 Then
             txtProcess = lvProcesses.ListItems(1).Text
             doCopy = True
             cmdAnalyze_Click
@@ -1073,7 +1211,7 @@ Private Sub cmdDelLike_Click()
     On Error Resume Next
     
 top:
-    For i = 1 To lvDirWatch.ListItems.Count
+    For i = 1 To lvDirWatch.ListItems.count
         If InStr(1, lvDirWatch.ListItems(i).Text, txtDeleteLike, vbTextCompare) > 0 Then
            lvDirWatch.ListItems.Remove i
            GoTo top
@@ -1184,9 +1322,9 @@ End Sub
 Private Sub Form_Unload(Cancel As Integer)
     On Error Resume Next
      
-    subclass.DetatchMessage frmDirWatch.Hwnd, WM_COPYDATA
-    subclass.DetatchMessage frmApiLogger.Hwnd, WM_COPYDATA
-    subclass.DetatchMessage Me.Hwnd, WM_COPYDATA
+    subclass.DetatchMessage frmDirWatch.hWnd, WM_COPYDATA
+    subclass.DetatchMessage frmApiLogger.hWnd, WM_COPYDATA
+    subclass.DetatchMessage Me.hWnd, WM_COPYDATA
      
     Unload frmDirWatch
     Unload frmReport
@@ -1259,14 +1397,14 @@ End Sub
  
 
 
-Private Sub subclass_MessageReceived(Hwnd As Long, wMsg As Long, wParam As Long, lParam As Long, Cancel As Boolean)
+Private Sub subclass_MessageReceived(hWnd As Long, wMsg As Long, wParam As Long, lParam As Long, Cancel As Boolean)
     Dim msg As String
     Dim tmp
     Dim li As ListItem
                 
     If wMsg = WM_COPYDATA Then
         If RecieveTextMessage(lParam, msg) Then
-            If Hwnd = Me.Hwnd Then
+            If hWnd = Me.hWnd Then
             
                 If msg = "analyzer_report" Then
                     frmReport.Text1 = frmReport.Text1 & vbCrLf & vbCrLf & _
@@ -1277,7 +1415,7 @@ Private Sub subclass_MessageReceived(Hwnd As Long, wMsg As Long, wParam As Long,
                     If Not frmReport.Visible Then frmReport.Visible = True
                 End If
                 
-            ElseIf Hwnd = frmApiLogger.Hwnd Then
+            ElseIf hWnd = frmApiLogger.hWnd Then
             
                 If ignoreAPILOG Then Exit Sub
                 If AnyOfTheseInstr(msg, txtApiIgnore) Then Exit Sub
