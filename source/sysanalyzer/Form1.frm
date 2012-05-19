@@ -79,13 +79,20 @@ Begin VB.Form frmMain
       TabCaption(0)   =   "Running Processes"
       TabPicture(0)   =   "Form1.frx":0442
       Tab(0).ControlEnabled=   0   'False
-      Tab(0).Control(0)=   "tmrCountDown"
-      Tab(0).Control(1)=   "cmdAnalyze"
-      Tab(0).Control(2)=   "txtProcess"
+      Tab(0).Control(0)=   "Label4"
+      Tab(0).Control(0).Enabled=   0   'False
+      Tab(0).Control(1)=   "lblTimer"
+      Tab(0).Control(1).Enabled=   0   'False
+      Tab(0).Control(2)=   "lblDisplay"
+      Tab(0).Control(2).Enabled=   0   'False
       Tab(0).Control(3)=   "lvProcesses"
-      Tab(0).Control(4)=   "lblDisplay"
-      Tab(0).Control(5)=   "lblTimer"
-      Tab(0).Control(6)=   "Label4"
+      Tab(0).Control(3).Enabled=   0   'False
+      Tab(0).Control(4)=   "txtProcess"
+      Tab(0).Control(4).Enabled=   0   'False
+      Tab(0).Control(5)=   "cmdAnalyze"
+      Tab(0).Control(5).Enabled=   0   'False
+      Tab(0).Control(6)=   "tmrCountDown"
+      Tab(0).Control(6).Enabled=   0   'False
       Tab(0).ControlCount=   7
       TabCaption(1)   =   "Open Ports"
       TabPicture(1)   =   "Form1.frx":045E
@@ -95,14 +102,14 @@ Begin VB.Form frmMain
       TabCaption(2)   =   "Process Dlls"
       TabPicture(2)   =   "Form1.frx":047A
       Tab(2).ControlEnabled=   0   'False
-      Tab(2).Control(0)=   "txtDllPath"
-      Tab(2).Control(1)=   "cmdDllProperties"
-      Tab(2).Control(2)=   "cmdCopyDll"
-      Tab(2).Control(3)=   "lvExplorer"
-      Tab(2).Control(4)=   "lvIE"
-      Tab(2).Control(5)=   "Label1(0)"
-      Tab(2).Control(6)=   "Label1(1)"
-      Tab(2).Control(7)=   "Label7"
+      Tab(2).Control(0)=   "Label7"
+      Tab(2).Control(1)=   "Label1(1)"
+      Tab(2).Control(2)=   "Label1(0)"
+      Tab(2).Control(3)=   "lvIE"
+      Tab(2).Control(4)=   "lvExplorer"
+      Tab(2).Control(5)=   "cmdCopyDll"
+      Tab(2).Control(6)=   "cmdDllProperties"
+      Tab(2).Control(7)=   "txtDllPath"
       Tab(2).ControlCount=   8
       TabCaption(3)   =   "Loaded Drivers"
       TabPicture(3)   =   "Form1.frx":0496
@@ -117,13 +124,13 @@ Begin VB.Form frmMain
       TabCaption(5)   =   "Api Log"
       TabPicture(5)   =   "Form1.frx":04CE
       Tab(5).ControlEnabled=   0   'False
-      Tab(5).Control(0)=   "cmdIgnoreApi"
-      Tab(5).Control(1)=   "cmdApiDelete"
-      Tab(5).Control(2)=   "txtAPIDelete"
+      Tab(5).Control(0)=   "Label3(2)"
+      Tab(5).Control(1)=   "Label5"
+      Tab(5).Control(2)=   "lvAPILog"
       Tab(5).Control(3)=   "txtApiIgnore"
-      Tab(5).Control(4)=   "lvAPILog"
-      Tab(5).Control(5)=   "Label5"
-      Tab(5).Control(6)=   "Label3(2)"
+      Tab(5).Control(4)=   "txtAPIDelete"
+      Tab(5).Control(5)=   "cmdApiDelete"
+      Tab(5).Control(6)=   "cmdIgnoreApi"
       Tab(5).ControlCount=   7
       TabCaption(6)   =   "Directory Watch Data"
       TabPicture(6)   =   "Form1.frx":04EA
@@ -558,7 +565,7 @@ Begin VB.Form frmMain
          EndProperty
          BeginProperty ColumnHeader(2) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
             SubItemIndex    =   1
-            Text            =   "SIze"
+            Text            =   "Size"
             Object.Width           =   2540
          EndProperty
          BeginProperty ColumnHeader(3) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
@@ -676,8 +683,17 @@ Begin VB.Form frmMain
       Begin VB.Menu mnuKillProcess 
          Caption         =   "Kill"
       End
+      Begin VB.Menu mnuSpacer1 
+         Caption         =   "-"
+      End
+      Begin VB.Menu mnuLaunchStrings 
+         Caption         =   "Strings"
+      End
       Begin VB.Menu mnuProcessFileProps 
          Caption         =   "File Properties"
+      End
+      Begin VB.Menu mnuSaveToAnalysisFolder 
+         Caption         =   "Save to Analysis Folder"
       End
    End
    Begin VB.Menu mnuDllsPopup 
@@ -958,6 +974,35 @@ End Sub
  
 
 
+
+Private Sub mnuLaunchStrings_Click()
+    If liProc Is Nothing Then Exit Sub
+    Dim f As String
+    On Error Resume Next
+    f = liProc.SubItems(3)
+    LaunchStrings f, True
+End Sub
+
+Private Sub mnuSaveToAnalysisFolder_Click()
+    If liProc Is Nothing Then Exit Sub
+    Dim f As String, f2 As String
+    On Error Resume Next
+    
+    f = liProc.SubItems(3)
+    If Not fso.FileExists(f) Then
+        MsgBox "File not found: " & f
+    Else
+        f2 = UserDeskTopFolder & "\" & fso.FileNameFromPath(f)
+        If fso.FileExists(f2) Then Kill f2
+        fso.Copy f, UserDeskTopFolder
+        If Not fso.FileExists(f2) Then
+            MsgBox "File copy failed..."
+        Else
+            MsgBox "File copied!"
+        End If
+    End If
+    
+End Sub
 
 Private Sub mnuScanForUnknownMods_Click()
     Dim cp As New CProcessInfo
@@ -1494,7 +1539,7 @@ End Function
 
 
 
-Private Sub lvProcesses_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub lvProcesses_MouseUp(Button As Integer, Shift As Integer, x As Single, Y As Single)
     If Button = 2 Then PopupMenu mnuProcessesPopup
 End Sub
 
@@ -1509,7 +1554,8 @@ Private Sub mnuDumpProcess_Click()
     If liProc Is Nothing Then Exit Sub
 
     Dim pth As String
-    pth = InputBox("Enter path to dump file as:", , UserDeskTopFolder & "\file.dmp")
+    pth = fso.FileNameFromPath(liProc.SubItems(3)) & ".dmp"
+    pth = InputBox("Enter path to dump file as:", , UserDeskTopFolder & "\" & pth)
     If Len(pth) = 0 Then Exit Sub
 
     Dim cmod As CModule
@@ -1559,16 +1605,23 @@ Private Sub mnuShowProcessDlls_Click()
     If liProc Is Nothing Then Exit Sub
 
     On Error Resume Next
+    Dim pid As Long
+    pid = CLng(liProc.Tag)
     
-    Dim col As Collection, n, list
-    Set col = diff.CProc.GetProcessModules(CLng(liProc.Tag))
+    frmMemoryMap.ShowDlls pid
+    
+    'Dim col As Collection, n, list
+    'Set col = diff.CProc.GetProcessModules(CLng(liProc.Tag))
+    '
+    'For Each n In col
+    '    list = list & n & vbCrLf
+    'Next
+    '
+    'frmReport.ShowList list
 
-    For Each n In col
-        list = list & n & vbCrLf
-    Next
-
-    frmReport.ShowList list
-
+    
+    
+    
 End Sub
 
 

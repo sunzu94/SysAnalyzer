@@ -153,6 +153,83 @@ Private Declare Function WSAIoctl Lib "ws2_32.dll" (ByVal s As Long, ByVal dwIoC
 Private Declare Sub CopyMemory2 Lib "kernel32" Alias "RtlMoveMemory" (pDst As Any, ByVal pSrc As Long, ByVal ByteLen As Long)
 Private Declare Function WSAStartup Lib "ws2_32.dll" (ByVal wVR As Long, lpWSAD As WSAData) As Long
 
+Function LaunchStrings(data As String, Optional isPath As Boolean = False)
+
+    Dim b() As Byte
+    Dim f As String
+    Dim exe As String
+    Dim h As Long
+    
+    On Error Resume Next
+    
+    exe = App.path & IIf(IsIde(), "\..\..", "") & "\shellext.exe"
+    If Not fso.FileExists(exe) Then
+        MsgBox "Could not launch strings shellext not found", vbInformation
+        Exit Function
+    End If
+    
+    If isPath Then
+        If fso.FileExists(data) Then
+            f = data
+        Else
+            MsgBox "Can not launch strings, File not found: " & data, vbInformation
+        End If
+    Else
+        b() = StrConv(dataOrPath, vbFromUnicode, LANG_US)
+        f = fso.GetFreeFileName(Environ("temp"), ".bin")
+        h = FreeFile
+    End If
+    
+    Open f For Binary As h
+    Put h, , b()
+    Close h
+    
+    Shell exe & " """ & f & """ /peek"
+
+End Function
+
+Sub SaveMySetting(key, value)
+    SaveSetting "iDefense", App.exename, key, value
+End Sub
+
+Function GetMySetting(key, def)
+    GetMySetting = GetSetting("iDefense", App.exename, key, def)
+End Function
+
+Sub SaveFormSizeAnPosition(f As Form)
+    Dim s As String
+    If f.WindowState <> 0 Then Exit Sub 'vbnormal
+    s = f.Left & "," & f.top & "," & f.Width & "," & f.Height
+    SaveMySetting f.name & "_pos", s
+End Sub
+
+Function occuranceCount(haystack, match) As Long
+    On Error Resume Next
+    Dim tmp
+    tmp = Split(haystack, match, , vbTextCompare)
+    occuranceCount = UBound(tmp)
+    If Err.Number <> 0 Then occuranceCount = 0
+End Function
+
+Sub RestoreFormSizeAnPosition(f As Form)
+    On Error GoTo hell
+    Dim s
+    
+    s = GetMySetting(f.name & "_pos", "")
+    
+    If Len(s) = 0 Then Exit Sub
+    If occuranceCount(s, ",") <> 3 Then Exit Sub
+    
+    s = Split(s, ",")
+    f.Left = s(0)
+    f.top = s(1)
+    f.Width = s(2)
+    f.Height = s(3)
+    
+    Exit Sub
+hell:
+End Sub
+
 Function HexDump(ByVal str, Optional hexOnly = 0) As String
     Dim s() As String, chars As String, tmp As String
     On Error Resume Next

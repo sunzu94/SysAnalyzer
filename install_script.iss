@@ -96,6 +96,11 @@ Source: source\dirwatch_ui\simple-fso..bas; DestDir: {app}\source\dirwatch_ui
 Source: windump.exe; DestDir: {app}
 Source: WinPcap_4_1_2.exe; DestDir: {app}
 Source: loadlib.exe; DestDir: {app}
+Source: source\sysanalyzer\frmMemoryMap.frm; DestDir: {app}\source\sysanalyzer
+Source: source\sysanalyzer\frmInjectionScan.frm; DestDir: {app}\source\sysanalyzer
+Source: source\sysanalyzer\CMemory.cls; DestDir: {app}\source\sysanalyzer
+Source: source\apilog_dll\injector\frmListProcess.frm; DestDir: {app}\source\apilog_dll\injector
+Source: ShellExt.exe; DestDir: {app}
 
 [Dirs]
 Name: {app}\source

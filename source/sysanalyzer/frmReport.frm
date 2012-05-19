@@ -4,10 +4,10 @@ Begin VB.Form frmReport
    ClientHeight    =   6285
    ClientLeft      =   60
    ClientTop       =   345
-   ClientWidth     =   11175
+   ClientWidth     =   12075
    LinkTopic       =   "Form1"
    ScaleHeight     =   6285
-   ScaleWidth      =   11175
+   ScaleWidth      =   12075
    StartUpPosition =   2  'CenterScreen
    Begin VB.CommandButton Command2 
       Caption         =   "Save "
@@ -41,7 +41,7 @@ Begin VB.Form frmReport
       ScrollBars      =   3  'Both
       TabIndex        =   0
       Top             =   300
-      Width           =   10935
+      Width           =   11925
    End
 End
 Attribute VB_Name = "frmReport"
@@ -136,7 +136,7 @@ Private Sub Form_Load()
     
     On Error Resume Next
     Me.Icon = frmMain.Icon
-    
+    RestoreFormSizeAnPosition Me
     
 End Sub
 
@@ -144,4 +144,8 @@ Private Sub Form_Resize()
     On Error Resume Next
     Text1.Height = Me.Height - Text1.top - 550
     Text1.Width = Me.Width - Text1.Left - 200
+End Sub
+
+Private Sub Form_Unload(Cancel As Integer)
+    SaveFormSizeAnPosition Me
 End Sub

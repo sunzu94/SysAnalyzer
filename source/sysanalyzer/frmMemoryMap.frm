@@ -10,6 +10,42 @@ Begin VB.Form frmMemoryMap
    ScaleHeight     =   6165
    ScaleWidth      =   11655
    StartUpPosition =   3  'Windows Default
+   Begin MSComctlLib.ListView lv2 
+      Height          =   4125
+      Left            =   1740
+      TabIndex        =   2
+      Top             =   480
+      Visible         =   0   'False
+      Width           =   8895
+      _ExtentX        =   15690
+      _ExtentY        =   7276
+      View            =   3
+      LabelEdit       =   1
+      LabelWrap       =   -1  'True
+      HideSelection   =   -1  'True
+      FullRowSelect   =   -1  'True
+      GridLines       =   -1  'True
+      _Version        =   393217
+      ForeColor       =   -2147483640
+      BackColor       =   -2147483643
+      BorderStyle     =   1
+      Appearance      =   1
+      NumItems        =   3
+      BeginProperty ColumnHeader(1) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+         Text            =   "Base"
+         Object.Width           =   2540
+      EndProperty
+      BeginProperty ColumnHeader(2) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+         SubItemIndex    =   1
+         Text            =   "Size"
+         Object.Width           =   2540
+      EndProperty
+      BeginProperty ColumnHeader(3) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+         SubItemIndex    =   2
+         Text            =   "Module"
+         Object.Width           =   2540
+      EndProperty
+   End
    Begin VB.ListBox List1 
       Height          =   1035
       Left            =   90
@@ -36,7 +72,7 @@ Begin VB.Form frmMemoryMap
       BackColor       =   -2147483643
       BorderStyle     =   1
       Appearance      =   1
-      NumItems        =   5
+      NumItems        =   6
       BeginProperty ColumnHeader(1) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
          Text            =   "Base"
          Object.Width           =   2540
@@ -61,6 +97,11 @@ Begin VB.Form frmMemoryMap
          Text            =   "Module"
          Object.Width           =   2540
       EndProperty
+      BeginProperty ColumnHeader(6) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+         SubItemIndex    =   5
+         Text            =   "Entropy"
+         Object.Width           =   2540
+      EndProperty
    End
    Begin VB.Menu mnuPopup 
       Caption         =   "mnuPopup"
@@ -70,6 +111,23 @@ Begin VB.Form frmMemoryMap
       End
       Begin VB.Menu mnuSaveMemory 
          Caption         =   "Save"
+      End
+      Begin VB.Menu mnuStrings 
+         Caption         =   "Strings"
+      End
+      Begin VB.Menu mnuSearchMemory 
+         Caption         =   "Search"
+         Enabled         =   0   'False
+      End
+   End
+   Begin VB.Menu mnuPopup2 
+      Caption         =   "mnuPopup2"
+      Visible         =   0   'False
+      Begin VB.Menu mnuDumpDll 
+         Caption         =   "Dump Dll"
+      End
+      Begin VB.Menu mnuSaveDll 
+         Caption         =   "Save Dll"
       End
    End
 End
@@ -81,6 +139,34 @@ Attribute VB_Exposed = False
 Dim pi As New CProcessInfo
 Dim active_pid As Long
 Dim selli As ListItem
+
+Public Sub ShowDlls(pid As Long)
+
+    Dim c As Collection
+    Dim cm As CModule
+    Dim li As ListItem
+    
+    lv.Visible = False
+    lv2.Visible = True
+    active_pid = pid
+    Me.Visible = True
+    
+    Set c = pi.GetProcessModules(pid)
+    
+    For Each cm In c
+        Set li = lv2.ListItems.Add(, , Hex(cm.base))
+        li.SubItems(1) = Hex(cm.Size)
+        li.SubItems(2) = cm.path
+        
+        If known.Loaded And known.Ready Then
+            mm = known.isFileKnown(cm.path)
+            li.ListSubItems(2).ForeColor = IIf(mm = exact_match, vbGreen, vbRed)
+        End If
+        
+        DoEvents
+    Next
+    
+End Sub
 
 Public Sub ShowMemoryMap(pid As Long)
     
@@ -149,7 +235,10 @@ Public Sub ShowMemoryMap(pid As Long)
 End Sub
 
 Private Sub Form_Load()
+    On Error Resume Next
     lv.ColumnHeaders(5).Width = lv.Width - lv.ColumnHeaders(5).Left - 350
+    lv2.Move lv.Left, lv.top, lv.Width, lv.Height
+    lv2.ColumnHeaders(3).Width = lv2.Width - lv2.ColumnHeaders(3).Left - 350
 End Sub
 
 Private Sub lv_DblClick()
@@ -160,8 +249,62 @@ Private Sub lv_ItemClick(ByVal Item As MSComctlLib.ListItem)
     Set selli = Item
 End Sub
 
-Private Sub lv_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub lv_MouseUp(Button As Integer, Shift As Integer, x As Single, Y As Single)
     If Button = 2 Then PopupMenu mnuPopup
+End Sub
+
+Private Sub lv2_ItemClick(ByVal Item As MSComctlLib.ListItem)
+    Set selli = Item
+End Sub
+
+Private Sub lv2_MouseUp(Button As Integer, Shift As Integer, x As Single, Y As Single)
+    If Button = 2 Then PopupMenu mnuPopup2
+End Sub
+
+Private Sub mnuDumpDll_Click()
+    If selli Is Nothing Then Exit Sub
+    Dim f As String
+    Dim n As String
+    Dim orgPath As String
+    On Error Resume Next
+    
+    orgPath = selli.SubItems(2)
+    n = fso.FileNameFromPath(orgPath) & ".dmp"
+    f = InputBox("Save file as: ", , UserDeskTopFolder & "\" & n)
+    If Len(f) = 0 Then Exit Sub
+    
+    If pi.DumpProcessMemory(active_pid, CLng("&h" & selli.Text), CLng("&h" & selli.SubItems(1)), f) Then
+        MsgBox "File successfully saved"
+    Else
+        MsgBox "Error saving file: " & Err.Description
+    End If
+End Sub
+
+Private Sub mnuSaveDll_Click()
+    If selli Is Nothing Then Exit Sub
+    Dim f As String
+    Dim n As String
+    Dim orgPath As String
+    
+    On Error Resume Next
+    orgPath = selli.SubItems(2)
+    
+    If Not fso.FileExists(orgPath) Then
+        List1.AddItem "Error: Could not find: " & orgPath
+        Exit Sub
+    End If
+    
+    n = fso.FileNameFromPath(orgPath)
+    'f = InputBox("Save file as: ", , UserDeskTopFolder & "\" & n)
+    'If Len(f) = 0 Then Exit Sub
+    fso.Copy orgPath, UserDeskTopFolder
+    
+    If Not fso.FileExists(UserDeskTopFolder & "\" & n) Then
+        List1.AddItem "Failed to copy file to " & UserDeskTopFolder
+    Else
+        List1.AddItem "File copied to " & UserDeskTopFolder
+    End If
+    
 End Sub
 
 Private Sub mnuSaveMemory_Click()
@@ -172,6 +315,18 @@ Private Sub mnuSaveMemory_Click()
     If Len(f) = 0 Then Exit Sub
     If pi.DumpProcessMemory(active_pid, CLng("&h" & selli.Text), CLng("&h" & selli.SubItems(1)), f) Then
         MsgBox "File successfully saved"
+    Else
+        MsgBox "Error saving file: " & Err.Description
+    End If
+End Sub
+
+Private Sub mnuStrings_Click()
+    If selli Is Nothing Then Exit Sub
+    On Error Resume Next
+    Dim f As String
+    f = fso.GetFreeFileName(Environ("temp"), ".bin")
+    If pi.DumpProcessMemory(active_pid, CLng("&h" & selli.Text), CLng("&h" & selli.SubItems(1)), f) Then
+       LaunchStrings f, True
     Else
         MsgBox "Error saving file: " & Err.Description
     End If

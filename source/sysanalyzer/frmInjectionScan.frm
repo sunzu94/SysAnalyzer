@@ -10,10 +10,18 @@ Begin VB.Form frmInjectionScan
    ScaleHeight     =   3585
    ScaleWidth      =   11970
    StartUpPosition =   3  'Windows Default
+   Begin VB.CommandButton cmdRescan 
+      Caption         =   "Rescan"
+      Height          =   405
+      Left            =   10890
+      TabIndex        =   5
+      Top             =   3030
+      Width           =   1035
+   End
    Begin VB.CommandButton cmdAbort 
       Caption         =   "Abort"
       Height          =   405
-      Left            =   10920
+      Left            =   9810
       TabIndex        =   4
       Top             =   3030
       Width           =   1005
@@ -23,7 +31,7 @@ Begin VB.Form frmInjectionScan
       Left            =   840
       TabIndex        =   3
       Top             =   3060
-      Width           =   9975
+      Width           =   7485
    End
    Begin MSComctlLib.ProgressBar pb 
       Height          =   255
@@ -55,7 +63,7 @@ Begin VB.Form frmInjectionScan
       BackColor       =   -2147483643
       BorderStyle     =   1
       Appearance      =   1
-      NumItems        =   6
+      NumItems        =   7
       BeginProperty ColumnHeader(1) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
          Text            =   "pid"
          Object.Width           =   2540
@@ -85,6 +93,11 @@ Begin VB.Form frmInjectionScan
          Text            =   "Module"
          Object.Width           =   2540
       EndProperty
+      BeginProperty ColumnHeader(7) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+         SubItemIndex    =   6
+         Text            =   "Entropy"
+         Object.Width           =   2540
+      EndProperty
    End
    Begin VB.Label Label1 
       Caption         =   "Process:"
@@ -102,6 +115,13 @@ Begin VB.Form frmInjectionScan
       End
       Begin VB.Menu mnuSave 
          Caption         =   "Save"
+      End
+      Begin VB.Menu mnuSearchMem 
+         Caption         =   "Search"
+         Enabled         =   0   'False
+      End
+      Begin VB.Menu mnuStrings 
+         Caption         =   "Strings"
       End
       Begin VB.Menu mnuViewMemoryMap 
          Caption         =   "Memory Map"
@@ -157,6 +177,7 @@ Private Sub FindStealthInjections(pid As Long, pName As String)
     Dim execSections As Long
     Dim mm As matchModes
     Dim knownModules As Long
+    Dim s As String
     
     On Error Resume Next
     Set c = pi.GetMemoryMap(pid)
@@ -171,12 +192,35 @@ Private Sub FindStealthInjections(pid As Long, pName As String)
             li.SubItems(3) = cMem.MemTypeAsString()
             li.SubItems(4) = cMem.ProtectionAsString()
             li.SubItems(5) = pName
+            
             If VBA.Left(pi.ReadMemory(cMem.pid, cMem.base, 2), 2) = "MZ" Then
                 SetLiColor li, vbRed
             End If
+
+            s = pi.ReadMemory(cMem.pid, cMem.base, cMem.Size) 'doesnt add that much time
+            li.Tag = s
+            li.SubItems(6) = CalculateEntropy(s)
+            
         End If
     Next
     
+End Sub
+
+'todo: try zlib compressibility as another entropy check...
+Private Function CalculateEntropy(ByVal s As String) As Integer 'very basic...
+    On Error Resume Next
+    If Len(s) = 0 Then Exit Function
+    Dim a As Long, b As Long
+    a = Len(s)
+    s = Replace(s, Chr(0), Empty)
+    b = Len(s)
+    CalculateEntropy = 100 - (b / a) * 100
+End Function
+
+
+Private Sub cmdRescan_Click()
+    lv.ListItems.Clear
+    StealthInjectionScan
 End Sub
 
 Private Sub Form_Load()
@@ -202,6 +246,20 @@ Private Sub mnuSave_Click()
     End If
 End Sub
 
+Private Sub mnuStrings_Click()
+    If selli Is Nothing Then Exit Sub
+    Dim f As String
+    Dim pid As Long
+    On Error Resume Next
+    pid = CLng(selli.Text)
+    f = fso.GetFreeFileName(Environ("temp"), ".bin")
+    If pi.DumpProcessMemory(pid, CLng("&h" & selli.SubItems(1)), CLng("&h" & selli.SubItems(2)), f) Then
+        LaunchStrings f, True
+    Else
+        MsgBox "Error saving file: " & Err.Description
+    End If
+End Sub
+
 Private Sub mnuView_Click()
     If selli Is Nothing Then Exit Sub
     Dim s As String
@@ -222,7 +280,7 @@ Private Sub lv_ItemClick(ByVal Item As MSComctlLib.ListItem)
     Set selli = Item
 End Sub
 
-Private Sub lv_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub lv_MouseUp(Button As Integer, Shift As Integer, x As Single, Y As Single)
     If Button = 2 Then PopupMenu mnuPopup
 End Sub
 
