@@ -39,11 +39,30 @@ extern "C" void __setargv(void);
 
 //todo:  
 //      block everyway you can find to delete files
+//      protect analysis apps from OpenProcess                5.17.12
+//      include process name in writeprocessmemory dumps
+//      hook toolhelp snapshots and hide analysis apps.
+//      getmodulehandle - hide api_log.dll                    5.17.12
+//      hook SetWindowsHook/Ex
+//      NtCreateThreadEx?  http://chmag.in/article/mar2011/remote-thread-execution-system-process-using-ntcreatethreadex-vista-windows-7
+//      QueueUserAPC? 
+//      SetThreadContext
+//      main app: hardcode scan, look for new (untrusted) dlls in new processes
+//                hardcore scan, look for RWE memory sections in a process that arent in a module.
+//
+//      config options: ignore/allow Sleep, normal/advance GetTickCount
+//                      allow/block OpenProcess?
 
 bool Installed =false;
 
 void Closing(void){ msg("***** Injected Process Terminated *****"); }
 	
+//Config options..these must all default to 0 because default windProc response = 0 if unhandled by client..
+int noSleep = 0;
+int noRegistry = 0;
+int blockOpenProcess = 0;
+int noGetProc = 0;
+int queryGetTick = 0;
 
 BOOL APIENTRY DllMain( HANDLE hModule, 
                        DWORD  ul_reason_for_call, 
@@ -63,6 +82,18 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 	return TRUE;
 }
 
+char *strlower(char *s)		
+{
+  char *cp;
+  if ( !(cp=s) )
+    return NULL;
+
+  while ( *s != 0 ) {
+    *s = tolower( *s );
+    s++;
+  }
+  return cp;
+}
 
 char* findProcessByPid(int pid){
 	
@@ -74,10 +105,10 @@ char* findProcessByPid(int pid){
     hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     
     Process32First( hSnap, &pe);
-    if( pe.th32ProcessID == pid ) return strdup(pe.szExeFile);
+    if( pe.th32ProcessID == pid ) return strlower(strdup(pe.szExeFile));
 
     while( Process32Next(hSnap, &pe) ){
-		if( pe.th32ProcessID == pid ) return strdup(pe.szExeFile);
+		if( pe.th32ProcessID == pid ) return strlower(strdup(pe.szExeFile));
 	}
 
 	return strdup("-- Could not find pid with ToolHelp Api! --");
@@ -90,12 +121,47 @@ char* findProcessByPid(int pid){
 
 VOID __stdcall My_Sleep( DWORD a0 )
 {
+	
+	int minToLog = 3000; //if its under 3 seconds who cares just do it dont spam me with it...
+	
+	if( a0 > minToLog){
+		if(noSleep){
+			LogAPI("%x     Sleep(%x) - IGNORED", CalledFrom(), a0);
+			return;
+		}
 
-	//to much spam but we do want to ignore calls to it so we wont call the real one...
-	//LogAPI("%x     Sleep(%x) (ignored)", CalledFrom(), a0);  
+		LogAPI("%x     Sleep(%x)", CalledFrom(), a0);
+	}
+
+	Real_Sleep(a0);
 	return;
 
 }
+
+DWORD __stdcall My_GetTickCount( VOID )
+{
+
+	DWORD  ret = 0;
+	int verbose = 0; //this can be called a metric shit ton of times...
+
+	if(queryGetTick){
+		ret = msg("***config:getTickValue");
+		if(ret!=0){
+			if(verbose) LogAPI("%x     GetTickCount() OVERRIDDEN = %x", CalledFrom(), ret);
+			return ret;
+		}
+	}
+	
+	try{
+		ret = Real_GetTickCount();
+	}
+	catch(...){}
+
+	if(verbose) LogAPI("%x     GetTickCount() = %x", CalledFrom(), ret);
+
+	return ret;
+}
+
 
 HANDLE __stdcall My_CreateFileA(LPCSTR a0,DWORD a1,DWORD a2,LPSECURITY_ATTRIBUTES a3,DWORD a4,DWORD a5,HANDLE a6)
 {
@@ -233,13 +299,14 @@ DWORD __stdcall My_WaitForSingleObject(HANDLE a0,DWORD a1)
 
 SOCKET __stdcall My_accept(SOCKET a0,sockaddr* a1,int* a2)
 {
-	LogAPI("%x     accept(%x,%x,%x)", CalledFrom(), a0, a1, a2);
 
     SOCKET ret = 0;
     try {
         ret = Real_accept(a0, a1, a2);
     }
 	catch(...){	} 
+
+	LogAPI("%x     accept(%x,%x,%x) = %x", CalledFrom(), a0, a1, a2, ret);
 
     return ret;
 }
@@ -347,18 +414,14 @@ int __stdcall My_listen(SOCKET a0,int a1)
 
 int __stdcall My_recv(SOCKET a0,char* a1,int a2,int a3)
 {
-    LogAPI("%x     recv(h=%x)", CalledFrom(), a0);
 
     int ret = 0;
     try {
         ret = Real_recv(a0, a1, a2, a3);
-
-		if(ret>0){
-			//hexdump((unsigned char*)a1,ret);
-		}
-
     } 
 	catch(...){	} 
+
+	LogAPI("%x     recv(h=%x, buf=%x) = %x bytes", CalledFrom(), a0, a1, ret);
 
     return ret;
 }
@@ -366,14 +429,11 @@ int __stdcall My_recv(SOCKET a0,char* a1,int a2,int a3)
 int __stdcall My_send(SOCKET a0,char* a1,int a2,int a3)
 {
     
-	LogAPI("%x     send(h=%x)", CalledFrom(), a0);
+	LogAPI("%x     send(h=%x, buf=%x, sz=%x)", CalledFrom(), a0, a1, a2);
     int ret = 0;
 
     try {
-
-		//if(a2>0 && *a1 !=0)	//hexdump((unsigned char*)a1,a2);
         ret = Real_send(a0, a1, a2, a3);
-    
 	}
 	catch(...){	} 
 
@@ -396,8 +456,6 @@ int __stdcall My_shutdown(SOCKET a0,int a1)
 
 SOCKET __stdcall My_socket(int a0,int a1,int a2)
 {
-	
-	LogAPI("%x     socket(family=%x,type=%x,proto=%x)", CalledFrom(), a0, a1, a2);
 
     SOCKET ret = 0;
     try {
@@ -405,19 +463,21 @@ SOCKET __stdcall My_socket(int a0,int a1,int a2)
     }
 	catch(...){	} 
 
+	LogAPI("%x     socket(family=%x,type=%x,proto=%x) = %x", CalledFrom(), a0, a1, a2, ret);
+
     return ret;
 }
 
 SOCKET __stdcall My_WSASocketA(int a0,int a1,int a2,struct _WSAPROTOCOL_INFOA* a3,GROUP a4,DWORD a5)
 {
-    
-	LogAPI("%x     WSASocketA(fam=%x,typ=%x,proto=%x)", CalledFrom(), a0, a1, a2);
 
     SOCKET ret = 0;
     try {
         ret = Real_WSASocketA(a0, a1, a2, a3, a4, a5);
     }
 	catch(...){	} 
+
+	LogAPI("%x     WSASocketA(fam=%x,typ=%x,proto=%x) = %x", CalledFrom(), a0, a1, a2, ret);
 
     return ret;
 }
@@ -428,13 +488,16 @@ SOCKET __stdcall My_WSASocketA(int a0,int a1,int a2,struct _WSAPROTOCOL_INFOA* a
 int My_URLDownloadToFileA(int a0,char* a1, char* a2, DWORD a3, int a4)
 {
 	
-	LogAPI("%x     URLDownloadToFile(%s)", CalledFrom(), a1);
-
     SOCKET ret = 0;
     try {
         ret = Real_URLDownloadToFileA(a0, a1, a2, a3, a4);
     }
 	catch(...){	} 
+
+	char* sret = (ret == S_OK) ? "OK" : "FAILED";
+
+	LogAPI("%x     URLDownloadToFile(%s, %s) = %s", CalledFrom(), a1, a2, sret);
+
 
     return ret;
 }
@@ -443,13 +506,15 @@ int My_URLDownloadToFileA(int a0,char* a1, char* a2, DWORD a3, int a4)
 int My_URLDownloadToCacheFile(int a0,char* a1, char* a2, DWORD a3, DWORD a4, int a5)
 {
 	
-	LogAPI("%x     URLDownloadToCacheFile(%s)", CalledFrom(), a1);
-
     SOCKET ret = 0;
     try {
         ret = Real_URLDownloadToCacheFile(a0, a1, a2, a3, a4, a5);
     }
 	catch(...){	} 
+
+	char* sret = (ret == S_OK) ? "OK" : "FAILED";
+
+	LogAPI("%x     URLDownloadToCacheFile(%s, %s)", CalledFrom(), a1, a2, sret);
 
     return ret;
 }
@@ -509,20 +574,52 @@ size_t __stdcall My_fwrite(const void* a0, size_t a1, size_t a2, FILE* a3)
 HANDLE __stdcall My_OpenProcess(DWORD a0,BOOL a1,DWORD a2)
 {
 
-	//todo get process name from pid and log it as well...
-    HANDLE ret = 0;
+	HANDLE ret = 0;
+	int i=0;
+	
+	char *target = findProcessByPid(a2);
+
+	if(blockOpenProcess){
+		LogAPI("%x     OpenProcess(%s) -  BLOCKED", CalledFrom(), target );
+		free(target);
+		return 0;
+	}
+
+	char* tools[] = {"api_logger.exe","sysanalyzer.exe","ollydbg.exe","windump.exe","sniff_hit.exe",0};
+
+	while(tools[i]){
+		if(strcmp(tools[i],target) == 0){
+			LogAPI("%x     OpenProcess(%s) -  PROTECTED", CalledFrom(), target );
+			free(target);
+			return 0;
+		}
+		i++;
+	}
+
     try {
         ret = Real_OpenProcess(a0, a1, a2);
     }
 	catch(...){	} 
 
-	LogAPI("%x     OpenProcess(pid=%ld) = 0x%x  - %s", CalledFrom(), a2, ret, findProcessByPid(a2) );
+	LogAPI("%x     OpenProcess(pid=%ld) = 0x%x  - %s", CalledFrom(), a2, ret, target );
+	free(target);
 
     return ret;
 }
 
-HMODULE __stdcall My_GetModuleHandleA(LPCSTR a0)
+HMODULE __stdcall My_GetModuleHandleA(char* a0)
 {
+	/* nice idea but vmware hook.dll freaks out or i suck one of the two...
+	char *my = strlower(strdup(a0)); //may not be a writable string in which case strlower would crash us..
+
+	if( strcmp(my, "api_log.dll") == 0 || strcmp(my, "api_log") == 0){
+		LogAPI("%x     GetModuleHandleA(%s) - HIDDEN", CalledFrom(), a0);
+		free(my);
+		return 0;
+	}
+	
+	free(my);*/
+
 	LogAPI("%x     GetModuleHandleA(%s)", CalledFrom(), a0);
 
     HMODULE ret = 0;
@@ -660,7 +757,8 @@ BOOL __stdcall My_WriteProcessMemory(HANDLE a0,LPVOID a1,LPVOID a2,DWORD a3,LPDW
 	char buf[255];
 	DWORD written=0;
 
-	sprintf(buf, "c:\\wpm_%x.bin",a1);
+	//todo lookup handle and relate back to which process name it was handed out for...
+	sprintf(buf, "c:\\wpm_h_%x_mem_%x.bin", a0, a1);
 	HANDLE h = Real_CreateFileA(buf, GENERIC_READ|GENERIC_WRITE ,0,0,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,0); 
 	Real_WriteFile(h,a2,a3,&written,0);
 	CloseHandle(h);
@@ -739,15 +837,17 @@ LPSTR __stdcall My_GetCommandLineA( VOID )
 
 BOOL __stdcall My_IsDebuggerPresent(void)
 {
-	LogAPI("%x     IsDebuggerPresent()", CalledFrom() );
+	LogAPI("%x     IsDebuggerPresent() = 0", CalledFrom() );
 
-	BOOL  ret = 0;
+	return 0;
+
+	/*BOOL  ret = 0;
 	try{
 		ret = Real_IsDebuggerPresent();
 	}
 	catch(...){}
 	
-	return ret;
+	return ret;*/
 }
 
 void My___setargv(void){
@@ -829,6 +929,7 @@ BOOL __stdcall My_ReadFile( HANDLE a0, LPVOID a1, DWORD a2, LPDWORD a3, LPOVERLA
 
 	return ret;
 }
+
 VOID __stdcall My_GetSystemTime( LPSYSTEMTIME a0 )
 {
 	
@@ -845,7 +946,6 @@ VOID __stdcall My_GetSystemTime( LPSYSTEMTIME a0 )
 
 HANDLE __stdcall My_CreateMutex(int a0, int a1, int a2){
 
-	LogAPI("%x     CreateMutex(%s)", CalledFrom(), a2 );
 
 	HANDLE ret = 0;
 	try{
@@ -853,6 +953,8 @@ HANDLE __stdcall My_CreateMutex(int a0, int a1, int a2){
 	}
 	catch(...){}
 	
+	LogAPI("%x     CreateMutex(%s) = 0x%x", CalledFrom(), a2, ret );
+
 	return ret;
 
 }
@@ -1124,20 +1226,40 @@ void InstallHooks(void)
 
 	msg("***** Installing Hooks *****");	
  
+	noSleep = msg("***config:noSleep");
+	noGetProc = msg("***config:noGetProc");
+	noRegistry = msg("***config:noRegistry");
+	queryGetTick = msg("***config:queryGetTick");
+	blockOpenProcess = msg("***config:blockOpenProcess");
+
+	if(noSleep) msg("OPTION_SET = noSleep");
+	if(noRegistry) msg("OPTION_SET = noRegistry");
+	if(noGetProc) msg("OPTION_SET = noGetProc");
+	if(queryGetTick) msg("OPTION_SET = queryGetTick");
+	if(blockOpenProcess) msg("OPTION_SET = blockOpenProcess");
+	
+	if(noGetProc==0) ADDHOOK(GetProcAddress);     //logging disabled hook proc (spam)
+
+	/* not all that useful and/or spamy...
+		ADDHOOK(WaitForSingleObject)  
+		ADDHOOK(fwrite);     //
+		ADDHOOK(WriteFileEx);
+		ADDHOOK(WriteFile);
+		ADDHOOK(_lread);
+		ADDHOOK(_lwrite);
+		ADDHOOK(ReadFile)
+		ADDHOOK(__setargv);
+		ADDHOOK(GetVersion)
+	*/
+
 	ADDHOOK(LoadLibraryA); 
-	ADDHOOK(WriteFile);
 	ADDHOOK(CreateFileA);
-	ADDHOOK(WriteFileEx);
 	ADDHOOK(_lcreat);
 	ADDHOOK(_lopen);
-	ADDHOOK(_lread);
-	ADDHOOK(_lwrite);
 	ADDHOOK(CreateProcessA);
 	ADDHOOK(WinExec);
 	ADDHOOK(ExitProcess);
 	ADDHOOK(ExitThread);
-	ADDHOOK(GetProcAddress);     //logging disabled hook proc (spam)
-	ADDHOOK(WaitForSingleObject);
 	ADDHOOK(CreateRemoteThread);
 	ADDHOOK(OpenProcess);
 	ADDHOOK(WriteProcessMemory);
@@ -1155,44 +1277,79 @@ void InstallHooks(void)
 	ADDHOOK(shutdown);
 	ADDHOOK(socket);
 	ADDHOOK(WSASocketA);
-	ADDHOOK(system);
-	ADDHOOK(fopen);
-	ADDHOOK(fwrite);
+
+	ADDHOOK(system);     //are these hooking the dll version for sure?
+	ADDHOOK(fopen);      //
+
 	ADDHOOK(URLDownloadToFileA);
 	ADDHOOK(URLDownloadToCacheFile);
 	ADDHOOK(GetCommandLineA);   //useful for finding end of packer
 	ADDHOOK(IsDebuggerPresent);
-	ADDHOOK(__setargv);
+	
 	ADDHOOK(GetVersionExA);
 	ADDHOOK(GlobalAlloc)
 	ADDHOOK(GetCurrentProcessId)
 	ADDHOOK(DebugActiveProcess)
-	ADDHOOK(ReadFile)
 	ADDHOOK(GetSystemTime)
 	ADDHOOK(CreateMutex)
 	ADDHOOK(ReadProcessMemory)
-	//ADDHOOK(GetVersion)
 	ADDHOOK(CopyFile)
 	ADDHOOK(InternetGetConnectedState)
 
 	//these can add allot of noise 
-	ADDHOOK(RegCreateKeyA) 
-	ADDHOOK(RegDeleteKeyA) 
-	ADDHOOK(RegDeleteValueA) 
-	ADDHOOK(RegEnumKeyA) 
-	ADDHOOK(RegEnumValueA)
-	//ADDHOOK(RegQueryValueA) spamy
-	ADDHOOK(RegSetValueA)
-	ADDHOOK(RegCreateKeyExA)
-	ADDHOOK(RegOpenKeyA)
-	ADDHOOK(RegOpenKeyExA)
-	//ADDHOOK(RegQueryValueExA) spamy
-	ADDHOOK(RegSetValueExA)
-	ADDHOOK(Sleep)
+	if(noRegistry==0){
+		ADDHOOK(RegCreateKeyA) 
+		ADDHOOK(RegDeleteKeyA) 
+		ADDHOOK(RegDeleteValueA) 
+		ADDHOOK(RegEnumKeyA) 
+		ADDHOOK(RegEnumValueA)
+		//ADDHOOK(RegQueryValueA) spamy
+		ADDHOOK(RegSetValueA)
+		ADDHOOK(RegCreateKeyExA)
+		ADDHOOK(RegOpenKeyA)
+		ADDHOOK(RegOpenKeyExA)
+		//ADDHOOK(RegQueryValueExA) spamy
+		ADDHOOK(RegSetValueExA)
+	}
 
+	ADDHOOK(Sleep)
+	ADDHOOK(GetTickCount)
 	 	
 }
 
 
+/* 
+   overly complex for the few settings we will need, 
+   plus dont want to bulk up code in dllmain can lead to bad things its a fickle place to play...
 
+int cfg[20];
+enum cfgNames{ noSleep=0, noRegistry, blockOpenProcess, noGetProc, queryGetTick };
+char* cfgText[] = {"noSleep", "noRegistry", "blockOpenProcess", "noGetProc", "queryGetTick" };
+int cfgCount = 4;
+
+void setcfg(int v, enum cfgNames n){
+	cfg[(int)n] = v;
+}
+
+int getcfg(enum cfgNames n){
+	return cfg[(int)n];
+}
+
+int getcfgname(enum cfgNames n){
+	return cfgText[(int)n];
+}
+
+void initcfg(){
+	memset(cfg, 0, cfgCount * 4);
+}
+
+  	/*char buf[200];
+	initcfg();
+	for(int i = 0; i<=cfgCount ; i++){
+		sprintf(buf,"***config:%s", getcfgname(i));
+		setcfg(i, msg(buf) );
+		if(getcfg(i) 
+	}* /
+
+*/
 

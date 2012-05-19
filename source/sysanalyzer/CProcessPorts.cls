@@ -231,7 +231,7 @@ Private Function GetPort(hPort As Long) As Long
     
     If hPort < 1 Then Exit Function
     
-    fso.AppendFile "c:\log.txt", "hport=" & hPort
+    'fso.AppendFile "c:\log.txt", "hport=" & hPort
     
     'XP is barfing here at controlfile sometimes
     ret = NtDeviceIoControlFile(hPort, 0, 0, 0, io, &H210012, tcInfo, Len(tcInfo), tci, Len(tci))

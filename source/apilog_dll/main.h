@@ -102,6 +102,7 @@ ALLOC_THUNK( int __stdcall Real_RegQueryValueExA ( HKEY a0, LPCSTR a1, LPDWORD a
 ALLOC_THUNK( int __stdcall Real_RegSetValueExA ( HKEY a0, LPCSTR a1, DWORD a2, DWORD a3, CONST BYTE* a4, DWORD a5 ) );
 
 ALLOC_THUNK( VOID __stdcall Real_Sleep( DWORD a0 ) );
+ALLOC_THUNK( DWORD __stdcall Real_GetTickCount( VOID ) );
 
 void msg(char);
 void LogAPI(const char*, ...);
@@ -265,7 +266,7 @@ void FindVBWindow(){
 
 } 
 
-void msg(char *Buffer){
+int msg(char *Buffer){
   
   if(hServer==0) FindVBWindow();
   
@@ -275,7 +276,7 @@ void msg(char *Buffer){
   cpStructData.lpData = (int)Buffer;
   cpStructData.dwFlag = 3;
   
-  SendMessage(hServer, WM_COPYDATA, 0,(LPARAM)&cpStructData);
+  return SendMessage(hServer, WM_COPYDATA, 0,(LPARAM)&cpStructData);
 
 } 
 

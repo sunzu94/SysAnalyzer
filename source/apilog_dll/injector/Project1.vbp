@@ -1,7 +1,15 @@
 Type=Exe
 Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\WINDOWS\system32\stdole2.tlb#OLE Automation
 Reference=*\G{60FF6824-F68B-4DF1-9ECF-6F0893AAD2B8}#1.2#0#C:\WINDOWS\spSubclass.dll#SandSprite_SubClass Component
+Reference=*\G{DDC88AC2-2723-4C1B-9D61-C4F4D7CF5375}#2.5#0#..\..\..\dependancy\vbDevKit.dll#Vb Developers Library From Sandsprite.com
+Object={831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0; mscomctl.ocx
 Form=Form2.frm
+Form=frmListProcess.frm
+Class=CProcessInfo; ..\..\sysanalyzer\CProcessInfo.cls
+Class=CProcess; ..\..\sysanalyzer\CProcess.cls
+Class=CModule; ..\..\sysanalyzer\CModule.cls
+Class=CProcessPorts; ..\..\sysanalyzer\CProcessPorts.cls
+Class=CProcessPort; ..\..\sysanalyzer\CProcessPort.cls
 IconForm="Form2"
 Startup="Form2"
 HelpFile=""

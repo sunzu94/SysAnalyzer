@@ -5,13 +5,13 @@ Begin VB.Form frmWizard
    Caption         =   "SysAnalyzer Configuration Wizard"
    ClientHeight    =   4305
    ClientLeft      =   45
-   ClientTop       =   330
-   ClientWidth     =   7770
+   ClientTop       =   435
+   ClientWidth     =   9000
    LinkTopic       =   "Form2"
    MaxButton       =   0   'False
    MinButton       =   0   'False
    ScaleHeight     =   4305
-   ScaleWidth      =   7770
+   ScaleWidth      =   9000
    ShowInTaskbar   =   0   'False
    StartUpPosition =   2  'CenterScreen
    Begin VB.TextBox txtArgs 
@@ -19,7 +19,7 @@ Begin VB.Form frmWizard
       Left            =   4350
       TabIndex        =   20
       Top             =   570
-      Width           =   2865
+      Width           =   3975
    End
    Begin VB.Frame Frame1 
       BackColor       =   &H005A5963&
@@ -29,7 +29,7 @@ Begin VB.Form frmWizard
       Left            =   3840
       TabIndex        =   8
       Top             =   1290
-      Width           =   3795
+      Width           =   5025
       Begin VB.ComboBox cboIp 
          Height          =   315
          Left            =   1140
@@ -67,13 +67,13 @@ Begin VB.Form frmWizard
       End
       Begin VB.CheckBox chkApiLog 
          BackColor       =   &H005A5963&
-         Caption         =   "Use Api Logger (Sleep ignored)"
+         Caption         =   "Use Api Logger"
          ForeColor       =   &H00E0E0E0&
          Height          =   315
          Left            =   480
          TabIndex        =   10
          Top             =   570
-         Width           =   2775
+         Width           =   1455
       End
       Begin VB.CheckBox chkWatchDirs 
          BackColor       =   &H005A5963&
@@ -153,7 +153,7 @@ Begin VB.Form frmWizard
    Begin VB.CommandButton cmdReadme 
       Caption         =   "Help"
       Height          =   375
-      Left            =   3300
+      Left            =   3870
       TabIndex        =   4
       Top             =   3810
       Width           =   1155
@@ -161,7 +161,7 @@ Begin VB.Form frmWizard
    Begin VB.CommandButton cmdStart 
       Caption         =   "Start"
       Height          =   375
-      Left            =   6570
+      Left            =   7710
       TabIndex        =   3
       Top             =   3810
       Width           =   1155
@@ -178,9 +178,9 @@ Begin VB.Form frmWizard
          Strikethrough   =   0   'False
       EndProperty
       Height          =   255
-      Left            =   7320
+      Left            =   8430
       TabIndex        =   2
-      Top             =   180
+      Top             =   210
       Width           =   375
    End
    Begin VB.TextBox txtBinary 
@@ -189,7 +189,7 @@ Begin VB.Form frmWizard
       OLEDropMode     =   1  'Manual
       TabIndex        =   1
       Top             =   180
-      Width           =   2895
+      Width           =   4005
    End
    Begin VB.Label Label1 
       BackColor       =   &H005A5963&
@@ -226,7 +226,7 @@ Begin VB.Form frmWizard
       EndProperty
       ForeColor       =   &H00E0E0E0&
       Height          =   255
-      Left            =   5280
+      Left            =   6150
       TabIndex        =   7
       Top             =   3870
       Width           =   435
@@ -287,6 +287,7 @@ Option Explicit
 '         Place, Suite 330, Boston, MA 02111-1307 USA
 
 Private Type config
+    version As Integer
     sniffer As Byte
     apilog As Byte
     dirwatch As Byte
@@ -345,6 +346,18 @@ Private Sub txtBinary_OLEDragDrop(Data As DataObject, Effect As Long, Button As 
     txtBinary = Data.files(1)
 End Sub
 
+Sub SetConfigDefaults()
+    With cfg
+            .version = 2
+            .apilog = 0
+            .delay = 30
+            .dirwatch = 1
+            .sniffer = 1
+            .interface = 1
+            .tcpdump = 1
+    End With
+End Sub
+
 Sub LoadConfig()
     
     'If fso.FileExists(cfgFile) Then   doesnt work...
@@ -356,14 +369,7 @@ Sub LoadConfig()
     'End If
     
     If Not fso.FileExists(cfgFile) Then
-        With cfg
-            .apilog = 0
-            .delay = 30
-            .dirwatch = 1
-            .sniffer = 1
-            .interface = 1
-            .tcpdump = 1
-        End With
+        SetConfigDefaults
         SaveConfig
     Else
         Dim f As Long
@@ -371,6 +377,10 @@ Sub LoadConfig()
         Open cfgFile For Binary As f
         Get f, , cfg
         Close f
+        If cfg.version <> 2 Then
+            SetConfigDefaults
+            SaveConfig
+        End If
     End If
     
     With cfg
@@ -520,7 +530,7 @@ Sub cmdStart_Click()
     If chkNetworkAnalyzer.value = 1 Then
         If Not isNetworkAnalyzerRunning() Then
             If fso.FileExists(networkAnalyzer) Then
-                Shell """" & networkAnalyzer & """ /start", vbNormalNoFocus
+                Shell """" & networkAnalyzer & """ /start", vbMinimizedNoFocus
             Else
                 MsgBox "Missing: " & networkAnalyzer
             End If
@@ -580,11 +590,13 @@ Private Function launchtcpdump()
         args = " -w ""[PATH]"" -q -U -l -s 0 -i " & txtInterface & " ip src [IP] or ip dst [IP]"
         args = Replace(args, "[PATH]", f)
         args = Replace(args, "[IP]", cboIp.Text)
-        args = "cmd /k """ & """" & tcpdump & """" & args & """"
+        args = "cmd /k """ & """" & tcpdump & """" & args & """"  'takes to long to initilize showing up in snapshots?
+        'args = tcpdump & """" & args & """"
         
         Clipboard.Clear
         Clipboard.SetText args
-        Shell args, vbNormalNoFocus
+        Shell args, vbMinimizedNoFocus
+        
         
     Else
         MsgBox "Missing: " & tcpdump

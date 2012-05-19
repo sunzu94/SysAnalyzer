@@ -45,6 +45,7 @@ Global watchDirs As New Collection
 Global cApiData As New Collection
 Global cLogData As New Collection
 
+Global Const LANG_US = &H409
 
 Public Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
 Private Declare Function SHGetPathFromIDList Lib "Shell32" Alias "SHGetPathFromIDListA" (ByVal pidl As Long, ByVal pszPath As String) As Long
@@ -152,10 +153,64 @@ Private Declare Function WSAIoctl Lib "ws2_32.dll" (ByVal s As Long, ByVal dwIoC
 Private Declare Sub CopyMemory2 Lib "kernel32" Alias "RtlMoveMemory" (pDst As Any, ByVal pSrc As Long, ByVal ByteLen As Long)
 Private Declare Function WSAStartup Lib "ws2_32.dll" (ByVal wVR As Long, lpWSAD As WSAData) As Long
 
+Function HexDump(ByVal str, Optional hexOnly = 0) As String
+    Dim s() As String, chars As String, tmp As String
+    On Error Resume Next
+    Dim ary() As Byte
+    Dim offset As Long
+    
+    offset = 0
+    str = " " & str
+    ary = StrConv(str, vbFromUnicode, LANG_US)
+    
+    chars = "   "
+    For i = 1 To UBound(ary)
+        tt = Hex(ary(i))
+        If Len(tt) = 1 Then tt = "0" & tt
+        tmp = tmp & tt & " "
+        x = ary(i)
+        'chars = chars & IIf((x > 32 And x < 127) Or x > 191, Chr(x), ".") 'x > 191 causes \x0 problems on non us systems... asc(chr(x)) = 0
+        chars = chars & IIf((x > 32 And x < 127), Chr(x), ".")
+        If i > 1 And i Mod 16 = 0 Then
+            h = Hex(offset)
+            While Len(h) < 6: h = "0" & h: Wend
+            If hexOnly = 0 Then
+                push s, h & "   " & tmp & chars
+            Else
+                push s, tmp
+            End If
+            offset = offset + 16
+            tmp = Empty
+            chars = "   "
+        End If
+    Next
+    'if read length was not mod 16=0 then
+    'we have part of line to account for
+    If tmp <> Empty Then
+        If hexOnly = 0 Then
+            h = Hex(offset)
+            While Len(h) < 6: h = "0" & h: Wend
+            h = h & "   " & tmp
+            While Len(h) <= 56: h = h & " ": Wend
+            push s, h & chars
+        Else
+            push s, tmp
+        End If
+    End If
+    
+    HexDump = Join(s, vbCrLf)
+    
+    If hexOnly <> 0 Then
+        HexDump = Replace(HexDump, " ", "")
+        HexDump = Replace(HexDump, vbCrLf, "")
+    End If
+    
+End Function
+
 
 Function AvailableInterfaces() As Collection
   
-    Dim hSocket As Long, size As Long, count As Integer
+    Dim hSocket As Long, Size As Long, count As Integer
     Dim i As Integer, lngIp As Long, ip(3) As Byte
     Dim sIp As String
     Dim ret As New Collection
@@ -173,9 +228,9 @@ Function AvailableInterfaces() As Collection
     WSAStartup &H202, WSAInfo
     hSocket = socket(AF_INET, 1, 0)
     If hSocket = INVALID_SOCKET Then Exit Function
-    If WSAIoctl(hSocket, SIO_GET_INTERFACE_LIST, ByVal 0, 0, buf, 1024, size, ByVal 0, ByVal 0) Then GoTo failed
+    If WSAIoctl(hSocket, SIO_GET_INTERFACE_LIST, ByVal 0, 0, buf, 1024, Size, ByVal 0, ByVal 0) Then GoTo failed
     
-    count = CInt(size / 76) - 1
+    count = CInt(Size / 76) - 1
      
     For i = 0 To count
         lngIp = buf.iInfo(i).iiAddress.AddressIn.sin_addr

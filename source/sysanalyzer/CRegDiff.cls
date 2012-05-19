@@ -55,7 +55,13 @@ Private Sub Class_Initialize()
      push HKLM_keys, "\SOFTWARE\Microsoft\Internet Explorer\Extensions"
      push HKLM_keys, "\SOFTWARE\Microsoft\Internet Explorer\Explorer Bars"
      push HKLM_keys, "\SYSTEM\CurrentControlSet\Services"
-    
+     
+     
+     'Example of a key which may change (not added new) which we currently dont have code for...
+    '[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon]
+    '"Userinit"="C:\\WINDOWS\\system32\\userinit.exe,C:\\WINDOWS\\system32\\bad.exe,"
+
+
 End Sub
 
 Sub Reset()

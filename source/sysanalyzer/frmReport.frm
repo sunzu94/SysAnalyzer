@@ -1,13 +1,13 @@
 VERSION 5.00
 Begin VB.Form frmReport 
    Caption         =   "List Data"
-   ClientHeight    =   6210
+   ClientHeight    =   6285
    ClientLeft      =   60
    ClientTop       =   345
-   ClientWidth     =   11085
+   ClientWidth     =   11175
    LinkTopic       =   "Form1"
-   ScaleHeight     =   6210
-   ScaleWidth      =   11085
+   ScaleHeight     =   6285
+   ScaleWidth      =   11175
    StartUpPosition =   2  'CenterScreen
    Begin VB.CommandButton Command2 
       Caption         =   "Save "
@@ -27,21 +27,21 @@ Begin VB.Form frmReport
    End
    Begin VB.TextBox Text1 
       BeginProperty Font 
-         Name            =   "Verdana"
-         Size            =   11.25
+         Name            =   "Courier New"
+         Size            =   12
          Charset         =   0
          Weight          =   400
          Underline       =   0   'False
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      Height          =   5895
-      Left            =   0
+      Height          =   5835
+      Left            =   60
       MultiLine       =   -1  'True
       ScrollBars      =   3  'Both
       TabIndex        =   0
       Top             =   300
-      Width           =   11055
+      Width           =   10935
    End
 End
 Attribute VB_Name = "frmReport"
@@ -72,8 +72,8 @@ Option Explicit
 
 'Used in several projects do not change interface!
 
-Private Declare Sub SetWindowPos Lib "user32" (ByVal Hwnd As Long, ByVal _
-    hWndInsertAfter As Long, ByVal x As Long, ByVal Y As Long, ByVal cx _
+Private Declare Sub SetWindowPos Lib "user32" (ByVal hWnd As Long, ByVal _
+    hWndInsertAfter As Long, ByVal x As Long, ByVal y As Long, ByVal cx _
     As Long, ByVal cy As Long, ByVal wFlags As Long)
     
 Private Const HWND_TOPMOST = -1
@@ -86,7 +86,7 @@ Function ShowList(list, Optional modal As Boolean = False, Optional saveName As 
     filesaveName = saveName
     
     If topMost Then
-        SetWindowPos Me.Hwnd, HWND_TOPMOST, Me.Left / 15, _
+        SetWindowPos Me.hWnd, HWND_TOPMOST, Me.Left / 15, _
             Me.top / 15, Me.Width / 15, _
             Me.Height / 15, 0
     End If
@@ -142,6 +142,6 @@ End Sub
 
 Private Sub Form_Resize()
     On Error Resume Next
-    Text1.Height = Me.Height - Text1.top
-    Text1.Width = Me.Width
+    Text1.Height = Me.Height - Text1.top - 550
+    Text1.Width = Me.Width - Text1.Left - 200
 End Sub

@@ -43,7 +43,7 @@ Private Declare Function NtQuerySystemInformation Lib "ntdll.dll" ( _
 Private Type SYSTEM_MODULE_INFORMATION
     reserved(1) As Long                'ULONG reserved[2];
     base As Long                       'PVOID Base;
-    size As Long                       'ULONG Size;
+    Size As Long                       'ULONG Size;
     flags As Long                      'ULONG Flags;
     Index As Integer                   'USHORT Index;
     unkn As Integer                    'USHORT Unknown;
@@ -55,6 +55,7 @@ End Type
 Private Const SYSMODINFO_SPECIFIER = 11
 
 Private Const STANDARD_RIGHTS_REQUIRED = &HF0000
+
 Private Enum ProcessAccessTypes
   PROCESS_TERMINATE = (&H1)
   PROCESS_CREATE_THREAD = (&H2)
@@ -72,6 +73,44 @@ Private Enum ProcessAccessTypes
   PROCESS_ALL_ACCESS = (STANDARD_RIGHTS_REQUIRED Or SYNCHRONIZE Or &HFFF)
 End Enum
 
+Enum MemoryTypes
+    MEM_COMMIT = &H1000
+    MEM_RESERVE = &H2000
+    MEM_DECOMMIT = &H4000
+    MEM_RELEASE = &H8000
+    MEM_FREE = &H10000
+    MEM_PRIVATE = &H20000
+    MEM_MAPPED = &H40000
+    MEM_RESET = &H80000
+    MEM_TOP_DOWN = &H100000
+    MEM_IMAGE = &H1000000
+    MEM_PHYSICAL = &H400000
+End Enum
+
+Private Type MEMORY_BASIC_INFORMATION
+   BaseAddress As Long
+   AllocationBase As Long
+   InitialProtect As Long
+   RegionSize As Long
+   State As Long
+   Protect As Long
+   Type As Long
+End Type
+
+Enum MemAccess
+        PAGE_EXECUTE_READWRITE = &H40
+        PAGE_EXECUTE_READ = &H20
+        PAGE_EXECUTE_WRITECOPY = &H80
+        PAGE_GUARD = &H100
+        PAGE_NOACCESS = &H1
+        PAGE_NOCACHE = &H200
+        PAGE_READONLY = &H2
+        PAGE_READWRITE = &H4
+        PAGE_WRITECOMBINE = &H400
+        PAGE_WRITECOPY = &H8
+End Enum
+
+
 Private Const FORMAT_MESSAGE_ALLOCATE_BUFFER = &H100
 Private Const FORMAT_MESSAGE_FROM_SYSTEM = &H1000
 Private Const ALL_ACCESS = &H1F0FFF
@@ -82,23 +121,23 @@ Private Const TH32CS_SNAPMODULE = 8
 Private Const TOKEN_QUERY = 8&
 Private Const TOKEN_USER = 1
 Private Const SPARE_LEN = 512
-Private Const MEM_RELEASE = &H8000
-Private Const MEM_COMMIT = &H1000
-Private Const MEM_RESERVE = &H2000
-Private Const PAGE_EXECUTE_READWRITE = &H40
-Private Const PAGE_EXECUTE_READ = &H20
-Private Const PAGE_EXECUTE_WRITECOPY = &H80
-Private Const PAGE_GUARD = &H100
-Private Const PAGE_NOACCESS = &H1
-Private Const PAGE_NOCACHE = &H200
-Private Const PAGE_READONLY = &H2
-Private Const PAGE_READWRITE = &H4
-Private Const PAGE_WRITECOMBINE = &H400
-Private Const PAGE_WRITECOPY = &H8
-Private Const MEM_MAPPED = &H40000
-Private Const MEM_IMAGE = &H1000000
-Private Const MEM_PRIVATE = &H20000
-Private Const MEM_PHYSICAL = &H400000
+'Private Const MEM_RELEASE = &H8000
+'Private Const MEM_COMMIT = &H1000
+'Private Const MEM_RESERVE = &H2000
+'Private Const PAGE_EXECUTE_READWRITE = &H40
+'Private Const PAGE_EXECUTE_READ = &H20
+'Private Const PAGE_EXECUTE_WRITECOPY = &H80
+'Private Const PAGE_GUARD = &H100
+'Private Const PAGE_NOACCESS = &H1
+'Private Const PAGE_NOCACHE = &H200
+'Private Const PAGE_READONLY = &H2
+'Private Const PAGE_READWRITE = &H4
+'Private Const PAGE_WRITECOMBINE = &H400
+'Private Const PAGE_WRITECOPY = &H8
+'Private Const MEM_MAPPED = &H40000
+'Private Const MEM_IMAGE = &H1000000
+'Private Const MEM_PRIVATE = &H20000
+'Private Const MEM_PHYSICAL = &H400000
 'Private Const PROCESS_TERMINATE = 1
 
 Private Declare Function ProcessFirst Lib "kernel32" Alias "Process32First" (ByVal hSnapshot As Long, uProcess As PROCESSENTRY32) As Long
@@ -118,22 +157,16 @@ Private Declare Function GetModuleFileNameExA Lib "PSAPI.DLL" (ByVal hProcess As
 Private Declare Function OpenProcessToken Lib "advapi32.dll" (ByVal ProcessHandle As Long, ByVal DesiredAccess As Long, TokenHandle As Long) As Long
 Private Declare Function GetTokenInformation Lib "advapi32.dll" (ByVal TokenHandle As Long, ByVal TokenInformationClass As Integer, TokenInformation As Any, ByVal TokenInformationLength As Long, ReturnLength As Long) As Long
 Private Declare Function LookupAccountSid Lib "advapi32.dll" Alias "LookupAccountSidA" (ByVal lpSystemName As String, ByVal Sid As Long, ByVal name As String, cbName As Long, ByVal ReferencedDomainName As String, cbReferencedDomainName As Long, peUse As Integer) As Long
-Private Declare Function VirtualQueryEx Lib "kernel32" (ByVal hProcess As Long, lpAddress As Any, lpBuffer As MEMORY_BASIC_INFORMATION, ByVal dwLength As Long) As Long
+'Private Declare Function VirtualQueryEx Lib "kernel32" (ByVal hProcess As Long, lpAddress As Any, lpBuffer As MEMORY_BASIC_INFORMATION, ByVal dwLength As Long) As Long
+Private Declare Function VirtualQueryEx Lib "kernel32" (ByVal hProcess As Long, ByVal lpAddress As Long, lpBuffer As MEMORY_BASIC_INFORMATION, ByVal dwLength As Long) As Long
+
 Private Declare Function TerminateProcess Lib "kernel32" (ByVal hProcess As Long, ByVal uExitCode As Long) As Long
 Private Declare Function GetCurrentProcess Lib "kernel32.dll" () As Long
 Private Declare Function LookupPrivilegeValue Lib "advapi32.dll" Alias "LookupPrivilegeValueA" (ByVal lpSystemName As String, ByVal lpName As String, lpLuid As LUID) As Long
 Private Declare Function GetLastError Lib "kernel32.dll" () As Long
 Private Declare Function AdjustTokenPrivileges Lib "advapi32.dll" (ByVal TokenHandle As Long, ByVal DisableAllPrivileges As Long, ByRef NewState As TOKEN_PRIVILEGES, ByVal BufferLength As Long, ByRef PreviousState As TOKEN_PRIVILEGES, ByRef ReturnLength As Long) As Long
 
-Private Type MEMORY_BASIC_INFORMATION
-    BaseAddress As Long
-    AllocationBase As Long
-    AllocationProtect As Long
-    RegionSize As Long
-    State As Long
-    Protect As Long
-    lType As Long
-End Type
+
 
 Private Type SID_AND_ATTRIBUTES
        Sid As Long
@@ -189,6 +222,8 @@ Private Type TOKEN_PRIVILEGES
     TheLuid As LUID
     Attributes As Long
 End Type
+
+Public SeDebugEnabled As Boolean
 
 Function GetRunningProcesses() As Collection 'of CProcess classes
     
@@ -327,7 +362,7 @@ Function GetProcessModules(pid As Long) As Collection
         Set cmod = New CModule
         cmod.path = mfn
         cmod.base = lmi.lpBaseOfDll
-        cmod.size = lmi.SizeOfImage
+        cmod.Size = lmi.SizeOfImage
          
         On Error Resume Next
         mCol.Add cmod, cmod.path
@@ -395,7 +430,37 @@ Function GetProcessUser(pid As Long) As String
     
 End Function
 
-Sub DumpProcessMemory(pid As Long, start As Long, Length As Long, fpath As String)
+Function DumpProcessMemory(pid As Long, start As Long, Length As Long, fpath As String) As Boolean
+   
+    Dim pHandle As Long
+    Dim b() As Byte
+    Dim f As Long
+    On Error GoTo hell
+    
+    f = FreeFile
+    
+    ReDim b(Length + 1)
+        
+    pHandle = OpenProcess(PROCESS_VM_READ, False, pid)
+    If pHandle = 0 Then Exit Function
+    
+    ReadProcessMemory pHandle, start, b(0), Length, Length
+    CloseHandle pHandle
+    
+    If Dir(fpath) <> "" Then Kill fpath
+    
+    Open fpath For Binary As f
+    Put f, , b()
+    Close f
+    DumpProcessMemory = True
+    
+    Exit Function
+hell:
+    DumpProcessMemory = False
+    
+End Function
+
+Function ReadMemory(pid As Long, start As Long, Length As Long) As String
    
     Dim pHandle As Long
     Dim b() As Byte
@@ -409,11 +474,9 @@ Sub DumpProcessMemory(pid As Long, start As Long, Length As Long, fpath As Strin
     ReadProcessMemory pHandle, start, b(0), Length, Length
     CloseHandle pHandle
     
-    Open fpath For Binary As f
-    Put f, , b()
-    Close f
+    ReadMemory = StrConv(b(), vbUnicode, &H409)
     
-End Sub
+End Function
 
 Function GetProcessPath(pid As Long) As String
     Dim hProc As Long
@@ -512,5 +575,65 @@ Function GetSeDebug() As Boolean
 End Function
 
 Private Sub Class_Initialize()
-    GetSeDebug
+    SeDebugEnabled = GetSeDebug()
 End Sub
+
+Function GetMemoryMap(pid As Long) As Collection 'of CMem
+
+    Dim hProc As Long
+    Dim x As Long
+    Dim meminfo As MEMORY_BASIC_INFORMATION
+    Dim cur As Long
+    Dim ret As New Collection
+    Dim n As String
+    Dim cMem As CMemory
+    
+    hProc = OpenProcess(CLng(PROCESS_QUERY_INFORMATION Or PROCESS_VM_READ), False, pid)
+    If hProc = 0 Then
+        Set GetMemoryMap = ret
+        x = GetLastError
+        Exit Function
+    End If
+           
+    Do While cur < &H7FFEFFFF
+         x = VirtualQueryEx(hProc, cur, meminfo, LenB(meminfo))
+         
+         If meminfo.State <> MEM_FREE Then
+            Set cMem = New CMemory
+            cMem.pid = pid
+            cMem.Size = meminfo.RegionSize
+            cMem.base = cur
+            cMem.AllocBase = meminfo.AllocationBase
+            cMem.InitialProtection = meminfo.InitialProtect
+            cMem.MemType = meminfo.Type
+            cMem.Protection = meminfo.Protect
+            cMem.State = meminfo.State
+                       
+            If cur > 0 Then
+               n = String(256, Chr(0))
+               x = GetModuleFileNameExA(hProc, cur, n, 255)
+               If x <> 0 Then cMem.ModuleName = ToNull(n)
+            End If
+            
+            ret.Add cMem
+            
+        End If
+        
+        cur = cur + meminfo.RegionSize
+        DoEvents
+        'sleep 10
+        
+    Loop
+       
+    CloseHandle hProc
+    Set GetMemoryMap = ret
+    
+End Function
+
+Private Function ToNull(v As String) As String
+    Dim x As Integer
+    ToNull = v
+    x = InStr(v, Chr(0))
+    If x > 0 Then ToNull = Left(v, x - 1)
+End Function
+

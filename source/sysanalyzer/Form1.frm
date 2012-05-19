@@ -72,52 +72,37 @@ Begin VB.Form frmMain
       TabOrientation  =   1
       Style           =   1
       Tabs            =   7
+      Tab             =   6
       TabsPerRow      =   10
       TabHeight       =   520
       ShowFocusRect   =   0   'False
       TabCaption(0)   =   "Running Processes"
       TabPicture(0)   =   "Form1.frx":0442
-      Tab(0).ControlEnabled=   -1  'True
-      Tab(0).Control(0)=   "Label4"
-      Tab(0).Control(0).Enabled=   0   'False
-      Tab(0).Control(1)=   "lblTimer"
-      Tab(0).Control(1).Enabled=   0   'False
-      Tab(0).Control(2)=   "lblDisplay"
-      Tab(0).Control(2).Enabled=   0   'False
+      Tab(0).ControlEnabled=   0   'False
+      Tab(0).Control(0)=   "tmrCountDown"
+      Tab(0).Control(1)=   "cmdAnalyze"
+      Tab(0).Control(2)=   "txtProcess"
       Tab(0).Control(3)=   "lvProcesses"
-      Tab(0).Control(3).Enabled=   0   'False
-      Tab(0).Control(4)=   "txtProcess"
-      Tab(0).Control(4).Enabled=   0   'False
-      Tab(0).Control(5)=   "cmdAnalyze"
-      Tab(0).Control(5).Enabled=   0   'False
-      Tab(0).Control(6)=   "tmrCountDown"
-      Tab(0).Control(6).Enabled=   0   'False
+      Tab(0).Control(4)=   "lblDisplay"
+      Tab(0).Control(5)=   "lblTimer"
+      Tab(0).Control(6)=   "Label4"
       Tab(0).ControlCount=   7
       TabCaption(1)   =   "Open Ports"
       TabPicture(1)   =   "Form1.frx":045E
       Tab(1).ControlEnabled=   0   'False
       Tab(1).Control(0)=   "lvPorts"
-      Tab(1).Control(0).Enabled=   0   'False
       Tab(1).ControlCount=   1
       TabCaption(2)   =   "Process Dlls"
       TabPicture(2)   =   "Form1.frx":047A
       Tab(2).ControlEnabled=   0   'False
-      Tab(2).Control(0)=   "Label7"
-      Tab(2).Control(0).Enabled=   0   'False
-      Tab(2).Control(1)=   "Label1(1)"
-      Tab(2).Control(1).Enabled=   0   'False
-      Tab(2).Control(2)=   "Label1(0)"
-      Tab(2).Control(2).Enabled=   0   'False
-      Tab(2).Control(3)=   "lvIE"
-      Tab(2).Control(3).Enabled=   0   'False
-      Tab(2).Control(4)=   "lvExplorer"
-      Tab(2).Control(4).Enabled=   0   'False
-      Tab(2).Control(5)=   "cmdCopyDll"
-      Tab(2).Control(5).Enabled=   0   'False
-      Tab(2).Control(6)=   "cmdDllProperties"
-      Tab(2).Control(6).Enabled=   0   'False
-      Tab(2).Control(7)=   "txtDllPath"
-      Tab(2).Control(7).Enabled=   0   'False
+      Tab(2).Control(0)=   "txtDllPath"
+      Tab(2).Control(1)=   "cmdDllProperties"
+      Tab(2).Control(2)=   "cmdCopyDll"
+      Tab(2).Control(3)=   "lvExplorer"
+      Tab(2).Control(4)=   "lvIE"
+      Tab(2).Control(5)=   "Label1(0)"
+      Tab(2).Control(6)=   "Label1(1)"
+      Tab(2).Control(7)=   "Label7"
       Tab(2).ControlCount=   8
       TabCaption(3)   =   "Loaded Drivers"
       TabPicture(3)   =   "Form1.frx":0496
@@ -142,20 +127,28 @@ Begin VB.Form frmMain
       Tab(5).ControlCount=   7
       TabCaption(6)   =   "Directory Watch Data"
       TabPicture(6)   =   "Form1.frx":04EA
-      Tab(6).ControlEnabled=   0   'False
-      Tab(6).Control(0)=   "cmdDirWatch"
-      Tab(6).Control(1)=   "txtIgnore"
-      Tab(6).Control(2)=   "txtDeleteLike"
-      Tab(6).Control(3)=   "cmdDelLike"
-      Tab(6).Control(4)=   "cmdSaveDirWatchFile"
-      Tab(6).Control(5)=   "lvDirWatch"
-      Tab(6).Control(6)=   "Label3(0)"
-      Tab(6).Control(7)=   "Label3(1)"
+      Tab(6).ControlEnabled=   -1  'True
+      Tab(6).Control(0)=   "Label3(1)"
+      Tab(6).Control(0).Enabled=   0   'False
+      Tab(6).Control(1)=   "Label3(0)"
+      Tab(6).Control(1).Enabled=   0   'False
+      Tab(6).Control(2)=   "lvDirWatch"
+      Tab(6).Control(2).Enabled=   0   'False
+      Tab(6).Control(3)=   "cmdSaveDirWatchFile"
+      Tab(6).Control(3).Enabled=   0   'False
+      Tab(6).Control(4)=   "cmdDelLike"
+      Tab(6).Control(4).Enabled=   0   'False
+      Tab(6).Control(5)=   "txtDeleteLike"
+      Tab(6).Control(5).Enabled=   0   'False
+      Tab(6).Control(6)=   "txtIgnore"
+      Tab(6).Control(6).Enabled=   0   'False
+      Tab(6).Control(7)=   "cmdDirWatch"
+      Tab(6).Control(7).Enabled=   0   'False
       Tab(6).ControlCount=   8
       Begin VB.CommandButton cmdDirWatch 
          Caption         =   "Stop Monitor"
          Height          =   315
-         Left            =   -66000
+         Left            =   9000
          TabIndex        =   36
          Top             =   4500
          Width           =   1215
@@ -171,19 +164,19 @@ Begin VB.Form frmMain
       Begin VB.Timer tmrCountDown 
          Enabled         =   0   'False
          Interval        =   1000
-         Left            =   9840
+         Left            =   -65160
          Top             =   4560
       End
       Begin VB.TextBox txtIgnore 
          Height          =   315
-         Left            =   -74280
+         Left            =   720
          TabIndex        =   25
          Top             =   4140
          Width           =   9495
       End
       Begin VB.TextBox txtDeleteLike 
          Height          =   315
-         Left            =   -74280
+         Left            =   720
          TabIndex        =   24
          Top             =   4500
          Width           =   4755
@@ -191,7 +184,7 @@ Begin VB.Form frmMain
       Begin VB.CommandButton cmdDelLike 
          Caption         =   "Delete Lines Like"
          Height          =   315
-         Left            =   -69420
+         Left            =   5580
          TabIndex        =   23
          Top             =   4500
          Width           =   1575
@@ -199,7 +192,7 @@ Begin VB.Form frmMain
       Begin VB.CommandButton cmdSaveDirWatchFile 
          Caption         =   "Save Selected file"
          Height          =   315
-         Left            =   -67800
+         Left            =   7200
          TabIndex        =   22
          Top             =   4500
          Width           =   1575
@@ -252,14 +245,14 @@ Begin VB.Form frmMain
       Begin VB.CommandButton cmdAnalyze 
          Caption         =   "Analyze Process"
          Height          =   315
-         Left            =   2460
+         Left            =   -72540
          TabIndex        =   5
          Top             =   4560
          Width           =   1875
       End
       Begin VB.TextBox txtProcess 
          Height          =   315
-         Left            =   1140
+         Left            =   -73860
          TabIndex        =   3
          Top             =   4560
          Width           =   1215
@@ -306,7 +299,7 @@ Begin VB.Form frmMain
       End
       Begin MSComctlLib.ListView lvProcesses 
          Height          =   4455
-         Left            =   60
+         Left            =   -74940
          TabIndex        =   1
          Top             =   60
          Width           =   10155
@@ -532,7 +525,7 @@ Begin VB.Form frmMain
       End
       Begin MSComctlLib.ListView lvDirWatch 
          Height          =   4035
-         Left            =   -74940
+         Left            =   60
          TabIndex        =   26
          Top             =   0
          Width           =   10155
@@ -578,7 +571,7 @@ Begin VB.Form frmMain
          Caption         =   "Currently displaying  base snapshot"
          ForeColor       =   &H00C00000&
          Height          =   255
-         Left            =   6240
+         Left            =   -68760
          TabIndex        =   31
          Top             =   4620
          Width           =   3675
@@ -586,7 +579,7 @@ Begin VB.Form frmMain
       Begin VB.Label lblTimer 
          Caption         =   "Seconds Remaining: "
          Height          =   315
-         Left            =   4500
+         Left            =   -70500
          TabIndex        =   30
          Top             =   4620
          Width           =   2955
@@ -595,7 +588,7 @@ Begin VB.Form frmMain
          Caption         =   "Ignore"
          Height          =   315
          Index           =   0
-         Left            =   -74940
+         Left            =   60
          TabIndex        =   28
          Top             =   4140
          Width           =   555
@@ -604,7 +597,7 @@ Begin VB.Form frmMain
          Caption         =   "Prune"
          Height          =   315
          Index           =   1
-         Left            =   -74940
+         Left            =   60
          TabIndex        =   27
          Top             =   4500
          Width           =   555
@@ -655,7 +648,7 @@ Begin VB.Form frmMain
       Begin VB.Label Label4 
          Caption         =   "Analyze PID"
          Height          =   315
-         Left            =   120
+         Left            =   -74880
          TabIndex        =   4
          Top             =   4560
          Width           =   1215
@@ -673,6 +666,9 @@ Begin VB.Form frmMain
       Visible         =   0   'False
       Begin VB.Menu mnuShowProcessDlls 
          Caption         =   "ShowDlls"
+      End
+      Begin VB.Menu mnuShowMemoryMap 
+         Caption         =   "Memory Map"
       End
       Begin VB.Menu mnuDumpProcess 
          Caption         =   "Dump"
@@ -768,6 +764,9 @@ Begin VB.Form frmMain
       End
       Begin VB.Menu mnuScanProcsForDll 
          Caption         =   "Scan Procs For Dll"
+      End
+      Begin VB.Menu mnuStealthInjScan 
+         Caption         =   "Scan for stealth injections"
       End
    End
 End
@@ -901,7 +900,7 @@ End Sub
 
 Private Sub Form_Resize()
     On Error Resume Next
-    Me.Height = 5805
+    Me.Height = 5925
     Me.Width = 10470
 End Sub
 
@@ -1133,6 +1132,17 @@ Function GetActiveLV(Optional Index As Long = -1) As ListView
     
 End Function
 
+Private Sub mnuShowMemoryMap_Click()
+    If liProc Is Nothing Then Exit Sub
+    Dim pid As Long
+    pid = CLng(liProc.Tag)
+    frmMemoryMap.ShowMemoryMap pid
+End Sub
+
+Private Sub mnuStealthInjScan_Click()
+    frmInjectionScan.StealthInjectionScan
+End Sub
+
 Private Sub tmrCountDown_Timer()
         
     tickCount = tickCount + 1
@@ -1326,6 +1336,7 @@ Private Sub Form_Unload(Cancel As Integer)
     subclass.DetatchMessage frmApiLogger.hWnd, WM_COPYDATA
     subclass.DetatchMessage Me.hWnd, WM_COPYDATA
      
+    Set subclass = Nothing
     Unload frmDirWatch
     Unload frmReport
     Unload frmApiLogger
@@ -1428,10 +1439,15 @@ Private Sub subclass_MessageReceived(hWnd As Long, wMsg As Long, wParam As Long,
                 
             Else
                 
-                If InStr(1, msg, "c:\iDEFENSE\Sysanalyzer", vbTextCompare) > 0 Then Exit Sub
-                If InStr(1, msg, user_desktop) > 0 Then Exit Sub
+                msg = Trim(msg)
+                If InStr(1, msg, "C:\\") > 0 Then msg = Replace(msg, "\\", "\")
+                If InStr(1, msg, Chr(0)) > 0 Then msg = Replace(msg, Chr(0), Empty)
+                If LCase(Right(msg, 4)) = ".lnk" Then Exit Sub
+                If InStr(1, msg, "C:\iDEFENSE\SysAnalyzer", vbTextCompare) > 0 Then Exit Sub
+                If InStr(1, msg, user_desktop, vbTextCompare) > 0 Then Exit Sub
                 If InStr(1, msg, "\Prefetch\") > 0 Then Exit Sub
                 If InStr(1, msg, "NTUSER.DAT") > 0 Then Exit Sub
+                If InStr(1, msg, "C:\LOG.TXT") > 0 Then Exit Sub
                 
                 If AnyOfTheseInstr(msg, txtIgnore) Then Exit Sub
                 If KeyExistsInCollection(cLogData, msg) Then Exit Sub
@@ -1439,7 +1455,7 @@ Private Sub subclass_MessageReceived(hWnd As Long, wMsg As Long, wParam As Long,
                 cLogData.Add msg, msg
                 tmp = Split(msg, ":", 2)
                 Set li = lvDirWatch.ListItems.Add(, , tmp(0))
-                li.SubItems(2) = Replace(Replace(Trim(tmp(1)), "\\", "\"), Chr(0), Empty)
+                li.SubItems(2) = Trim(tmp(1))
                 li.SubItems(1) = Hex(FileLen(li.SubItems(2)))
                 
             End If
@@ -1478,7 +1494,7 @@ End Function
 
 
 
-Private Sub lvProcesses_MouseUp(Button As Integer, Shift As Integer, x As Single, Y As Single)
+Private Sub lvProcesses_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     If Button = 2 Then PopupMenu mnuProcessesPopup
 End Sub
 
@@ -1504,7 +1520,7 @@ Private Sub mnuDumpProcess_Click()
     Set col = diff.CProc.GetProcessModules(pid)
     Set cmod = col(1)
 
-    Call diff.CProc.DumpProcessMemory(pid, cmod.base, cmod.size, pth)
+    Call diff.CProc.DumpProcessMemory(pid, cmod.base, cmod.Size, pth)
 
 End Sub
 
