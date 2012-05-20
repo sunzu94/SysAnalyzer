@@ -153,7 +153,7 @@ Private Declare Function WSAIoctl Lib "ws2_32.dll" (ByVal s As Long, ByVal dwIoC
 Private Declare Sub CopyMemory2 Lib "kernel32" Alias "RtlMoveMemory" (pDst As Any, ByVal pSrc As Long, ByVal ByteLen As Long)
 Private Declare Function WSAStartup Lib "ws2_32.dll" (ByVal wVR As Long, lpWSAD As WSAData) As Long
 
-Function LaunchStrings(data As String, Optional isPath As Boolean = False)
+Function LaunchStrings(Data As String, Optional isPath As Boolean = False)
 
     Dim b() As Byte
     Dim f As String
@@ -169,10 +169,10 @@ Function LaunchStrings(data As String, Optional isPath As Boolean = False)
     End If
     
     If isPath Then
-        If fso.FileExists(data) Then
-            f = data
+        If fso.FileExists(Data) Then
+            f = Data
         Else
-            MsgBox "Can not launch strings, File not found: " & data, vbInformation
+            MsgBox "Can not launch strings, File not found: " & Data, vbInformation
         End If
     Else
         b() = StrConv(dataOrPath, vbFromUnicode, LANG_US)
@@ -230,13 +230,11 @@ Sub RestoreFormSizeAnPosition(f As Form)
 hell:
 End Sub
 
-Function HexDump(ByVal str, Optional hexOnly = 0) As String
+Function HexDump(ByVal str, Optional hexOnly = 0, Optional offset As Long = 0) As String
     Dim s() As String, chars As String, tmp As String
     On Error Resume Next
     Dim ary() As Byte
-    Dim offset As Long
-    
-    offset = 0
+   
     str = " " & str
     ary = StrConv(str, vbFromUnicode, LANG_US)
     

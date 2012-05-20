@@ -303,7 +303,12 @@ Private going_toMainUI As Boolean
 
 Private Sub Form_Unload(Cancel As Integer)
     SaveConfig
-    If Not going_toMainUI Then End
+    Dim f As Form
+    If Not going_toMainUI Then
+        For Each f In Forms
+            Unload f
+        Next
+    End If
 End Sub
 
 Private Sub lblInterfaces_Click(Index As Integer)

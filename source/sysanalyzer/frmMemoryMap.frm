@@ -117,7 +117,6 @@ Begin VB.Form frmMemoryMap
       End
       Begin VB.Menu mnuSearchMemory 
          Caption         =   "Search"
-         Enabled         =   0   'False
       End
    End
    Begin VB.Menu mnuPopup2 
@@ -149,8 +148,9 @@ Public Sub ShowDlls(pid As Long)
     lv.Visible = False
     lv2.Visible = True
     active_pid = pid
-    Me.Visible = True
+    'Me.Visible = True
     
+     
     Set c = pi.GetProcessModules(pid)
     
     For Each cm In c
@@ -165,6 +165,8 @@ Public Sub ShowDlls(pid As Long)
         
         DoEvents
     Next
+    
+    Me.Show
     
 End Sub
 
@@ -182,7 +184,7 @@ Public Sub ShowMemoryMap(pid As Long)
     
     active_pid = pid
     
-    Me.Show
+    Me.Visible = True
     List1.AddItem "Loading memory map for pid: " & pid
     
     Set c = pi.GetMemoryMap(pid)
@@ -268,6 +270,8 @@ Private Sub mnuDumpDll_Click()
     Dim orgPath As String
     On Error Resume Next
     
+     MsgBox dlg.SaveDialog(AllFiles)
+     
     orgPath = selli.SubItems(2)
     n = fso.FileNameFromPath(orgPath) & ".dmp"
     f = InputBox("Save file as: ", , UserDeskTopFolder & "\" & n)
@@ -320,6 +324,52 @@ Private Sub mnuSaveMemory_Click()
     End If
 End Sub
 
+Private Sub mnuSearchMemory_Click()
+    Dim li As ListItem
+    Dim s As String
+    Dim s2 As String
+    Dim ret As String
+    Dim a As Long
+    Dim b As Long
+    Dim m As String
+    
+    If lv.ListItems.count = 0 Then
+        MsgBox "Nothing to search"
+        Exit Sub
+    End If
+    
+    s = InputBox("Enter string to search for:")
+    If Len(s) = 0 Then Exit Sub
+    
+    s2 = StrConv(s, vbUnicode, LANG_US)
+    'abort = False
+    
+    Dim base As Long
+    Dim Size As Long
+    
+    For Each li In lv.ListItems
+        'If abort = True Then Exit For
+        li.Selected = True
+        li.EnsureVisible
+        DoEvents
+        lv.Refresh
+        base = CLng("&h" & li.Text)
+        Size = CLng("&h" & li.SubItems(1))
+        m = pi.ReadMemory(active_pid, base, Size)
+        a = InStr(1, m, s, vbTextCompare)
+        b = InStr(1, m, s2, vbTextCompare)
+        If a > 0 Then ret = ret & "pid: " & li.Text & " base: " & li.SubItems(1) & " offset: " & Hex(base + a) & " ASCII " & li.SubItems(5) & vbCrLf
+        If b > 0 Then ret = ret & "pid: " & li.Text & " base: " & li.SubItems(1) & " offset: " & Hex(base + b) & " UNICODE " & li.SubItems(5) & vbCrLf
+    Next
+    
+    If Len(ret) > 0 Then
+        frmReport.ShowList ret
+    Else
+        MsgBox "Specified string not found (ASCII or UNICODE)", vbInformation
+    End If
+    
+End Sub
+
 Private Sub mnuStrings_Click()
     If selli Is Nothing Then Exit Sub
     On Error Resume Next
@@ -335,11 +385,13 @@ End Sub
 Private Sub mnuViewMemory_Click()
     If selli Is Nothing Then Exit Sub
     Dim s As String
+    Dim base As Long
     On Error Resume Next
-    s = pi.ReadMemory(active_pid, CLng("&h" & selli.Text), CLng("&h" & selli.SubItems(1)))
+    base = CLng("&h" & selli.Text)
+    s = pi.ReadMemory(active_pid, base, CLng("&h" & selli.SubItems(1)))
     If Len(s) = 0 Then
         List1.AddItem "Failed to readmemory?"
         Exit Sub
     End If
-    frmReport.ShowList HexDump(s), False, selli.Text & ".mem", False
+    frmReport.ShowList HexDump(s, , base), False, selli.Text & ".mem", False
 End Sub

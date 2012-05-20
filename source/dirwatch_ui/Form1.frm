@@ -222,7 +222,7 @@ Option Explicit
 '         this program; if not, write to the Free Software Foundation, Inc., 59 Temple
 '         Place, Suite 330, Boston, MA 02111-1307 USA
 
-Dim WithEvents subclass As clsSubClass
+Dim WithEvents subclass As CSubclass2
 Attribute subclass.VB_VarHelpID = -1
 
 Dim liDirWatch As ListItem
@@ -231,7 +231,7 @@ Dim fso As New CFileSystem2
 
 Sub Initalize()
     
-    Set subclass = New clsSubClass
+    Set subclass = New CSubclass2
    
     subclass.AttachMessage frmDirWatch.hwnd, WM_COPYDATA
     

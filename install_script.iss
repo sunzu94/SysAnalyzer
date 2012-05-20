@@ -9,7 +9,7 @@ OutputBaseFilename=SysAnalyzer_Setup
 OutputDir=./
 
 [Files]
-Source: ./dependancy\spSubclass.dll; DestDir: {win}; Flags: uninsneveruninstall regserver
+Source: ./dependancy\spSubclass2.dll; DestDir: {win}; Flags: uninsneveruninstall regserver
 Source: ./dependancy\TABCTL32.OCX; DestDir: {win}; Flags: uninsneveruninstall regserver
 Source: ./dependancy\vbDevKit.dll; DestDir: {win}; Flags: uninsneveruninstall regserver
 Source: ./dependancy\adoKit.dll; DestDir: {win}; Flags: uninsneveruninstall regserver

@@ -118,7 +118,6 @@ Begin VB.Form frmInjectionScan
       End
       Begin VB.Menu mnuSearchMem 
          Caption         =   "Search"
-         Enabled         =   0   'False
       End
       Begin VB.Menu mnuStrings 
          Caption         =   "Strings"
@@ -152,17 +151,20 @@ Function StealthInjectionScan()
     Set c = pi.GetRunningProcesses()
     pb.max = c.count
     pb.value = 1
+    abort = False
     
     For Each cp In c
-        Me.Caption = "Scanning " & pb.value & "/" & c.count & "..."
+        Me.Caption = "Scanning " & pb.value & "/" & c.count & "  Found: " & lv.ListItems.count & " Processing: " & cp.path
         FindStealthInjections cp.pid, pi.GetProcessPath(cp.pid)
         DoEvents
+        Sleep 20
         pb.value = pb.value + 1
         If abort Then Exit For
     Next
     
     pb.value = 0
     
+    Me.Caption = "Found " & lv.ListItems.count & " allocations"
     
         
 End Function
@@ -198,10 +200,12 @@ Private Sub FindStealthInjections(pid As Long, pName As String)
             End If
 
             s = pi.ReadMemory(cMem.pid, cMem.base, cMem.Size) 'doesnt add that much time
-            li.Tag = s
+            Set li.Tag = cMem
             li.SubItems(6) = CalculateEntropy(s)
-            
+            s = Empty
         End If
+        DoEvents
+        Sleep 5
     Next
     
 End Sub
@@ -246,6 +250,55 @@ Private Sub mnuSave_Click()
     End If
 End Sub
 
+Private Sub mnuSearchMem_Click()
+    Dim li As ListItem
+    
+    Dim s As String
+    Dim s2 As String
+    Dim ret As String
+    Dim a As Long
+    Dim b As Long
+    Dim cMem As CMemory
+    Dim m As String
+    
+    If lv.ListItems.count = 0 Then
+        MsgBox "Nothing to search"
+        Exit Sub
+    End If
+    
+    s = InputBox("Enter string to search for:")
+    If Len(s) = 0 Then Exit Sub
+    
+    s2 = StrConv(s, vbUnicode, LANG_US)
+    pb.max = lv.ListItems.count
+    pb.value = 0
+    abort = False
+    
+    For Each li In lv.ListItems
+        If abort = True Then Exit For
+        li.Selected = True
+        li.EnsureVisible
+        Set cMem = li.Tag
+        DoEvents
+        lv.Refresh
+        m = pi.ReadMemory(cMem.pid, cMem.base, cMem.Size)
+        a = InStr(1, m, s, vbTextCompare)
+        b = InStr(1, m, s2, vbTextCompare)
+        If a > 0 Then ret = ret & "pid: " & li.Text & " base: " & li.SubItems(1) & " offset: " & Hex(cMem.base + a) & " ASCII " & li.SubItems(5) & vbCrLf
+        If b > 0 Then ret = ret & "pid: " & li.Text & " base: " & li.SubItems(1) & " offset: " & Hex(cMem.base + b) & " UNICODE " & li.SubItems(5) & vbCrLf
+        pb.value = pb.value + 1
+    Next
+            
+    pb.value = 0
+    
+    If Len(ret) > 0 Then
+        frmReport.ShowList ret
+    Else
+        MsgBox "Specified string not found (ASCII or UNICODE)", vbInformation
+    End If
+    
+End Sub
+
 Private Sub mnuStrings_Click()
     If selli Is Nothing Then Exit Sub
     Dim f As String
@@ -264,14 +317,16 @@ Private Sub mnuView_Click()
     If selli Is Nothing Then Exit Sub
     Dim s As String
     Dim pid As Long
+    Dim base As Long
     On Error Resume Next
+    base = CLng("&h" & selli.SubItems(1))
     pid = CLng(selli.Text)
-    s = pi.ReadMemory(pid, CLng("&h" & selli.SubItems(1)), CLng("&h" & selli.SubItems(2)))
+    s = pi.ReadMemory(pid, base, CLng("&h" & selli.SubItems(2)))
     If Len(s) = 0 Then
         MsgBox "Failed to readmemory?"
         Exit Sub
     End If
-    frmReport.ShowList HexDump(s), False, selli.SubItems(1) & ".mem", False
+    frmReport.ShowList HexDump(s, , base), False, selli.SubItems(1) & ".mem", False
 End Sub
 
 

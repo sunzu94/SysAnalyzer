@@ -760,7 +760,7 @@ BOOL __stdcall My_WriteProcessMemory(HANDLE a0,LPVOID a1,LPVOID a2,DWORD a3,LPDW
 	//todo lookup handle and relate back to which process name it was handed out for...
 	sprintf(buf, "c:\\wpm_h_%x_mem_%x.bin", a0, a1);
 	HANDLE h = Real_CreateFileA(buf, GENERIC_READ|GENERIC_WRITE ,0,0,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,0); 
-	Real_WriteFile(h,a2,a3,&written,0);
+	/*Real_*/WriteFile(h,a2,a3,&written,0);
 	CloseHandle(h);
 
 	LogAPI("%x     WriteProcessMemory(h=%x,base=%x,buf=%x,len=%x) Saved as %s", CalledFrom(), a0,a1,a2,a3,buf);
