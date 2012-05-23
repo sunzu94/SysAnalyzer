@@ -364,15 +364,7 @@ Sub SetConfigDefaults()
 End Sub
 
 Sub LoadConfig()
-    
-    'If fso.FileExists(cfgFile) Then   doesnt work...
-    '    If FileLen(cfgFile) <> LenB(cfg) Then
-    '        'version must be old delete it..
-    '        Kill cfgFile
-    '        MsgBox "Old cfg file detected..deleting.."
-    '    End If
-    'End If
-    
+        
     If Not fso.FileExists(cfgFile) Then
         SetConfigDefaults
         SaveConfig
@@ -389,12 +381,12 @@ Sub LoadConfig()
     End If
     
     With cfg
-        chkApiLog.value = .apilog
+        chkApiLog.Value = .apilog
         chkNetworkAnalyzer = .sniffer
         chkWatchDirs = .dirwatch
         txtDelay = .delay
         txtInterface = .interface
-        chkPacketCapture.value = .tcpdump
+        chkPacketCapture.Value = .tcpdump
     End With
     
 End Sub
@@ -406,12 +398,12 @@ Sub SaveConfig()
     If Len(txtDelay) = 0 Or Not IsNumeric(txtDelay) Then txtDelay = 30
             
     With cfg
-        .apilog = chkApiLog.value
+        .apilog = chkApiLog.Value
         .sniffer = chkNetworkAnalyzer
         .dirwatch = chkWatchDirs
         .delay = CLng(txtDelay)
         .interface = CByte(txtInterface)
-        .tcpdump = chkPacketCapture.value
+        .tcpdump = chkPacketCapture.Value
     End With
     
     Dim f As Long
@@ -473,8 +465,8 @@ Private Sub Form_Load()
             
     If cboIp.ListCount = 0 Then  'no active interfaces ?
         chkPacketCapture.Enabled = False
-        chkPacketCapture.value = 0
-        chkNetworkAnalyzer.value = 0
+        chkPacketCapture.Value = 0
+        chkNetworkAnalyzer.Value = 0
         chkNetworkAnalyzer.Enabled = False
     Else
         cboIp.ListIndex = 0
@@ -515,7 +507,7 @@ Sub cmdStart_Click()
         
     On Error Resume Next
     
-    If chkPacketCapture.value = 1 Then
+    If chkPacketCapture.Value = 1 Then
         If Not IsNumeric(txtInterface.Text) Or txtInterface.Text = 0 Then
             MsgBox "Interface for tcpdump must be numeric and non-zero", vbInformation
             Exit Sub
@@ -532,7 +524,7 @@ Sub cmdStart_Click()
         txtDelay = 30
     End If
         
-    If chkNetworkAnalyzer.value = 1 Then
+    If chkNetworkAnalyzer.Value = 1 Then
         If Not isNetworkAnalyzerRunning() Then
             If fso.FileExists(networkAnalyzer) Then
                 Shell """" & networkAnalyzer & """ /start", vbMinimizedNoFocus
@@ -542,7 +534,7 @@ Sub cmdStart_Click()
         End If
     End If
     
-    If chkPacketCapture.value = 1 Then launchtcpdump
+    If chkPacketCapture.Value = 1 Then launchtcpdump
     
     going_toMainUI = True
     frmMain.Initalize
@@ -601,7 +593,7 @@ Private Function launchtcpdump()
         Clipboard.Clear
         Clipboard.SetText args
         Shell args, vbMinimizedNoFocus
-        
+        Sleep 500
         
     Else
         MsgBox "Missing: " & tcpdump
@@ -613,13 +605,13 @@ Private Sub tmrDelayShell_Timer()
     tmrDelayShell.Enabled = False
     On Error GoTo hell
     
-    If chkWatchDirs.value = 1 Then
+    If chkWatchDirs.Value = 1 Then
         DirWatchCtl True
     Else
         frmMain.SSTab1.TabVisible(6) = False
     End If
     
-    If chkApiLog.value = 1 Then
+    If chkApiLog.Value = 1 Then
         Dim exe As String
             
         If VBA.Left(txtBinary, 4) = "pid:" Then

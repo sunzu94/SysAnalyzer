@@ -43,7 +43,7 @@ Private Declare Function NtQuerySystemInformation Lib "ntdll.dll" ( _
 Private Type SYSTEM_MODULE_INFORMATION
     reserved(1) As Long                'ULONG reserved[2];
     base As Long                       'PVOID Base;
-    Size As Long                       'ULONG Size;
+    size As Long                       'ULONG Size;
     flags As Long                      'ULONG Flags;
     Index As Integer                   'USHORT Index;
     unkn As Integer                    'USHORT Unknown;
@@ -92,7 +92,7 @@ Private Type MEMORY_BASIC_INFORMATION
    AllocationBase As Long
    InitialProtect As Long
    RegionSize As Long
-   State As Long
+   state As Long
    Protect As Long
    Type As Long
 End Type
@@ -261,7 +261,7 @@ Function GetRunningProcesses() As Collection 'of CProcess classes
         End With
         
         n = InStr(proc.path, Chr(0))
-        If n > 0 Then proc.path = Mid(proc.path, 1, n)
+        If n > 1 Then proc.path = Mid(proc.path, 1, n - 1)
         proc.path = Replace(proc.path, "\??\", Empty)
         proc.path = Replace(proc.path, "\SystemRoot", Environ("Windir"))
         
@@ -362,7 +362,7 @@ Function GetProcessModules(pid As Long) As Collection
         Set cmod = New CModule
         cmod.path = mfn
         cmod.base = lmi.lpBaseOfDll
-        cmod.Size = lmi.SizeOfImage
+        cmod.size = lmi.SizeOfImage
          
         On Error Resume Next
         mCol.Add cmod, cmod.path
@@ -495,7 +495,7 @@ Function GetProcessPath(pid As Long) As String
         GetProcessPath = Replace(GetProcessPath, "\??\", Empty)
         GetProcessPath = Replace(GetProcessPath, "\SystemRoot", Environ("Windir"))
         n = InStr(GetProcessPath, Chr(0))
-        If n > 0 Then GetProcessPath = Mid(GetProcessPath, 1, n)
+        If n > 1 Then GetProcessPath = Mid(GetProcessPath, 1, n - 1)
         
         Call CloseHandle(hProc)
     End If
@@ -598,16 +598,16 @@ Function GetMemoryMap(pid As Long) As Collection 'of CMem
     Do While cur < &H7FFEFFFF
          x = VirtualQueryEx(hProc, cur, meminfo, LenB(meminfo))
          
-         If meminfo.State <> MEM_FREE Then
+         If meminfo.state <> MEM_FREE Then
             Set cMem = New CMemory
             cMem.pid = pid
-            cMem.Size = meminfo.RegionSize
+            cMem.size = meminfo.RegionSize
             cMem.base = cur
             cMem.AllocBase = meminfo.AllocationBase
             cMem.InitialProtection = meminfo.InitialProtect
             cMem.MemType = meminfo.Type
             cMem.Protection = meminfo.Protect
-            cMem.State = meminfo.State
+            cMem.state = meminfo.state
                        
             If cur > 0 Then
                n = String(256, Chr(0))

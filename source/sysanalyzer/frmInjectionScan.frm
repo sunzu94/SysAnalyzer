@@ -10,6 +10,30 @@ Begin VB.Form frmInjectionScan
    ScaleHeight     =   3585
    ScaleWidth      =   11970
    StartUpPosition =   3  'Windows Default
+   Begin VB.CommandButton Command1 
+      Caption         =   "Remove if entropy <"
+      Height          =   405
+      Left            =   5910
+      TabIndex        =   8
+      Top             =   3060
+      Width           =   1785
+   End
+   Begin VB.TextBox txtMinEntropy 
+      Height          =   345
+      Left            =   7740
+      TabIndex        =   7
+      Text            =   "50"
+      Top             =   3060
+      Width           =   465
+   End
+   Begin VB.CommandButton cmdNextProc 
+      Caption         =   "Next Proc"
+      Height          =   405
+      Left            =   8520
+      TabIndex        =   6
+      Top             =   3030
+      Width           =   1185
+   End
    Begin VB.CommandButton cmdRescan 
       Caption         =   "Rescan"
       Height          =   405
@@ -31,7 +55,7 @@ Begin VB.Form frmInjectionScan
       Left            =   840
       TabIndex        =   3
       Top             =   3060
-      Width           =   7485
+      Width           =   4995
    End
    Begin MSComctlLib.ProgressBar pb 
       Height          =   255
@@ -135,6 +159,12 @@ Attribute VB_Exposed = False
 Dim abort As Boolean
 Dim pi As New CProcessInfo
 Dim selli As ListItem
+Dim nextProc As Boolean
+Dim totalScanned As Long
+Dim totalRWEFound As Long
+Dim multiscanMode As Boolean
+
+'todo: user config list of common target processes and only scan selected processes to speed up?
 
 Private Sub cmdAbort_Click()
     abort = True
@@ -150,27 +180,30 @@ Function StealthInjectionScan()
     Me.Visible = True
     Set c = pi.GetRunningProcesses()
     pb.max = c.count
-    pb.value = 1
+    pb.Value = 1
     abort = False
+    totalScanned = 0
+    totalRWEFound = 0
+    multiscanMode = True
     
     For Each cp In c
-        Me.Caption = "Scanning " & pb.value & "/" & c.count & "  Found: " & lv.ListItems.count & " Processing: " & cp.path
+        Me.Caption = "Scanning " & pb.Value & "/" & c.count & "  Found: " & lv.ListItems.count & " Processing: " & cp.path & " TotalRWEFound: " & totalRWEFound & " Total Allocs Scanned: " & totalScanned
         FindStealthInjections cp.pid, pi.GetProcessPath(cp.pid)
         DoEvents
         Sleep 20
-        pb.value = pb.value + 1
+        pb.Value = pb.Value + 1
         If abort Then Exit For
     Next
     
-    pb.value = 0
-    
+    multiscanMode = False
+    pb.Value = 0
     Me.Caption = "Found " & lv.ListItems.count & " allocations"
     
         
 End Function
 
 
-Private Sub FindStealthInjections(pid As Long, pName As String)
+Sub FindStealthInjections(pid As Long, pName As String)
     
     Dim c As Collection
     Dim cMem As CMemory
@@ -180,17 +213,52 @@ Private Sub FindStealthInjections(pid As Long, pName As String)
     Dim mm As matchModes
     Dim knownModules As Long
     Dim s As String
+    Dim entropy As Long
+    Dim minEntropy As Long
     
     On Error Resume Next
+    Me.Visible = True
+    minEntropy = CLng(txtMinEntropy)
+    
+    If Err.Number <> 0 Then
+        minEntropy = 50
+        txtMinEntropy = 50
+        Err.Clear
+    End If
+    
+    nextProc = False
     Set c = pi.GetMemoryMap(pid)
 
+    If multiscanMode = False Then
+        pb.max = c.count
+        pb.Value = 0
+    End If
+    
     'todo: replace(chr(0) in readmem, if it shrinks by % then its just junk?
     For Each cMem In c
         If abort Then Exit Sub
+        If nextProc Then Exit Sub
+        totalScanned = totalScanned + 1
+        
+        If multiscanMode = False Then
+            pb.Value = pb.Value + 1
+            Me.Caption = "Scanning " & pb.Value & "/" & c.count & "  Found: " & lv.ListItems.count & " Total Allocs Scanned: " & totalScanned
+        End If
+         
         If cMem.Protection = PAGE_EXECUTE_READWRITE And cMem.MemType <> MEM_IMAGE Then
+            
+            totalRWEFound = totalRWEFound + 1
+            s = pi.ReadMemory(cMem.pid, cMem.base, cMem.size) 'doesnt add that much time
+            entropy = CalculateEntropy(s)
+            s = Empty
+             
+            'If chkMinEntropy.Value = 1 Then
+            '    If entropy < minEntropy Then GoTo nextOne
+            'End If
+            
             Set li = lv.ListItems.Add(, , pid)
             li.SubItems(1) = Hex(cMem.base)
-            li.SubItems(2) = Hex(cMem.Size)
+            li.SubItems(2) = Hex(cMem.size)
             li.SubItems(3) = cMem.MemTypeAsString()
             li.SubItems(4) = cMem.ProtectionAsString()
             li.SubItems(5) = pName
@@ -199,11 +267,11 @@ Private Sub FindStealthInjections(pid As Long, pName As String)
                 SetLiColor li, vbRed
             End If
 
-            s = pi.ReadMemory(cMem.pid, cMem.base, cMem.Size) 'doesnt add that much time
             Set li.Tag = cMem
-            li.SubItems(6) = CalculateEntropy(s)
-            s = Empty
+            li.SubItems(6) = entropy
         End If
+        
+nextOne:
         DoEvents
         Sleep 5
     Next
@@ -216,11 +284,16 @@ Private Function CalculateEntropy(ByVal s As String) As Integer 'very basic...
     If Len(s) = 0 Then Exit Function
     Dim a As Long, b As Long
     a = Len(s)
-    s = Replace(s, Chr(0), Empty)
+    's = Replace(s, Chr(0), Empty)
+    s = SimpleCompress(s)
     b = Len(s)
-    CalculateEntropy = 100 - (b / a) * 100
+    CalculateEntropy = ((b / a) * 100)
 End Function
 
+
+Private Sub cmdNextProc_Click()
+    nextProc = True
+End Sub
 
 Private Sub cmdRescan_Click()
     lv.ListItems.Clear
@@ -228,7 +301,13 @@ Private Sub cmdRescan_Click()
 End Sub
 
 Private Sub Form_Load()
-     lv.ColumnHeaders(6).Width = lv.Width - lv.ColumnHeaders(6).Left - 350
+
+     lv.ColumnHeaders(6).Width = lv.Width - lv.ColumnHeaders(6).Left - 350 - lv.ColumnHeaders(7).Width
+     
+     If IsIde() Then
+        LoadLibrary "zlib.dll"
+     End If
+     
 End Sub
 
 Private Sub lv_DblClick()
@@ -242,6 +321,7 @@ Private Sub mnuSave_Click()
     On Error Resume Next
     pid = CLng(selli.Text)
     f = InputBox("Save file as: ", , UserDeskTopFolder & "\" & pid & "_" & selli.SubItems(1) & ".mem")
+    'f = dlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save As:", , Me.hWnd, pid & "_" & selli.SubItems(1) & ".mem")
     If Len(f) = 0 Then Exit Sub
     If pi.DumpProcessMemory(pid, CLng("&h" & selli.SubItems(1)), CLng("&h" & selli.SubItems(2)), f) Then
         MsgBox "File successfully saved"
@@ -271,7 +351,7 @@ Private Sub mnuSearchMem_Click()
     
     s2 = StrConv(s, vbUnicode, LANG_US)
     pb.max = lv.ListItems.count
-    pb.value = 0
+    pb.Value = 0
     abort = False
     
     For Each li In lv.ListItems
@@ -281,15 +361,15 @@ Private Sub mnuSearchMem_Click()
         Set cMem = li.Tag
         DoEvents
         lv.Refresh
-        m = pi.ReadMemory(cMem.pid, cMem.base, cMem.Size)
+        m = pi.ReadMemory(cMem.pid, cMem.base, cMem.size)
         a = InStr(1, m, s, vbTextCompare)
         b = InStr(1, m, s2, vbTextCompare)
         If a > 0 Then ret = ret & "pid: " & li.Text & " base: " & li.SubItems(1) & " offset: " & Hex(cMem.base + a) & " ASCII " & li.SubItems(5) & vbCrLf
         If b > 0 Then ret = ret & "pid: " & li.Text & " base: " & li.SubItems(1) & " offset: " & Hex(cMem.base + b) & " UNICODE " & li.SubItems(5) & vbCrLf
-        pb.value = pb.value + 1
+        pb.Value = pb.Value + 1
     Next
             
-    pb.value = 0
+    pb.Value = 0
     
     If Len(ret) > 0 Then
         frmReport.ShowList ret
@@ -326,7 +406,9 @@ Private Sub mnuView_Click()
         MsgBox "Failed to readmemory?"
         Exit Sub
     End If
-    frmReport.ShowList HexDump(s, , base), False, selli.SubItems(1) & ".mem", False
+    Dim f As New rhexed.CHexEditor
+    f.Editor.AdjustBaseOffset = base
+    f.Editor.LoadString s
 End Sub
 
 

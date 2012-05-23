@@ -101,20 +101,19 @@ Begin VB.Form frmMain
       TabCaption(2)   =   "Process Dlls"
       TabPicture(2)   =   "Form1.frx":047A
       Tab(2).ControlEnabled=   0   'False
-      Tab(2).Control(0)=   "Label7"
-      Tab(2).Control(1)=   "Label1(1)"
-      Tab(2).Control(2)=   "Label1(0)"
-      Tab(2).Control(3)=   "lvIE"
-      Tab(2).Control(4)=   "lvExplorer"
-      Tab(2).Control(5)=   "cmdCopyDll"
-      Tab(2).Control(6)=   "cmdDllProperties"
-      Tab(2).Control(7)=   "txtDllPath"
+      Tab(2).Control(0)=   "txtDllPath"
+      Tab(2).Control(1)=   "cmdDllProperties"
+      Tab(2).Control(2)=   "cmdCopyDll"
+      Tab(2).Control(3)=   "lvExplorer"
+      Tab(2).Control(4)=   "lvIE"
+      Tab(2).Control(5)=   "Label1(0)"
+      Tab(2).Control(6)=   "Label1(1)"
+      Tab(2).Control(7)=   "Label7"
       Tab(2).ControlCount=   8
       TabCaption(3)   =   "Loaded Drivers"
       TabPicture(3)   =   "Form1.frx":0496
       Tab(3).ControlEnabled=   0   'False
       Tab(3).Control(0)=   "lvDrivers"
-      Tab(3).Control(0).Enabled=   0   'False
       Tab(3).ControlCount=   1
       TabCaption(4)   =   "Reg Monitor"
       TabPicture(4)   =   "Form1.frx":04B2
@@ -124,25 +123,25 @@ Begin VB.Form frmMain
       TabCaption(5)   =   "Api Log"
       TabPicture(5)   =   "Form1.frx":04CE
       Tab(5).ControlEnabled=   0   'False
-      Tab(5).Control(0)=   "Label3(2)"
-      Tab(5).Control(1)=   "Label5"
-      Tab(5).Control(2)=   "lvAPILog"
+      Tab(5).Control(0)=   "cmdIgnoreApi"
+      Tab(5).Control(1)=   "cmdApiDelete"
+      Tab(5).Control(2)=   "txtAPIDelete"
       Tab(5).Control(3)=   "txtApiIgnore"
-      Tab(5).Control(4)=   "txtAPIDelete"
-      Tab(5).Control(5)=   "cmdApiDelete"
-      Tab(5).Control(6)=   "cmdIgnoreApi"
+      Tab(5).Control(4)=   "lvAPILog"
+      Tab(5).Control(5)=   "Label5"
+      Tab(5).Control(6)=   "Label3(2)"
       Tab(5).ControlCount=   7
       TabCaption(6)   =   "Directory Watch Data"
       TabPicture(6)   =   "Form1.frx":04EA
       Tab(6).ControlEnabled=   0   'False
-      Tab(6).Control(0)=   "Label3(1)"
-      Tab(6).Control(1)=   "Label3(0)"
-      Tab(6).Control(2)=   "lvDirWatch"
-      Tab(6).Control(3)=   "cmdSaveDirWatchFile"
-      Tab(6).Control(4)=   "cmdDelLike"
-      Tab(6).Control(5)=   "txtDeleteLike"
-      Tab(6).Control(6)=   "txtIgnore"
-      Tab(6).Control(7)=   "cmdDirWatch"
+      Tab(6).Control(0)=   "cmdDirWatch"
+      Tab(6).Control(1)=   "txtIgnore"
+      Tab(6).Control(2)=   "txtDeleteLike"
+      Tab(6).Control(3)=   "cmdDelLike"
+      Tab(6).Control(4)=   "cmdSaveDirWatchFile"
+      Tab(6).Control(5)=   "lvDirWatch"
+      Tab(6).Control(6)=   "Label3(0)"
+      Tab(6).Control(7)=   "Label3(1)"
       Tab(6).ControlCount=   8
       Begin VB.CommandButton cmdDirWatch 
          Caption         =   "Stop Monitor"
@@ -669,6 +668,9 @@ Begin VB.Form frmMain
       Begin VB.Menu mnuShowMemoryMap 
          Caption         =   "Memory Map"
       End
+      Begin VB.Menu mnuScanProcForStealthInjects 
+         Caption         =   "RWE Mem Scan"
+      End
       Begin VB.Menu mnuDumpProcess 
          Caption         =   "Dump"
       End
@@ -766,15 +768,18 @@ Begin VB.Form frmMain
          Caption         =   "Update Known Db"
          Enabled         =   0   'False
       End
-      Begin VB.Menu mnuScanForUnknownMods 
-         Caption         =   "Scan Procs for Unknown Dlls"
-         Enabled         =   0   'False
-      End
-      Begin VB.Menu mnuScanProcsForDll 
-         Caption         =   "Scan Procs For Dll"
-      End
-      Begin VB.Menu mnuStealthInjScan 
-         Caption         =   "Scan for stealth injections"
+      Begin VB.Menu mnuManualTools 
+         Caption         =   "Manual Tools"
+         Begin VB.Menu mnuScanForUnknownMods 
+            Caption         =   "Scan Procs for Unknown Dlls"
+            Enabled         =   0   'False
+         End
+         Begin VB.Menu mnuScanProcsForDll 
+            Caption         =   "Scan Procs For Dll"
+         End
+         Begin VB.Menu mnuStealthInjScan 
+            Caption         =   "RWE Mem Scan"
+         End
       End
    End
    Begin VB.Menu mnuDriversPopup 
@@ -897,8 +902,6 @@ Private Sub cmdIgnoreApi_Click()
 End Sub
 
 Private Sub Form_Load()
-    
-     
     
     If known.HideKnownInDisplays Then
         mnuHideKnown.Checked = True
@@ -1093,6 +1096,13 @@ Private Sub mnuScanForUnknownMods_Click()
     
 End Sub
 
+Private Sub mnuScanProcForStealthInjects_Click()
+    If liProc Is Nothing Then Exit Sub
+    Dim pid As Long
+    pid = CLng(liProc.Tag)
+    frmInjectionScan.FindStealthInjections pid, liProc.SubItems(3)
+End Sub
+
 Private Sub mnuScanProcsForDll_Click()
     Dim cp As New CProcessInfo
     Dim c As Collection
@@ -1120,6 +1130,8 @@ Private Sub mnuScanProcsForDll_Click()
     For Each p In c
         If p.pid <> 0 And p.pid <> 4 Then
             lblDisplay.Caption = "Scanning " & i & "/" & c.count
+            lblDisplay.Refresh
+            DoEvents
             Set m = cp.GetProcessModules(p.pid)
             If Not m Is Nothing And m.count > 0 Then
                 tmp = "pid: " & p.pid & " " & p.path
@@ -1134,8 +1146,6 @@ Private Sub mnuScanProcsForDll_Click()
                 If hit Then ret = ret & tmp & tmp2
             End If
             i = i + 1
-            DoEvents
-            lblDisplay.Refresh
         End If
     Next
     
@@ -1499,9 +1509,10 @@ Private Sub subclass_MessageReceived(hWnd As Long, wMsg As Long, wParam As Long,
                 
             ElseIf hWnd = frmApiLogger.hWnd Then
             
+                apiDataManager.HandleApiMessage msg '5.18.12
                 If ignoreAPILOG Then Exit Sub
                 If AnyOfTheseInstr(msg, txtApiIgnore) Then Exit Sub
-                If KeyExistsInCollection(cApiData, msg) Then Exit Sub
+                If KeyExistsInCollection(cApiData, msg) Then Exit Sub 'some antispam..
                 On Error Resume Next
                 cApiData.Add msg, msg
                 lvAPILog.ListItems.Add , , msg
@@ -1509,10 +1520,12 @@ Private Sub subclass_MessageReceived(hWnd As Long, wMsg As Long, wParam As Long,
             ElseIf wParam = 0 Then 'analyzer report
                 
             Else
-                
+                'directory watch info coming in...
                 msg = Trim(msg)
                 If InStr(1, msg, "C:\\") > 0 Then msg = Replace(msg, "\\", "\")
-                If InStr(1, msg, Chr(0)) > 0 Then msg = Replace(msg, Chr(0), Empty)
+                If InStr(1, msg, Chr(0)) > 0 Then msg = Replace(msg, Chr(0), Empty) 'standardize data first
+                
+                'hardcoded filters
                 If LCase(Right(msg, 4)) = ".lnk" Then Exit Sub
                 If InStr(1, msg, "C:\iDEFENSE\SysAnalyzer", vbTextCompare) > 0 Then Exit Sub
                 If InStr(1, msg, user_desktop, vbTextCompare) > 0 Then Exit Sub
@@ -1520,9 +1533,10 @@ Private Sub subclass_MessageReceived(hWnd As Long, wMsg As Long, wParam As Long,
                 If InStr(1, msg, "NTUSER.DAT") > 0 Then Exit Sub
                 If InStr(1, msg, "C:\LOG.TXT") > 0 Then Exit Sub
                 
-                If AnyOfTheseInstr(msg, txtIgnore) Then Exit Sub
-                If KeyExistsInCollection(cLogData, msg) Then Exit Sub
-                On Error Resume Next
+                If AnyOfTheseInstr(msg, txtIgnore) Then Exit Sub 'user filters
+                If KeyExistsInCollection(cLogData, msg) Then Exit Sub 'antispam
+                
+                On Error Resume Next 'logging
                 cLogData.Add msg, msg
                 tmp = Split(msg, ":", 2)
                 Set li = lvDirWatch.ListItems.Add(, , tmp(0))
@@ -1574,16 +1588,15 @@ Sub lvProcesses_ItemClick(ByVal Item As MSComctlLib.ListItem)
     txtProcess = Item.Tag
 End Sub
  
-
-
 Private Sub mnuDumpProcess_Click()
     If liProc Is Nothing Then Exit Sub
 
-MsgBox dlg.SaveDialog(AllFiles)
+    'MsgBox dlg.SaveDialog(AllFiles) 'threadlocks for unknown reason...
 
     Dim pth As String
     pth = fso.FileNameFromPath(liProc.SubItems(3)) & ".dmp"
     pth = InputBox("Enter path to dump file as:", , UserDeskTopFolder & "\" & pth)
+    'pth = dlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save Dump as", , Me.hWnd, pth)
     If Len(pth) = 0 Then Exit Sub
 
     Dim cmod As CModule
@@ -1594,7 +1607,7 @@ MsgBox dlg.SaveDialog(AllFiles)
     Set col = diff.CProc.GetProcessModules(pid)
     Set cmod = col(1)
 
-    Call diff.CProc.DumpProcessMemory(pid, cmod.base, cmod.Size, pth)
+    Call diff.CProc.DumpProcessMemory(pid, cmod.base, cmod.size, pth)
 
 End Sub
 

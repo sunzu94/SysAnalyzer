@@ -27,15 +27,17 @@ Public Declare Function CloseWatch Lib "dir_watch.dll" (ByVal threadID As Long) 
 Public Declare Function IDEStartWatch Lib "./../../dir_watch.dll" Alias "StartWatch" (ByVal dirPath As String) As Long
 Public Declare Function IDECloseWatch Lib "./../../dir_watch.dll" Alias "CloseWatch" (ByVal threadID As Long) As Long
 
+Public Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
 
 Global fso As New clsFileSystem
-Global dlg As New clsCmnDlg
+Global dlg As New clsCmnDlg2 'comdlg threadlocks on main form?! even MS one does..
 Global hash As New CWinHash
 
 #If isSysanalyzer = 1 Then
     Global diff As New CSysDiff
     Global ado As New clsAdoKit
     Global known As New CKnownFile
+    Global apiDataManager As New CApiDataManager
 #End If
 
 Global tcpdump As String
@@ -48,8 +50,8 @@ Global cLogData As New Collection
 Global Const LANG_US = &H409
 
 Public Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
-Private Declare Function SHGetPathFromIDList Lib "Shell32" Alias "SHGetPathFromIDListA" (ByVal pidl As Long, ByVal pszPath As String) As Long
-Private Declare Function SHGetSpecialFolderLocation Lib "Shell32" (ByVal hwndOwner As Long, ByVal nFolder As Long, pidl As Long) As Long
+Private Declare Function SHGetPathFromIDList Lib "shell32" Alias "SHGetPathFromIDListA" (ByVal pidl As Long, ByVal pszPath As String) As Long
+Private Declare Function SHGetSpecialFolderLocation Lib "shell32" (ByVal hWndOwner As Long, ByVal nFolder As Long, pidl As Long) As Long
 Private Declare Sub CoTaskMemFree Lib "ole32" (ByVal pv As Long)
 Private Declare Function GetFileVersionInfo Lib "Version.dll" Alias "GetFileVersionInfoA" (ByVal lptstrFilename As String, ByVal dwhandle As Long, ByVal dwlen As Long, lpData As Any) As Long
 Private Declare Function GetFileVersionInfoSize Lib "Version.dll" Alias "GetFileVersionInfoSizeA" (ByVal lptstrFilename As String, lpdwHandle As Long) As Long
@@ -188,8 +190,8 @@ Function LaunchStrings(Data As String, Optional isPath As Boolean = False)
 
 End Function
 
-Sub SaveMySetting(key, value)
-    SaveSetting "iDefense", App.exename, key, value
+Sub SaveMySetting(key, Value)
+    SaveSetting "iDefense", App.exename, key, Value
 End Sub
 
 Function GetMySetting(key, def)
@@ -285,7 +287,7 @@ End Function
 
 Function AvailableInterfaces() As Collection
   
-    Dim hSocket As Long, Size As Long, count As Integer
+    Dim hSocket As Long, size As Long, count As Integer
     Dim i As Integer, lngIp As Long, ip(3) As Byte
     Dim sIp As String
     Dim ret As New Collection
@@ -303,9 +305,9 @@ Function AvailableInterfaces() As Collection
     WSAStartup &H202, WSAInfo
     hSocket = socket(AF_INET, 1, 0)
     If hSocket = INVALID_SOCKET Then Exit Function
-    If WSAIoctl(hSocket, SIO_GET_INTERFACE_LIST, ByVal 0, 0, buf, 1024, Size, ByVal 0, ByVal 0) Then GoTo failed
+    If WSAIoctl(hSocket, SIO_GET_INTERFACE_LIST, ByVal 0, 0, buf, 1024, size, ByVal 0, ByVal 0) Then GoTo failed
     
-    count = CInt(Size / 76) - 1
+    count = CInt(size / 76) - 1
      
     For i = 0 To count
         lngIp = buf.iInfo(i).iiAddress.AddressIn.sin_addr
@@ -482,14 +484,14 @@ End Function
 
 
 
-Sub push(ary, value) 'this modifies parent ary object
+Sub push(ary, Value) 'this modifies parent ary object
     On Error GoTo init
     Dim x As Integer
     x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
-    ary(UBound(ary)) = value
+    ary(UBound(ary)) = Value
     Exit Sub
-init:     ReDim ary(0): ary(0) = value
+init:     ReDim ary(0): ary(0) = Value
 End Sub
 
 

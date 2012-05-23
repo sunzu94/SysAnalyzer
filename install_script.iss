@@ -15,6 +15,8 @@ Source: ./dependancy\vbDevKit.dll; DestDir: {win}; Flags: uninsneveruninstall re
 Source: ./dependancy\adoKit.dll; DestDir: {win}; Flags: uninsneveruninstall regserver
 Source: ./dependancy\mscomctl.ocx; DestDir: {win}; Flags: uninsneveruninstall regserver
 Source: ./dependancy\MSWINSCK.OCX; DestDir: {win}; Flags: uninsneveruninstall regserver
+Source: ./dependancy\hexed.ocx; DestDir: {win}; Flags: uninsneveruninstall regserver
+Source: ./dependancy\zlib.dll; DestDir: {app};
 Source: ./\source\apilog_dll\injector\Project1.vbw; DestDir: {app}\source\apilog_dll\injector
 Source: ./\source\apilog_dll\injector\hook.ico; DestDir: {app}\source\apilog_dll\injector
 Source: ./\source\apilog_dll\injector\Form2.frx; DestDir: {app}\source\apilog_dll\injector
@@ -101,6 +103,9 @@ Source: source\sysanalyzer\frmInjectionScan.frm; DestDir: {app}\source\sysanalyz
 Source: source\sysanalyzer\CMemory.cls; DestDir: {app}\source\sysanalyzer
 Source: source\apilog_dll\injector\frmListProcess.frm; DestDir: {app}\source\apilog_dll\injector
 Source: ShellExt.exe; DestDir: {app}
+Source: source\sysanalyzer\CApiHandle.cls; DestDir: {app}\source\sysanalyzer
+Source: source\sysanalyzer\CApiDataManager.cls; DestDir: {app}\source\sysanalyzer
+Source: source\sysanalyzer\modZLIB.bas; DestDir: {app}\source\sysanalyzer
 
 [Dirs]
 Name: {app}\source

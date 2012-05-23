@@ -155,7 +155,7 @@ Public Sub ShowDlls(pid As Long)
     
     For Each cm In c
         Set li = lv2.ListItems.Add(, , Hex(cm.base))
-        li.SubItems(1) = Hex(cm.Size)
+        li.SubItems(1) = Hex(cm.size)
         li.SubItems(2) = cm.path
         
         If known.Loaded And known.Ready Then
@@ -197,7 +197,7 @@ Public Sub ShowMemoryMap(pid As Long)
     lv.ListItems.Clear
     For Each cMem In c
         Set li = lv.ListItems.Add(, , Hex(cMem.base))
-        li.SubItems(1) = Hex(cMem.Size)
+        li.SubItems(1) = Hex(cMem.size)
         li.SubItems(2) = cMem.MemTypeAsString()
         li.SubItems(3) = cMem.ProtectionAsString()
         li.SubItems(4) = cMem.ModuleName
@@ -270,11 +270,12 @@ Private Sub mnuDumpDll_Click()
     Dim orgPath As String
     On Error Resume Next
     
-     MsgBox dlg.SaveDialog(AllFiles)
+    'MsgBox dlg.SaveDialog(AllFiles)
      
     orgPath = selli.SubItems(2)
     n = fso.FileNameFromPath(orgPath) & ".dmp"
     f = InputBox("Save file as: ", , UserDeskTopFolder & "\" & n)
+    'f = dlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save Dll Dump as:", , Me.hWnd, n)
     If Len(f) = 0 Then Exit Sub
     
     If pi.DumpProcessMemory(active_pid, CLng("&h" & selli.Text), CLng("&h" & selli.SubItems(1)), f) Then
@@ -316,6 +317,7 @@ Private Sub mnuSaveMemory_Click()
     Dim f As String
     On Error Resume Next
     f = InputBox("Save file as: ", , UserDeskTopFolder & "\" & selli.Text & ".mem")
+    'f = dlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save Memory as:", , Me.hWnd, selli.Text & ".mem")
     If Len(f) = 0 Then Exit Sub
     If pi.DumpProcessMemory(active_pid, CLng("&h" & selli.Text), CLng("&h" & selli.SubItems(1)), f) Then
         MsgBox "File successfully saved"
@@ -345,7 +347,7 @@ Private Sub mnuSearchMemory_Click()
     'abort = False
     
     Dim base As Long
-    Dim Size As Long
+    Dim size As Long
     
     For Each li In lv.ListItems
         'If abort = True Then Exit For
@@ -354,8 +356,8 @@ Private Sub mnuSearchMemory_Click()
         DoEvents
         lv.Refresh
         base = CLng("&h" & li.Text)
-        Size = CLng("&h" & li.SubItems(1))
-        m = pi.ReadMemory(active_pid, base, Size)
+        size = CLng("&h" & li.SubItems(1))
+        m = pi.ReadMemory(active_pid, base, size)
         a = InStr(1, m, s, vbTextCompare)
         b = InStr(1, m, s2, vbTextCompare)
         If a > 0 Then ret = ret & "pid: " & li.Text & " base: " & li.SubItems(1) & " offset: " & Hex(base + a) & " ASCII " & li.SubItems(5) & vbCrLf
@@ -393,5 +395,8 @@ Private Sub mnuViewMemory_Click()
         List1.AddItem "Failed to readmemory?"
         Exit Sub
     End If
-    frmReport.ShowList HexDump(s, , base), False, selli.Text & ".mem", False
+    'frmReport.ShowList HexDump(s, , base), False, selli.Text & ".mem", False
+    Dim f As New rhexed.CHexEditor
+    f.Editor.AdjustBaseOffset = base
+    f.Editor.LoadString s
 End Sub
