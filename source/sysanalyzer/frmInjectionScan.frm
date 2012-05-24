@@ -320,8 +320,8 @@ Private Sub mnuSave_Click()
     Dim pid As Long
     On Error Resume Next
     pid = CLng(selli.Text)
-    f = InputBox("Save file as: ", , UserDeskTopFolder & "\" & pid & "_" & selli.SubItems(1) & ".mem")
-    'f = dlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save As:", , Me.hWnd, pid & "_" & selli.SubItems(1) & ".mem")
+    'f = InputBox("Save file as: ", , UserDeskTopFolder & "\" & pid & "_" & selli.SubItems(1) & ".mem")
+    f = frmDlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save As:", , Me, pid & "_" & selli.SubItems(1) & ".mem")
     If Len(f) = 0 Then Exit Sub
     If pi.DumpProcessMemory(pid, CLng("&h" & selli.SubItems(1)), CLng("&h" & selli.SubItems(2)), f) Then
         MsgBox "File successfully saved"

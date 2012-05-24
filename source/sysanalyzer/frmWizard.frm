@@ -440,7 +440,7 @@ End Sub
 
 
 Private Sub Form_Load()
-        
+            
     On Error GoTo hell
     
     Dim c As Collection
@@ -649,6 +649,7 @@ Private Sub tmrDelayShell_Timer()
     
     frmMain.samplePath = txtBinary
     frmMain.StartCountDown CInt(txtDelay)
+    Unload Me
     
 Exit Sub
 hell:

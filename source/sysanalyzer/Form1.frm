@@ -866,7 +866,7 @@ Sub StartCountDown(xSecs As Integer)
     lblTimer = seconds
     Me.Visible = True
     tmrCountDown.Enabled = True
-    Unload frmWizard
+    'Unload frmWizard
     lastViewMode = 0
     
 End Sub
@@ -1595,8 +1595,8 @@ Private Sub mnuDumpProcess_Click()
 
     Dim pth As String
     pth = fso.FileNameFromPath(liProc.SubItems(3)) & ".dmp"
-    pth = InputBox("Enter path to dump file as:", , UserDeskTopFolder & "\" & pth)
-    'pth = dlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save Dump as", , Me.hWnd, pth)
+    'pth = InputBox("Enter path to dump file as:", , UserDeskTopFolder & "\" & pth)
+    pth = frmDlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save Dump as", , Me, pth)
     If Len(pth) = 0 Then Exit Sub
 
     Dim cmod As CModule

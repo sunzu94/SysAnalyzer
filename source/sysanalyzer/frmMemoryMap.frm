@@ -274,8 +274,8 @@ Private Sub mnuDumpDll_Click()
      
     orgPath = selli.SubItems(2)
     n = fso.FileNameFromPath(orgPath) & ".dmp"
-    f = InputBox("Save file as: ", , UserDeskTopFolder & "\" & n)
-    'f = dlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save Dll Dump as:", , Me.hWnd, n)
+    'f = InputBox("Save file as: ", , UserDeskTopFolder & "\" & n)
+    f = frmDlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save Dll Dump as:", , Me, n)
     If Len(f) = 0 Then Exit Sub
     
     If pi.DumpProcessMemory(active_pid, CLng("&h" & selli.Text), CLng("&h" & selli.SubItems(1)), f) Then
@@ -316,8 +316,8 @@ Private Sub mnuSaveMemory_Click()
     If selli Is Nothing Then Exit Sub
     Dim f As String
     On Error Resume Next
-    f = InputBox("Save file as: ", , UserDeskTopFolder & "\" & selli.Text & ".mem")
-    'f = dlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save Memory as:", , Me.hWnd, selli.Text & ".mem")
+    'f = InputBox("Save file as: ", , UserDeskTopFolder & "\" & selli.Text & ".mem")
+    f = frmDlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save Memory as:", , Me, selli.Text & ".mem")
     If Len(f) = 0 Then Exit Sub
     If pi.DumpProcessMemory(active_pid, CLng("&h" & selli.Text), CLng("&h" & selli.SubItems(1)), f) Then
         MsgBox "File successfully saved"

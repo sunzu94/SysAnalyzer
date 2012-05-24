@@ -106,6 +106,7 @@ Source: ShellExt.exe; DestDir: {app}
 Source: source\sysanalyzer\CApiHandle.cls; DestDir: {app}\source\sysanalyzer
 Source: source\sysanalyzer\CApiDataManager.cls; DestDir: {app}\source\sysanalyzer
 Source: source\sysanalyzer\modZLIB.bas; DestDir: {app}\source\sysanalyzer
+Source: source\sysanalyzer\frmDlg.frm; DestDir: {app}\source\sysanalyzer
 
 [Dirs]
 Name: {app}\source
