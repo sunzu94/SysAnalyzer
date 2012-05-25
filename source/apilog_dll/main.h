@@ -30,7 +30,7 @@ typedef struct{
 //and 24 byte empty buffer inline which we assemble commands into in the
 //hook proceedure. 
 //#define BLOCK _asm int 3
-#define ALLOC_THUNK(prototype) __declspec(naked) prototype { _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop}	   
+#define ALLOC_THUNK(prototype) __declspec(naked) prototype { _asm int 3 _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop _asm int 3 _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop _asm nop _asm int 3}	   
 
 ALLOC_THUNK( HMODULE  __stdcall Real_LoadLibraryA(LPCSTR a0) );
 ALLOC_THUNK( BOOL     __stdcall Real_WriteFile(HANDLE a0,LPCVOID a1,DWORD a2,LPDWORD a3,LPOVERLAPPED a4) ); 
@@ -103,6 +103,9 @@ ALLOC_THUNK( int __stdcall Real_RegSetValueExA ( HKEY a0, LPCSTR a1, DWORD a2, D
 
 ALLOC_THUNK( VOID __stdcall Real_Sleep( DWORD a0 ) );
 ALLOC_THUNK( DWORD __stdcall Real_GetTickCount( VOID ) );
+ALLOC_THUNK( int __stdcall Real_ZwQuerySystemInformation(int SystemInformationClass, int SystemInformation, int SystemInformationLength, int ReturnLength) );
+ALLOC_THUNK( int __stdcall Real_ZwSystemDebugControl( int Command, int InputBuffer, int InputBufferLength,int OutputBuffer, int OutputBufferLength, int ReturnLength) );
+ALLOC_THUNK( BOOL __stdcall Real_CloseHandle( HANDLE a0 ) );
 
 void msg(char);
 void LogAPI(const char*, ...);
@@ -114,6 +117,8 @@ DWORD (__stdcall *GetModuleFileNameExA)(HANDLE hProcess, HMODULE hModule, LPSTR 
 bool Warned=false;
 HWND hServer=0;
 int DumpAt=0;
+
+extern int myPID;
 
 void GetDllPath(char* buf){ //returns full path of dll
 	
@@ -241,6 +246,7 @@ void GetHive(HKEY hive, char* buf){
 
 
 
+//todo: if we cant find message window dump to log file?
 
 void FindVBWindow(){
 	char *vbIDEClassName = "ThunderFormDC" ;
@@ -266,17 +272,25 @@ void FindVBWindow(){
 
 } 
 
+char msgbuf[0x1001];
+
 int msg(char *Buffer){
   
   if(hServer==0) FindVBWindow();
   
   cpyData cpStructData;
   
-  cpStructData.cbSize = strlen(Buffer) ;
-  cpStructData.lpData = (int)Buffer;
+  _snprintf(msgbuf, 0x1000, "%x,%s", myPID, Buffer);
+
+  cpStructData.cbSize = strlen(msgbuf) ;
+  cpStructData.lpData = (int)msgbuf;
   cpStructData.dwFlag = 3;
   
-  return SendMessage(hServer, WM_COPYDATA, 0,(LPARAM)&cpStructData);
+  int ret = SendMessage(hServer, WM_COPYDATA, 0,(LPARAM)&cpStructData);
+
+  //if ret == 0x then do something special like reconfig ?
+
+  return ret;
 
 } 
 

@@ -148,9 +148,11 @@ Public Sub ShowDlls(pid As Long)
     lv.Visible = False
     lv2.Visible = True
     active_pid = pid
-    'Me.Visible = True
+    Me.Visible = True
     
-     
+    On Error Resume Next
+    If known.Loaded And known.Ready Then ado.OpenConnection
+    
     Set c = pi.GetProcessModules(pid)
     
     For Each cm In c
@@ -166,7 +168,8 @@ Public Sub ShowDlls(pid As Long)
         DoEvents
     Next
     
-    Me.Show
+    If known.Loaded And known.Ready Then ado.CloseConnection
+    'Me.Show
     
 End Sub
 
@@ -181,7 +184,7 @@ Public Sub ShowMemoryMap(pid As Long)
     Dim knownModules As Long
     
     On Error Resume Next
-    
+    If known.Loaded And known.Ready Then ado.OpenConnection
     active_pid = pid
     
     Me.Visible = True
@@ -203,9 +206,11 @@ Public Sub ShowMemoryMap(pid As Long)
         li.SubItems(4) = cMem.ModuleName
         
         If known.Loaded And known.Ready Then
-            mm = known.isFileKnown(cMem.ModuleName)
-            li.ListSubItems(4).ForeColor = IIf(mm = exact_match, vbGreen, vbRed)
-            knownModules = knownModules + 1
+            If Len(cMem.ModuleName) > 0 Then
+                mm = known.isFileKnown(cMem.ModuleName)
+                li.ListSubItems(4).ForeColor = IIf(mm = exact_match, vbGreen, vbRed)
+                knownModules = knownModules + 1
+            End If
         End If
             
         If Len(cMem.ModuleName) > 0 Then modules = modules + 1
@@ -231,7 +236,10 @@ Public Sub ShowMemoryMap(pid As Long)
     
     List1.AddItem "Found " & modules & " modules and " & execSections & " executable sections"
     
-    If known.Loaded And known.Ready Then List1.AddItem knownModules & " known modules found"
+    If known.Loaded And known.Ready Then
+        List1.AddItem knownModules & " known modules found"
+        ado.CloseConnection
+    End If
     
     
 End Sub

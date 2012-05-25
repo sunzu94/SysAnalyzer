@@ -11,8 +11,17 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-Dim handles As New Collection 'of CApiHandle
+Dim Handles As New Collection 'of CApiHandle
 'handles numbers are unique (pertype? or across all?) but can be reused once closed...
+
+Enum captureTypes
+    ct_file = 0
+    ct_WriteProcMem = 1
+    ct_send = 2
+    ct_recv = 3
+End Enum
+
+Event CaptureMade(t As captureTypes, data As String)
 
 Private Function AddHandle(data, h, rtype As rTypes)
     Dim ch As CApiHandle
@@ -21,12 +30,12 @@ Private Function AddHandle(data, h, rtype As rTypes)
     ch.Resource = data
     ch.handle = h
     ch.rtype = rtype
-    handles.Add ch
+    Handles.Add ch
 End Function
 
 Private Function HandleExists(h, rtype As rTypes) As Boolean
     Dim ch As CApiHandle
-    For Each ch In handles
+    For Each ch In Handles
         If ch.handle = h And ch.rtype = rtype Then
             HandleExists = True
             Exit Function
@@ -37,19 +46,24 @@ End Function
 Private Function RemoveHandle(h, rtype As rTypes)
     Dim i As Long
     Dim cw As CApiHandle
-    For i = 1 To handles.count
-        Set cw = handles(i)
+    For i = 1 To Handles.Count
+        Set cw = Handles(i)
         If cw.handle = h And cw.rtype = rtype Then
             Set cw = Nothing
-            handles.Remove i
+            Handles.Remove i
         End If
     Next
 End Function
 
 
-Function HandleApiMessage(msg As String)
+Function HandleApiMessage(msg)
     'on CloseHandle - copy files to /analysis
     'move WriteProcessMemory injections from c:\ to /analysis/injects
     'keep readable report of files/ports/connections ? data send/received?
     'extract buffers from process for send/recv/wpm
+    
+    'dataformat: pid,retAddr message
+    
+    
+    
 End Function

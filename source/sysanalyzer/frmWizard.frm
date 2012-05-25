@@ -14,6 +14,17 @@ Begin VB.Form frmWizard
    ScaleWidth      =   9000
    ShowInTaskbar   =   0   'False
    StartUpPosition =   2  'CenterScreen
+   Begin VB.CheckBox chkShowWizardOnStartup 
+      BackColor       =   &H005A5963&
+      Caption         =   "Show Wizard Form on startup"
+      ForeColor       =   &H00E0E0E0&
+      Height          =   315
+      Left            =   120
+      TabIndex        =   21
+      Top             =   3930
+      Visible         =   0   'False
+      Width           =   2445
+   End
    Begin VB.TextBox txtArgs 
       Height          =   285
       Left            =   4350

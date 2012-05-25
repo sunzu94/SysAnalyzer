@@ -63,6 +63,9 @@ int noRegistry = 0;
 int blockOpenProcess = 0;
 int noGetProc = 0;
 int queryGetTick = 0;
+int blockDebugControl = 0;
+int ignoreExitProcess = 0;
+int myPID = 0;
 
 BOOL APIENTRY DllMain( HANDLE hModule, 
                        DWORD  ul_reason_for_call, 
@@ -111,13 +114,51 @@ char* findProcessByPid(int pid){
 		if( pe.th32ProcessID == pid ) return strlower(strdup(pe.szExeFile));
 	}
 
-	return strdup("-- Could not find pid with ToolHelp Api! --");
+	return strdup("-- Not in ToolHelp Api! --");
 
 }
 
 
 //___________________________________________________hook implementations _________
 
+BOOL __stdcall My_CloseHandle(HANDLE a0)
+{
+    
+	LogAPI("%x     CloseHandle(h=%x)", CalledFrom(), a0);
+
+    BOOL ret = 0;
+    try {
+        ret = Real_CloseHandle(a0);
+    } 
+	catch(...){	} 
+    return ret;
+}
+
+
+int My_ZwQuerySystemInformation(int SystemInformationClass, int SystemInformation, int SystemInformationLength, int ReturnLength){
+
+	//todo if SystemProcessInformation rename tool processes to bs..
+	LogAPI("%x     ZwQuerySystemInformation(class=%x)", CalledFrom(), SystemInformationClass);
+
+	return Real_ZwQuerySystemInformation(SystemInformationClass, SystemInformation, SystemInformationLength, ReturnLength);
+
+}
+
+int My_ZwSystemDebugControl( int Command, int InputBuffer, int InputBufferLength,int OutputBuffer, int OutputBufferLength, int ReturnLength){
+
+	char* blk = blockDebugControl ? "BLOCKED" : "";
+
+	int ret = 0;
+	
+	if(blockDebugControl == 0){ //causes endless loop in sample to ignore this..
+		ret = Real_ZwSystemDebugControl( Command,  InputBuffer, InputBufferLength,OutputBuffer, OutputBufferLength, ReturnLength);
+	}
+	
+	LogAPI("%x     ZwSystemDebugControl(cmd=%x, dest=%x, size=%x, src=%x, sz=%x) = %x - %s", CalledFrom(), Command, OutputBuffer, OutputBufferLength, InputBuffer, InputBufferLength, ret, blk);
+
+	return ret;
+
+}
 
 VOID __stdcall My_Sleep( DWORD a0 )
 {
@@ -522,12 +563,11 @@ int My_URLDownloadToCacheFile(int a0,char* a1, char* a2, DWORD a3, DWORD a4, int
 void __stdcall My_ExitProcess(UINT a0)
 {
     
-	LogAPI("%x     ExitProcess()", CalledFrom());
+	char* s = ignoreExitProcess ? " - IGNORED" : "";
 
-    try {
-        Real_ExitProcess(a0);
-    }
-	catch(...){	} 
+	LogAPI("%x     ExitProcess() %s", CalledFrom(),s);
+
+    if(ignoreExitProcess==0) Real_ExitProcess(a0);
 
 }
 
@@ -580,7 +620,7 @@ HANDLE __stdcall My_OpenProcess(DWORD a0,BOOL a1,DWORD a2)
 	char *target = findProcessByPid(a2);
 
 	if(blockOpenProcess){
-		LogAPI("%x     OpenProcess(%s) -  BLOCKED", CalledFrom(), target );
+		LogAPI("%x     OpenProcess(pid:%x) %s -  BLOCKED", CalledFrom(), a2, target );
 		free(target);
 		return 0;
 	}
@@ -663,13 +703,13 @@ BOOL __stdcall My_CreateProcessA(LPCSTR a0,LPSTR a1,LPSECURITY_ATTRIBUTES a2,LPS
 
 	unsigned long (__stdcall  *lpfnLoadLib)(void *);
 
+	char* flags = a5 == CREATE_SUSPENDED ? "CREATE_SUSPENDED" : "";
+
 	int buflen, ret ; 
 	unsigned long writeLen, hThread;
 	HANDLE hProcess, lpdllPath;
    
 	char dllPath[MAX_PATH]; // = "api_log.dll\x00";
-
-	LogAPI("%x     CreateProcessA(%s,%s,%x,%s)", CalledFrom(), a0, a1, a6, a7);
 
     BOOL retv = 0;
     try {
@@ -698,9 +738,17 @@ BOOL __stdcall My_CreateProcessA(LPCSTR a0,LPSTR a1,LPSECURITY_ATTRIBUTES a2,LPS
 		ret = (int)Real_CreateRemoteThread(hProcess, 0, 0, lpfnLoadLib, lpdllPath, 0, &hThread);
 		LogAPI("*****   CreateRemoteThread=%x" , ret);
             
-	    ResumeThread(pi->hThread);
+	    if(a5 != CREATE_SUSPENDED) ResumeThread(pi->hThread);
 
-    }
+		if(strlen(flags) > 1){
+			LogAPI("%x     CreateProcessA(%s,%s,%x,%s, %s) hProc=%x hThread=%x", CalledFrom(), a0, a1, a6, a7, flags, pi->hProcess, pi->hThread);
+		}else{
+			LogAPI("%x     CreateProcessA(%s,%s,%x,%s,flags=0x%x) hProc=%x hThread=%x", CalledFrom(), a0, a1, a6, a7, a5, pi->hProcess, pi->hThread);
+		}
+
+		Real_CloseHandle(hProcess);
+
+	}
 	catch(...){	} 
 
     return retv;
@@ -761,7 +809,7 @@ BOOL __stdcall My_WriteProcessMemory(HANDLE a0,LPVOID a1,LPVOID a2,DWORD a3,LPDW
 	sprintf(buf, "c:\\wpm_h_%x_mem_%x.bin", a0, a1);
 	HANDLE h = Real_CreateFileA(buf, GENERIC_READ|GENERIC_WRITE ,0,0,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,0); 
 	/*Real_*/WriteFile(h,a2,a3,&written,0);
-	CloseHandle(h);
+	Real_CloseHandle(h);
 
 	LogAPI("%x     WriteProcessMemory(h=%x,base=%x,buf=%x,len=%x) Saved as %s", CalledFrom(), a0,a1,a2,a3,buf);
 
@@ -813,7 +861,7 @@ FARPROC __stdcall My_GetProcAddress(HMODULE a0,LPCSTR a1)
     }
 	catch(...){	} 
 	
-	LogAPI("%x     GetProcAddress(%s)", CalledFrom(), a1);
+	if(noGetProc==0) LogAPI("%x     GetProcAddress(%s)", CalledFrom(), a1);
 
     return ret;
 }
@@ -1218,27 +1266,38 @@ void DoHook(void* real, void* hook, void* thunk, char* name){
 
 
 //Macro wrapper to build DoHook() call
-#define ADDHOOK(name) DoHook( name, My_##name, Real_##name, #name );	
-
-
-void InstallHooks(void)
-{
-
-	msg("***** Installing Hooks *****");	
- 
+#define ADDHOOK(name) DoHook( name, My_##name, Real_##name, #name );
+	
+int ConfigHandlerThreadProc(int x){
+	
 	noSleep = msg("***config:noSleep");
 	noGetProc = msg("***config:noGetProc");
 	noRegistry = msg("***config:noRegistry");
 	queryGetTick = msg("***config:queryGetTick");
 	blockOpenProcess = msg("***config:blockOpenProcess");
+	blockDebugControl = msg("***config:blockDebugControl");
+    ignoreExitProcess = msg("***config:ignoreExitProcess");
 
 	if(noSleep) msg("OPTION_SET = noSleep");
 	if(noRegistry) msg("OPTION_SET = noRegistry");
 	if(noGetProc) msg("OPTION_SET = noGetProc");
 	if(queryGetTick) msg("OPTION_SET = queryGetTick");
 	if(blockOpenProcess) msg("OPTION_SET = blockOpenProcess");
-	
-	if(noGetProc==0) ADDHOOK(GetProcAddress);     //logging disabled hook proc (spam)
+	if(blockDebugControl) msg("OPTION_SET = blockDebugControl");
+	if(ignoreExitProcess) msg("OPTION_SET = ignoreExitProcess");
+
+	return 1;
+
+}
+
+void InstallHooks(void)
+{
+
+	myPID = GetCurrentProcessId();
+	msg("***** Installing Hooks *****");	
+	LogAPI("***config:handler:%x", ConfigHandlerThreadProc);
+	ConfigHandlerThreadProc(0); //first one we do automatically to stay in sync...
+
 
 	/* not all that useful and/or spamy...
 		ADDHOOK(WaitForSingleObject)  
@@ -1250,8 +1309,10 @@ void InstallHooks(void)
 		ADDHOOK(ReadFile)
 		ADDHOOK(__setargv);
 		ADDHOOK(GetVersion)
+		ADDHOOK(GetCurrentProcessId)
 	*/
 
+	ADDHOOK(GetProcAddress);  //have to always hook this because its used in CreateProcess follower...
 	ADDHOOK(LoadLibraryA); 
 	ADDHOOK(CreateFileA);
 	ADDHOOK(_lcreat);
@@ -1281,14 +1342,13 @@ void InstallHooks(void)
 	ADDHOOK(system);     //are these hooking the dll version for sure?
 	ADDHOOK(fopen);      //
 
-	ADDHOOK(URLDownloadToFileA);
-	ADDHOOK(URLDownloadToCacheFile);
+	ADDHOOK(URLDownloadToFileA);    //todo: in sclog this had to go manual lookup test me..
+	ADDHOOK(URLDownloadToCacheFile); // ""
 	ADDHOOK(GetCommandLineA);   //useful for finding end of packer
 	ADDHOOK(IsDebuggerPresent);
 	
 	ADDHOOK(GetVersionExA);
 	ADDHOOK(GlobalAlloc)
-	ADDHOOK(GetCurrentProcessId)
 	ADDHOOK(DebugActiveProcess)
 	ADDHOOK(GetSystemTime)
 	ADDHOOK(CreateMutex)
@@ -1314,7 +1374,28 @@ void InstallHooks(void)
 
 	ADDHOOK(Sleep)
 	ADDHOOK(GetTickCount)
-	 	
+	ADDHOOK(CloseHandle)
+
+
+	void* real = Real_GetProcAddress( Real_GetModuleHandleA("ntdll.dll"), "ZwQuerySystemInformation");
+	/*if ( !InstallHook( real, My_ZwQuerySystemInformation, Real_ZwQuerySystemInformation) ){ 
+		msg("Install hook ZwQuerySystemInformation failed...Error: \r\n");
+		ExitProcess(0);
+	}
+
+	real = Real_GetProcAddress( Real_GetModuleHandleA("ntdll.dll"), "ZwSystemDebugControl");
+	if ( !InstallHook( real, My_ZwSystemDebugControl, Real_ZwSystemDebugControl) ){ 
+		msg("Install hook ZwSystemDebugControl failed...Error: \r\n");
+		ExitProcess(0);
+	}*/
+
+	real = Real_GetProcAddress( Real_GetModuleHandleA("ntdll.dll"), "NtSystemDebugControl");
+	if ( !InstallHook( real, My_ZwSystemDebugControl, Real_ZwSystemDebugControl) ){ 
+		msg("Install hook NtSystemDebugControl failed...Error: \r\n");
+		ExitProcess(0);
+	}
+
+	
 }
 
 

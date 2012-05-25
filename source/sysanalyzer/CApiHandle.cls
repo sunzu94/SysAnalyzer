@@ -14,6 +14,7 @@ Attribute VB_Exposed = False
 Public Resource As String
 Public handle As Long
 Public rtype As rTypes
+Public pid As Long
 
 Public Enum rTypes
     rtFile = 0

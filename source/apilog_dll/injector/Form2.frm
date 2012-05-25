@@ -1,77 +1,182 @@
 VERSION 5.00
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
 Begin VB.Form Form2 
    Caption         =   "ApiLogger"
    ClientHeight    =   7665
-   ClientLeft      =   60
-   ClientTop       =   345
-   ClientWidth     =   10275
+   ClientLeft      =   165
+   ClientTop       =   450
+   ClientWidth     =   13545
    Icon            =   "Form2.frx":0000
    LinkTopic       =   "Form2"
    ScaleHeight     =   7665
-   ScaleWidth      =   10275
+   ScaleWidth      =   13545
    StartUpPosition =   3  'Windows Default
+   Begin MSComctlLib.ListView lvProc 
+      Height          =   1515
+      Left            =   0
+      TabIndex        =   36
+      Top             =   210
+      Width           =   3165
+      _ExtentX        =   5583
+      _ExtentY        =   2672
+      View            =   3
+      LabelEdit       =   1
+      LabelWrap       =   -1  'True
+      HideSelection   =   -1  'True
+      FullRowSelect   =   -1  'True
+      GridLines       =   -1  'True
+      _Version        =   393217
+      ForeColor       =   -2147483640
+      BackColor       =   -2147483643
+      BorderStyle     =   1
+      Appearance      =   1
+      NumItems        =   4
+      BeginProperty ColumnHeader(1) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+         Text            =   "pid"
+         Object.Width           =   1235
+      EndProperty
+      BeginProperty ColumnHeader(2) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+         SubItemIndex    =   1
+         Text            =   "Process"
+         Object.Width           =   2540
+      EndProperty
+      BeginProperty ColumnHeader(3) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+         SubItemIndex    =   2
+         Text            =   "Status"
+         Object.Width           =   2540
+      EndProperty
+      BeginProperty ColumnHeader(4) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+         SubItemIndex    =   3
+         Key             =   "reconfig"
+         Text            =   "Reconfig"
+         Object.Width           =   2540
+      EndProperty
+   End
+   Begin MSComctlLib.ListView lv 
+      Height          =   3585
+      Left            =   3330
+      TabIndex        =   35
+      Top             =   4110
+      Width           =   10185
+      _ExtentX        =   17965
+      _ExtentY        =   6324
+      View            =   3
+      LabelEdit       =   1
+      LabelWrap       =   -1  'True
+      HideSelection   =   -1  'True
+      FullRowSelect   =   -1  'True
+      GridLines       =   -1  'True
+      _Version        =   393217
+      ForeColor       =   -2147483640
+      BackColor       =   -2147483643
+      BorderStyle     =   1
+      Appearance      =   1
+      NumItems        =   3
+      BeginProperty ColumnHeader(1) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+         Text            =   "pid"
+         Object.Width           =   1235
+      EndProperty
+      BeginProperty ColumnHeader(2) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+         SubItemIndex    =   1
+         Text            =   "msg"
+         Object.Width           =   2540
+      EndProperty
+      BeginProperty ColumnHeader(3) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+         SubItemIndex    =   2
+         Text            =   "Count"
+         Object.Width           =   2540
+      EndProperty
+   End
+   Begin MSComctlLib.TreeView TreeView1 
+      Height          =   5565
+      Left            =   60
+      TabIndex        =   33
+      Top             =   2010
+      Width           =   3195
+      _ExtentX        =   5636
+      _ExtentY        =   9816
+      _Version        =   393217
+      Style           =   7
+      Appearance      =   1
+   End
+   Begin VB.CommandButton cmdFind 
+      Caption         =   "Find"
+      Height          =   375
+      Left            =   6570
+      TabIndex        =   32
+      Top             =   3690
+      Width           =   1305
+   End
+   Begin VB.CommandButton cmdCopy 
+      Caption         =   "Copy"
+      Height          =   375
+      Left            =   8010
+      TabIndex        =   31
+      Top             =   3690
+      Width           =   1365
+   End
+   Begin VB.CommandButton cmdClear 
+      Caption         =   "Clear"
+      Height          =   375
+      Left            =   9510
+      TabIndex        =   29
+      Top             =   3690
+      Width           =   1215
+   End
    Begin VB.CommandButton cmdBrowse 
       Caption         =   "..."
       Height          =   315
-      Left            =   4920
-      TabIndex        =   33
-      Top             =   30
+      Left            =   8220
+      TabIndex        =   27
+      Top             =   0
       Width           =   615
    End
    Begin VB.CommandButton cmdSelectProcess 
       Caption         =   "PID"
       Height          =   315
-      Left            =   5580
-      TabIndex        =   32
-      Top             =   30
+      Left            =   8880
+      TabIndex        =   26
+      Top             =   0
       Width           =   555
-   End
-   Begin VB.CommandButton Command6 
-      Caption         =   "Resume"
-      Height          =   375
-      Left            =   2460
-      TabIndex        =   31
-      Top             =   3630
-      Width           =   1425
-   End
-   Begin VB.CommandButton Command5 
-      Caption         =   "Suspend"
-      Height          =   375
-      Left            =   1110
-      TabIndex        =   30
-      Top             =   3630
-      Width           =   1305
-   End
-   Begin VB.CommandButton cmdTerminate 
-      Caption         =   "Terminate"
-      Height          =   375
-      Left            =   3930
-      TabIndex        =   29
-      Top             =   3630
-      Width           =   1335
    End
    Begin VB.CommandButton Command4 
       Caption         =   "Re-Apply"
       Height          =   315
-      Left            =   6180
-      TabIndex        =   21
-      Top             =   1440
+      Left            =   9480
+      TabIndex        =   18
+      Top             =   1410
       Width           =   1305
    End
    Begin VB.Frame Frame1 
       Caption         =   " Api Startup Logging Options "
-      Height          =   3435
-      Left            =   7590
-      TabIndex        =   19
-      Top             =   60
+      Height          =   4065
+      Left            =   10890
+      TabIndex        =   16
+      Top             =   30
       Width           =   2565
+      Begin VB.CheckBox chkIgnoreExitProcess 
+         Caption         =   "Ignore ExitProcess"
+         Height          =   315
+         Left            =   180
+         TabIndex        =   30
+         Top             =   3540
+         Width           =   2055
+      End
+      Begin VB.CheckBox chkBlockDebugControl 
+         Caption         =   "Block NtSystemDebugCtl"
+         Height          =   285
+         Left            =   180
+         TabIndex        =   28
+         Top             =   3210
+         Width           =   2085
+      End
       Begin VB.CheckBox Check3 
          Caption         =   "Capture UrlDownload*"
          Enabled         =   0   'False
          Height          =   285
          Left            =   180
-         TabIndex        =   28
-         Top             =   2910
+         TabIndex        =   25
+         Top             =   2880
          Width           =   1965
       End
       Begin VB.CheckBox Check2 
@@ -79,7 +184,7 @@ Begin VB.Form Form2
          Enabled         =   0   'False
          Height          =   255
          Left            =   180
-         TabIndex        =   27
+         TabIndex        =   24
          Top             =   2550
          Width           =   1995
       End
@@ -88,7 +193,7 @@ Begin VB.Form Form2
          Enabled         =   0   'False
          Height          =   315
          Left            =   180
-         TabIndex        =   26
+         TabIndex        =   23
          Top             =   2160
          Width           =   2145
       End
@@ -96,7 +201,7 @@ Begin VB.Form Form2
          Caption         =   "Advance GetTickCount"
          Height          =   315
          Left            =   180
-         TabIndex        =   25
+         TabIndex        =   22
          Top             =   1770
          Width           =   2205
       End
@@ -104,7 +209,7 @@ Begin VB.Form Form2
          Caption         =   "Block OpenProcess"
          Height          =   345
          Left            =   180
-         TabIndex        =   24
+         TabIndex        =   21
          Top             =   1380
          Width           =   1935
       End
@@ -112,7 +217,7 @@ Begin VB.Form Form2
          Caption         =   "No Registry Hooks"
          Height          =   285
          Left            =   180
-         TabIndex        =   23
+         TabIndex        =   20
          Top             =   1020
          Width           =   1845
       End
@@ -120,7 +225,7 @@ Begin VB.Form Form2
          Caption         =   "No GetProcAddress"
          Height          =   285
          Left            =   180
-         TabIndex        =   22
+         TabIndex        =   19
          Top             =   660
          Width           =   1725
       End
@@ -128,167 +233,186 @@ Begin VB.Form Form2
          Caption         =   "Ignore Long Sleeps"
          Height          =   315
          Left            =   180
-         TabIndex        =   20
+         TabIndex        =   17
          Top             =   300
          Width           =   2055
       End
    End
    Begin VB.TextBox txtArgs 
       Height          =   315
-      Left            =   960
-      TabIndex        =   18
-      Top             =   360
-      Width           =   5145
-   End
-   Begin VB.CommandButton Command3 
-      Caption         =   "Copy"
-      Height          =   375
-      Left            =   8970
-      TabIndex        =   16
-      Top             =   3630
-      Width           =   1215
-   End
-   Begin VB.CommandButton Command2 
-      Caption         =   "Clear"
-      Height          =   375
-      Left            =   7710
+      Left            =   4260
+      OLEDropMode     =   1  'Manual
       TabIndex        =   15
-      Top             =   3630
-      Width           =   1095
+      Top             =   330
+      Width           =   5145
    End
    Begin VB.TextBox txtIgnore 
       Height          =   315
-      Left            =   960
-      TabIndex        =   14
-      Top             =   1410
+      Left            =   4260
+      TabIndex        =   13
+      ToolTipText     =   "comma seperate value list of strings to ignore logging of"
+      Top             =   1380
       Width           =   5115
    End
    Begin VB.CommandButton Command1 
       Caption         =   "Stop Logging"
       Height          =   375
-      Left            =   5700
-      TabIndex        =   12
-      Top             =   3630
-      Width           =   1905
+      Left            =   4500
+      TabIndex        =   11
+      Top             =   3690
+      Width           =   1485
    End
    Begin VB.CommandButton cmdContinue 
       Caption         =   "Continue"
       Enabled         =   0   'False
       Height          =   315
-      Left            =   6180
-      TabIndex        =   11
-      Top             =   1080
+      Left            =   9480
+      TabIndex        =   10
+      Top             =   1050
       Width           =   1305
    End
    Begin VB.TextBox txtDumpAt 
       Height          =   285
-      Left            =   960
-      TabIndex        =   9
-      Top             =   1050
+      Left            =   4260
+      TabIndex        =   8
+      Top             =   1020
       Width           =   5145
    End
    Begin VB.ListBox List2 
       Height          =   1425
-      Left            =   30
-      TabIndex        =   8
-      Top             =   2010
+      Left            =   3330
+      TabIndex        =   7
+      Top             =   1980
       Width           =   7455
    End
    Begin VB.TextBox txtDll 
       Height          =   285
-      Left            =   960
+      Left            =   4260
       OLEDropMode     =   1  'Manual
-      TabIndex        =   6
-      Top             =   720
+      TabIndex        =   5
+      Top             =   690
       Width           =   5145
    End
    Begin VB.CommandButton cmdStart 
       Caption         =   "Inject && Log"
       Height          =   315
-      Left            =   6180
-      TabIndex        =   3
-      Top             =   30
+      Left            =   9480
+      TabIndex        =   2
+      Top             =   0
       Width           =   1335
    End
    Begin VB.TextBox txtPacked 
       Height          =   315
-      Left            =   960
+      Left            =   4260
       OLEDropMode     =   1  'Manual
-      TabIndex        =   2
-      Top             =   0
+      TabIndex        =   1
+      Top             =   -30
       Width           =   3885
    End
-   Begin VB.ListBox List1 
-      BeginProperty Font 
-         Name            =   "Verdana"
-         Size            =   9
-         Charset         =   0
-         Weight          =   400
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      Height          =   3420
-      Left            =   0
-      TabIndex        =   0
-      Top             =   4140
-      Width           =   10155
+   Begin VB.Label Label9 
+      Caption         =   "Processes"
+      Height          =   285
+      Left            =   60
+      TabIndex        =   37
+      Top             =   0
+      Width           =   1335
+   End
+   Begin VB.Label Label8 
+      Caption         =   "Captures"
+      Height          =   255
+      Left            =   30
+      TabIndex        =   34
+      Top             =   1770
+      Width           =   1395
    End
    Begin VB.Label Label7 
       Caption         =   "Args"
       Height          =   285
-      Left            =   0
-      TabIndex        =   17
-      Top             =   360
+      Left            =   3300
+      TabIndex        =   14
+      Top             =   330
       Width           =   945
    End
    Begin VB.Label Label6 
-      Caption         =   "CSV Ignore"
-      Height          =   255
-      Left            =   30
-      TabIndex        =   13
+      Caption         =   "Ignore (Slow)"
+      Height          =   285
+      Left            =   3270
+      TabIndex        =   12
       Top             =   1440
       Width           =   975
    End
    Begin VB.Label Label5 
       Caption         =   "Freeze At"
       Height          =   255
-      Left            =   0
-      TabIndex        =   10
-      Top             =   1110
+      Left            =   3300
+      TabIndex        =   9
+      Top             =   1080
       Width           =   915
    End
    Begin VB.Label Label4 
       Caption         =   "Injection Details"
       Height          =   315
-      Left            =   0
-      TabIndex        =   7
-      Top             =   1770
+      Left            =   3300
+      TabIndex        =   6
+      Top             =   1740
       Width           =   1755
    End
    Begin VB.Label Label3 
       Caption         =   "Inject DLL"
       Height          =   315
-      Left            =   0
-      TabIndex        =   5
-      Top             =   750
+      Left            =   3300
+      TabIndex        =   4
+      Top             =   720
       Width           =   975
    End
    Begin VB.Label Label2 
       Caption         =   "API Call Log"
       Height          =   255
-      Left            =   0
-      TabIndex        =   4
-      Top             =   3870
+      Left            =   3300
+      TabIndex        =   3
+      Top             =   3840
       Width           =   1035
    End
    Begin VB.Label Label1 
       Caption         =   "Executable"
       Height          =   255
-      Left            =   0
-      TabIndex        =   1
-      Top             =   60
+      Left            =   3300
+      TabIndex        =   0
+      Top             =   30
       Width           =   975
+   End
+   Begin VB.Menu mnuPopup 
+      Caption         =   "mnuPopup"
+      Visible         =   0   'False
+      Begin VB.Menu mnuFind 
+         Caption         =   "Find"
+      End
+   End
+   Begin VB.Menu mnuProcess 
+      Caption         =   "Process"
+      Visible         =   0   'False
+      Begin VB.Menu mnuSuspend 
+         Caption         =   "Suspend"
+      End
+      Begin VB.Menu mnuResume 
+         Caption         =   "Resume"
+      End
+      Begin VB.Menu mnuTerminate 
+         Caption         =   "Terminate"
+      End
+      Begin VB.Menu mnuClearPidList 
+         Caption         =   "Clear"
+      End
+      Begin VB.Menu mnuUpdateConfig 
+         Caption         =   "Update Config"
+      End
+   End
+   Begin VB.Menu mnuCaptures 
+      Caption         =   "mnuCaptures"
+      Visible         =   0   'False
+      Begin VB.Menu mnuLoadSampleApiLog 
+         Caption         =   "Load Saved ApiLog"
+      End
    End
 End
 Attribute VB_Name = "Form2"
@@ -386,6 +510,9 @@ Private Declare Function NtResumeProcess Lib "ntdll.dll" (ByVal hProc As Long) A
 Dim WithEvents sc As CSubclass2
 Attribute sc.VB_VarHelpID = -1
 Dim dlg As New clsCmnDlg
+Dim fso As New CFileSystem2
+Dim WithEvents dm As CApiDataManager
+Attribute dm.VB_VarHelpID = -1
 
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (hpvDest As Any, hpvSource As Any, ByVal cbCopy As Long)
 Private Const WM_COPYDATA = &H4A
@@ -397,18 +524,21 @@ Private Type COPYDATASTRUCT
     lpData As Long
 End Type
 
-Dim pi As New CProcessInfo
+Dim cpi As New CProcessInfo
 
 Dim noLog As Boolean
 Dim readyToReturn As Boolean
 Dim ignored() As String
 Dim getTickIncrements As Long
-Dim g_hProc As Long            'used latter for ReadProcessmemory calls on send/recv bufs
+Dim liProc As ListItem
+Dim lastPid As String
+Dim lastMsg As String
 
 'todo: parse incoming api to: handles -> process/file/socket mapping..,
 '                             capture downloads
 '                             capture send/recv bufs
 '                             switch list to listview to capture more like bufs in .tag
+'          capture incoming ***config:handler:1000119f to do on the fly reconfigs with CreateRemoteProcess..
 
 Function AryIsEmpty(ary) As Boolean
   On Error GoTo oops
@@ -417,6 +547,21 @@ Function AryIsEmpty(ary) As Boolean
     AryIsEmpty = False
   Exit Function
 oops: AryIsEmpty = True
+End Function
+
+Function AddPid(hex_pid As String)
+    Dim li As ListItem
+    Dim pid As Long
+    On Error Resume Next
+    pid = CLng("&h" & hex_pid)
+    
+    For Each li In lv.ListItems
+        If li.Tag = pid Then Exit Function
+    Next
+    
+    Set li = lv.ListItems.Add(, , hex_pid)
+    li.SubItems(1) = fso.FileNameFromPath(cpi.GetProcessPath(pid))
+    li.Tag = pid
 End Function
 
 Function ignoreit(v) As Boolean
@@ -435,6 +580,7 @@ Function ignoreit(v) As Boolean
     
 End Function
 
+
 Private Sub cmdBrowse_Click()
     Dim f As String
     f = dlg.OpenDialog(AllFiles, , "Open Executable to monitor", Me.hwnd)
@@ -442,13 +588,46 @@ Private Sub cmdBrowse_Click()
     txtPacked = f
 End Sub
 
+Private Sub cmdClear_Click()
+    lv.ListItems.Clear
+End Sub
+
 Private Sub cmdContinue_Click()
     readyToReturn = True
 End Sub
 
+Private Sub cmdCopy_Click()
+    On Error Resume Next
+    Dim i As Long, t
+    Dim li As ListItem
+    For Each li In lv.ListItems
+        t = t & "pid: " & li.Text & " - " & li.SubItems(1) & vbCrLf
+    Next
+    Clipboard.Clear
+    Clipboard.SetText t
+    MsgBox Len(t) & " bytes copied"
+End Sub
+
+Private Sub cmdFind_Click()
+    Dim f As String
+    Dim t As String, i As Long
+    On Error Resume Next
+    f = InputBox("Enter string to find in log:")
+    If Len(f) = 0 Then Exit Sub
+    For i = 1 To lv.ListItems.Count
+        If InStr(1, lv.ListItems(i).SubItems(1), f, vbTextCompare) > 0 Then
+            t = t & "pid: " & lv.ListItems(i).Text & " - " & lv.ListItems(i).SubItems(1) & vbCrLf
+        End If
+    Next
+    Dim fso As New CFileSystem2
+    f = fso.GetFreeFileName(Environ("temp"))
+    fso.WriteFile f, t
+    Shell "notepad.exe """ & f & """", vbNormalFocus
+End Sub
+
 Private Sub cmdSelectProcess_Click()
     Dim cp As CProcess
-    Set cp = frmListProcess.SelectProcess(pi.GetRunningProcesses)
+    Set cp = frmListProcess.SelectProcess(cpi.GetRunningProcesses)
     If Not cp Is Nothing Then
         txtPacked = "pid:" & cp.pid
     End If
@@ -458,7 +637,7 @@ Private Sub cmdStart_Click()
         
     Dim exe As String
     
-    List1.Clear
+    lv.ListItems.Clear
     List2.Clear
     Erase ignored
     
@@ -486,8 +665,10 @@ Private Sub cmdStart_Click()
     
 End Sub
 
+ 
+
 Private Sub cmdTerminate_Click()
-    List2.AddItem "TerminateProcess = " & TerminateProcess(g_hProc, 1)
+    
 End Sub
 
 Private Sub Command1_Click()
@@ -502,47 +683,29 @@ Private Sub Command1_Click()
     
 End Sub
 
-Private Sub Command2_Click()
-    List1.Clear
-End Sub
 
-Private Sub Command3_Click()
-    On Error Resume Next
-    Dim i As Long, t
-    For i = 0 To List1.ListCount
-        t = t & List1.List(i) & vbCrLf
-    Next
-    Clipboard.Clear
-    Clipboard.SetText t
-    MsgBox Len(t) & " bytes copied"
-End Sub
 
 Private Sub Command4_Click()
     Dim i As Long
+    Dim li As ListItem
     Erase ignored
     If Len(txtIgnore) > 0 Then
         ignored = Split(txtIgnore, ",")
     End If
-    For i = List1.ListCount To 0 Step -1
-        If ignoreit(List1.List(i)) Then
-            List1.RemoveItem i
+    For i = lv.ListItems.Count To 1 Step -1
+        If ignoreit(lv.ListItems(i).SubItems(1)) Then
+            lv.ListItems.Remove i
         End If
     Next
 End Sub
 
-Private Sub Command5_Click()
-    List2.AddItem "NtSuspendProcess = " & NtSuspendProcess(g_hProc)
-End Sub
-
-Private Sub Command6_Click()
-    List2.AddItem "NtResumeProcess = " & NtResumeProcess(g_hProc)
-End Sub
-
 Private Sub Form_Load()
+    
     Set sc = New CSubclass2
+    Set dm = New CApiDataManager
     
     sc.AttachMessage Me.hwnd, WM_COPYDATA
-     
+    
     Dim defaultdll, defaultexe
     
     If isIde() Then defaultexe = App.path & "\..\..\..\safe_test1.exe"
@@ -566,21 +729,109 @@ End Function
 
 Private Sub Form_Resize()
     On Error Resume Next
-    List1.Width = Me.Width - List1.Left - 200
-    List1.Height = Me.Height - List1.Top - 400
+    lv.Width = Me.Width - lv.Left - 200
+    lv.Height = Me.Height - lv.Top - 500
+    lv.ColumnHeaders(2).Width = lv.Width - lv.ColumnHeaders(2).Left - lv.ColumnHeaders(3).Width - 200
 End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
     SaveMySetting "Ignore", txtIgnore
 End Sub
 
-Private Sub sc_MessageReceived(hwnd As Long, wMsg As Long, wParam As Long, lParam As Long, Cancel As Boolean)
+Private Sub lv_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+    If Button = 2 Then PopupMenu mnuPopup
+End Sub
+
+Private Sub lvProc_ItemClick(ByVal Item As MSComctlLib.ListItem)
+    Set liProc = Item
+End Sub
+
+Private Sub lvProc_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+   ' mnuLoadSampleApiLog.Visible = isIde()
+    If Button = 2 Then PopupMenu mnuProcess
+End Sub
+
+Private Sub mnuClearPidList_Click()
+    lvProc.ListItems.Clear
+End Sub
+
+Private Sub mnuLoadSampleApiLog_Click()
+    On Error Resume Next
+    Dim f As String
+    Dim lines() As String
+    Dim x
+    f = dlg.OpenDialog(textFiles, , , Me.hwnd)
+    If Len(f) = 0 Then Exit Sub
+    f = fso.ReadFile(f)
+    lines() = Split(f, vbCrLf)
+    For Each x In lines
+        dm.HandleApiMessage x
+    Next
+End Sub
+
+Private Sub mnuResume_Click()
+    On Error Resume Next
+    Dim pid As Long, hProcess As Long
+    If liProc Is Nothing Then Exit Sub
+    pid = CLng("&h" & liProc.Text)
+    If Err.Number = 0 Then
+         hProcess = OpenProcess(PROCESS_ALL_ACCESS, False, pid)
+         List2.AddItem "NtResumeProcess(" & Hex(hProcess) & ") = " & NtResumeProcess(hProcess)
+         List2.ListIndex = List2.ListCount - 1
+         CloseHandle (hProcess)
+    End If
+End Sub
+
+Private Sub mnuSuspend_Click()
+    On Error Resume Next
+    Dim pid As Long, hProcess As Long
+    If liProc Is Nothing Then Exit Sub
+    pid = CLng("&h" & liProc.Text)
+    If Err.Number = 0 Then
+         hProcess = OpenProcess(PROCESS_ALL_ACCESS, False, pid)
+         List2.AddItem "NtSuspendProcess(" & Hex(hProcess) & ") = " & NtSuspendProcess(hProcess)
+         List2.ListIndex = List2.ListCount - 1
+         CloseHandle (hProcess)
+    End If
+End Sub
+
+Private Sub mnuTerminate_Click()
+    On Error Resume Next
+    Dim pid As Long, hProcess As Long
+    If liProc Is Nothing Then Exit Sub
+    pid = CLng("&h" & liProc.Text)
+    If Err.Number = 0 Then
+         hProcess = OpenProcess(PROCESS_ALL_ACCESS, False, pid)
+         List2.AddItem "TerminateProcess(" & Hex(hProcess) & ") = " & TerminateProcess(hProcess, 1)
+         List2.ListIndex = List2.ListCount - 1
+         CloseHandle (hProcess)
+    End If
+End Sub
+
+Private Sub mnuUpdateConfig_Click()
+    On Error Resume Next
+    Dim pid As Long, hProcess As Long, handler As Long, hThread As Long, arg As Long
+    If liProc Is Nothing Then Exit Sub
+    pid = CLng("&h" & liProc.Text)
+    handler = CLng("&h" & liProc.SubItems(3))
+    If handler = 0 Then Exit Sub
+    If Err.Number = 0 Then
+         hProcess = OpenProcess(PROCESS_ALL_ACCESS, False, pid)
+         List2.AddItem "UpdateConfig(" & Hex(hProcess) & "," & Hex(handler) & ") = " & CreateRemoteThread(hProcess, ByVal 0, 0, handler, arg, 0, hThread)
+         List2.ListIndex = List2.ListCount - 1
+         CloseHandle (hProcess)
+    End If
+End Sub
+
+Private Sub sc_MessageReceived(hwnd As Long, wMsg As Long, wParam As Long, lParam As Long, Cancel As Boolean) '
     If wMsg = WM_COPYDATA Then RecieveTextMessage lParam
 End Sub
 
-Private Sub HandleConfig(msg As String)
+Private Sub HandleConfig(msg As String, spid As String)
     On Error GoTo hell
     Dim cmd
+    Dim li As ListItem
+    Dim pid As Long
     
     cmd = Split(msg, ":")
     
@@ -594,6 +845,16 @@ Private Sub HandleConfig(msg As String)
         Case "nogetproc": If chkNoGetProc.value = 1 Then sc.OverRideRetVal 1
         Case "querygettick": If chkAdvanceGetTick.value = 1 Then sc.OverRideRetVal 1
         Case "blockopenprocess": If chkBlockOpenProcess.value = 1 Then sc.OverRideRetVal 1
+        Case "blockdebugcontrol": If chkBlockDebugControl.value = 1 Then sc.OverRideRetVal 1
+        Case "ignoreexitprocess": If chkIgnoreExitProcess.value = 1 Then sc.OverRideRetVal 1
+        Case "handler": 'reconfig handler that can be called with CreateRemoteThread()
+                pid = CLng("&h" & spid)
+                For Each li In lvProc.ListItems
+                    If li.Tag = pid Then
+                        li.SubItems(3) = cmd(2)
+                        Exit For
+                    End If
+                Next
         
         Case "gettickvalue":
         
@@ -624,6 +885,12 @@ Private Sub RecieveTextMessage(lParam As Long)
     Dim writeLen As Long
     Dim ret As Long
     Dim hThread As Long
+    Dim comma As Long
+    Dim pid As String
+    Dim li As ListItem
+    
+    DoEvents
+    Sleep 8
     
     CopyMemory CopyData, ByVal lParam, Len(CopyData)
     
@@ -632,19 +899,51 @@ Private Sub RecieveTextMessage(lParam As Long)
         temp = StrConv(Buffer, vbUnicode)
         temp = Left$(temp, InStr(1, temp, Chr$(0)) - 1)
         
-        If VBA.Left(temp, 10) = "***config:" Then
-            HandleConfig temp
+        comma = InStr(temp, ",")
+        If comma > 0 Then
+            pid = Mid(temp, 1, comma - 1)
+            temp = Mid(temp, comma + 1)
+            If lastPid <> pid Then
+                lastPid = pid
+                AddPid pid
+            End If
+        End If
+        
+        If InStr(temp, "***config:") > 0 Then
+            HandleConfig temp, pid
             Exit Sub
         End If
         
+        If InStr(temp, "OPTION_SET") > 0 Then
+            List2.AddItem temp
+            List2.ListIndex = List2.ListCount - 1
+            Exit Sub
+        End If
+        
+        If Len(temp) = 0 Then Exit Sub
+        
+        If lastMsg = temp Then
+            IncrementLastCount
+            Exit Sub 'antispam
+        End If
+            
+        lastMsg = temp
+              
+        'todo: parse api log and do captures here...
+        'dm.HandleApiMessage temp
+        
+        If InStr(temp, "CloseHandle") > 0 Then Exit Sub 'to much spam
+  
+  
         'heres where we work with the intercepted message
         If Not noLog Then
             
             If ignoreit(temp) Then Exit Sub
             
-            List1.AddItem temp
-            List1.ListIndex = List1.ListCount - 1
-        
+            Set li = lv.ListItems.Add(, , pid)
+            li.SubItems(1) = temp
+            li.EnsureVisible
+            
             If Len(txtDumpAt) > 0 Then
                 If InStr(1, temp, txtDumpAt, vbTextCompare) > 0 Then
                     'sendMessage is a blocking call so we will sit here till user hits continue
@@ -664,7 +963,14 @@ Private Sub RecieveTextMessage(lParam As Long)
     
 End Sub
 
-
+Private Sub IncrementLastCount()
+    Dim i As Long
+    Dim v As Long
+    On Error Resume Next
+    i = lv.ListItems.Count
+    v = CLng(lv.ListItems(i).SubItems(2))
+    lv.ListItems(i).SubItems(2) = v + 1
+End Sub
 
 Public Function StartProcessWithDLL(exePath As String, dllPath As String) As Long
 
@@ -678,6 +984,7 @@ Public Function StartProcessWithDLL(exePath As String, dllPath As String) As Lon
     Dim writeLen As Long
     Dim b() As Byte
     Dim buflen As Long
+    Dim li As ListItem
     
     Const PAGE_READWRITE = 4
     Const CREATE_SUSPENDED = &H4
@@ -691,15 +998,21 @@ Public Function StartProcessWithDLL(exePath As String, dllPath As String) As Lon
         
         If IsNumeric(exePath) Then
             hProcess = OpenProcess(PROCESS_ALL_ACCESS, False, CLng(exePath))
-            g_hProc = hProcess
             .AddItem "Opening PID: " & exePath & " Process Handle=" & hProcess
+            Set li = lvProc.ListItems.Add(, , Hex(CLng(exePath)))
+            li.SubItems(1) = fso.FileNameFromPath(cpi.GetProcessPath(CLng(exePath)))
+            li.Tag = CLng(exePath)
         Else
             ret = CreateProcess(0&, exePath, 0&, 0&, 1&, CREATE_SUSPENDED, 0&, 0&, si, pi)
             .AddItem "Create Process Suspended: " & ret & IIf(ret = 0, " Failed", " PID: " & pi.dwProcessId)
             
             hProcess = OpenProcess(PROCESS_ALL_ACCESS, False, pi.dwProcessId)
-            g_hProc = hProcess
             .AddItem "OpenProcess Handle=" & hProcess
+            
+            Set li = lvProc.ListItems.Add(, , Hex(pi.dwProcessId))
+            li.SubItems(1) = fso.FileNameFromPath(exePath)
+            li.Tag = pi.dwProcessId
+            
         End If
                     
         lpdllPath = VirtualAllocEx(hProcess, ByVal 0, buflen, MEM_COMMIT, ByVal PAGE_READWRITE)
@@ -719,6 +1032,8 @@ Public Function StartProcessWithDLL(exePath As String, dllPath As String) As Lon
         
         If Not IsNumeric(exePath) Then ResumeThread pi.hThread
         
+        CloseHandle hProcess
+        
     End With
 
 End Function
@@ -736,12 +1051,23 @@ End Function
  
  
 
-Private Sub txtDll_OLEDragDrop(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, Y As Single)
-    txtDll = Data.Files(1)
+Private Sub TreeView1_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+    If Button = 2 Then PopupMenu mnuCaptures
 End Sub
 
-Private Sub txtPacked_OLEDragOver(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, Y As Single, State As Integer)
-    txtPacked = Data.Files(1)
+Private Sub txtArgs_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, y As Single)
+    On Error Resume Next
+    txtArgs = data.Files(1)
+End Sub
+
+Private Sub txtDll_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, y As Single)
+    On Error Resume Next
+    txtDll = data.Files(1)
+End Sub
+
+Private Sub txtPacked_OLEDragOver(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, y As Single, State As Integer)
+    On Error Resume Next
+    txtPacked = data.Files(1)
 End Sub
 
 

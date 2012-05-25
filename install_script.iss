@@ -16,7 +16,7 @@ Source: ./dependancy\adoKit.dll; DestDir: {win}; Flags: uninsneveruninstall regs
 Source: ./dependancy\mscomctl.ocx; DestDir: {win}; Flags: uninsneveruninstall regserver
 Source: ./dependancy\MSWINSCK.OCX; DestDir: {win}; Flags: uninsneveruninstall regserver
 Source: ./dependancy\hexed.ocx; DestDir: {win}; Flags: uninsneveruninstall regserver
-Source: ./dependancy\zlib.dll; DestDir: {app};
+Source: ./dependancy\zlib.dll; DestDir: {app}
 Source: ./\source\apilog_dll\injector\Project1.vbw; DestDir: {app}\source\apilog_dll\injector
 Source: ./\source\apilog_dll\injector\hook.ico; DestDir: {app}\source\apilog_dll\injector
 Source: ./\source\apilog_dll\injector\Form2.frx; DestDir: {app}\source\apilog_dll\injector
@@ -84,7 +84,7 @@ Source: ./\sniff_hit.exe; DestDir: {app}; Flags: ignoreversion
 Source: ./\sysAnalyzer.exe; DestDir: {app}; Flags: ignoreversion
 Source: ./\SysAnalyzer_help.chm; DestDir: {app}
 Source: ./\SysAnalyzer.pdb; DestDir: {app}
-Source: ./\known_files.mdb; DestDir: {app}; Flags: uninsneveruninstall
+Source: ./\known_files.mdb; DestDir: {app}; Flags: uninsneveruninstall onlyifdoesntexist
 Source: dirwatch_ui.exe; DestDir: {app}; Flags: ignoreversion
 Source: source\dirwatch_ui\clsCmnDlg.cls; DestDir: {app}\source\dirwatch_ui
 Source: source\dirwatch_ui\dir_watch.dll; DestDir: {app}\source\dirwatch_ui

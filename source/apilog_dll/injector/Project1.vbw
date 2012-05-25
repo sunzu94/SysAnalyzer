@@ -1,4 +1,4 @@
-Form2 = 25, 5, 821, 630, , 43, 6, 833, 618, C
+Form2 = 25, 5, 821, 630, Z, 42, 1, 1034, 613, C
 frmListProcess = 44, 44, 790, 449, , 88, 88, 834, 493, C
 CProcessInfo = 110, 110, 912, 515, 
 CProcess = 0, 0, 0, 0, C
@@ -6,5 +6,5 @@ CModule = 0, 0, 0, 0, C
 CProcessPorts = 88, 88, 834, 493, 
 CProcessPort = 0, 0, 0, 0, C
 CMemory = 0, 0, 0, 0, C
-CApiDataManager = 110, 110, 783, 515, Z
-CApiHandle = 132, 132, 805, 537, C
+CApiDataManager = 110, 110, 783, 515, 
+CApiHandle = 132, 132, 805, 537, 
