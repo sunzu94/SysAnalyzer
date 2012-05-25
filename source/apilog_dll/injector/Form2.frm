@@ -11,10 +11,18 @@ Begin VB.Form Form2
    ScaleHeight     =   7665
    ScaleWidth      =   13545
    StartUpPosition =   3  'Windows Default
+   Begin VB.CommandButton cmdSave 
+      Caption         =   "Save"
+      Height          =   375
+      Left            =   8040
+      TabIndex        =   37
+      Top             =   3690
+      Width           =   1335
+   End
    Begin MSComctlLib.ListView lvProc 
       Height          =   1515
       Left            =   0
-      TabIndex        =   36
+      TabIndex        =   35
       Top             =   210
       Width           =   3165
       _ExtentX        =   5583
@@ -55,7 +63,7 @@ Begin VB.Form Form2
    Begin MSComctlLib.ListView lv 
       Height          =   3585
       Left            =   3330
-      TabIndex        =   35
+      TabIndex        =   34
       Top             =   4110
       Width           =   10185
       _ExtentX        =   17965
@@ -87,33 +95,28 @@ Begin VB.Form Form2
          Object.Width           =   2540
       EndProperty
    End
-   Begin MSComctlLib.TreeView TreeView1 
+   Begin MSComctlLib.TreeView tv 
       Height          =   5565
       Left            =   60
-      TabIndex        =   33
+      TabIndex        =   32
       Top             =   2010
       Width           =   3195
       _ExtentX        =   5636
       _ExtentY        =   9816
       _Version        =   393217
-      Style           =   7
+      LabelEdit       =   1
+      LineStyle       =   1
+      Style           =   6
+      SingleSel       =   -1  'True
       Appearance      =   1
    End
    Begin VB.CommandButton cmdFind 
       Caption         =   "Find"
       Height          =   375
       Left            =   6570
-      TabIndex        =   32
-      Top             =   3690
-      Width           =   1305
-   End
-   Begin VB.CommandButton cmdCopy 
-      Caption         =   "Copy"
-      Height          =   375
-      Left            =   8010
       TabIndex        =   31
       Top             =   3690
-      Width           =   1365
+      Width           =   1305
    End
    Begin VB.CommandButton cmdClear 
       Caption         =   "Clear"
@@ -313,17 +316,17 @@ Begin VB.Form Form2
       Caption         =   "Processes"
       Height          =   285
       Left            =   60
-      TabIndex        =   37
+      TabIndex        =   36
       Top             =   0
       Width           =   1335
    End
    Begin VB.Label Label8 
-      Caption         =   "Captures"
+      Caption         =   "Capture report (beta)"
       Height          =   255
       Left            =   30
-      TabIndex        =   34
+      TabIndex        =   33
       Top             =   1770
-      Width           =   1395
+      Width           =   2475
    End
    Begin VB.Label Label7 
       Caption         =   "Args"
@@ -596,17 +599,7 @@ Private Sub cmdContinue_Click()
     readyToReturn = True
 End Sub
 
-Private Sub cmdCopy_Click()
-    On Error Resume Next
-    Dim i As Long, t
-    Dim li As ListItem
-    For Each li In lv.ListItems
-        t = t & "pid: " & li.Text & " - " & li.SubItems(1) & vbCrLf
-    Next
-    Clipboard.Clear
-    Clipboard.SetText t
-    MsgBox Len(t) & " bytes copied"
-End Sub
+ 
 
 Private Sub cmdFind_Click()
     Dim f As String
@@ -623,6 +616,22 @@ Private Sub cmdFind_Click()
     f = fso.GetFreeFileName(Environ("temp"))
     fso.WriteFile f, t
     Shell "notepad.exe """ & f & """", vbNormalFocus
+End Sub
+
+Private Sub cmdSave_Click()
+    On Error Resume Next
+    Dim i As Long, t, f As String
+    Dim li As ListItem
+    
+    f = dlg.SaveDialog(textFiles, , , , Me.hwnd)
+    If Len(f) = 0 Then Exit Sub
+    
+    For Each li In lv.ListItems
+        t = t & "pid: " & li.Text & " - " & li.SubItems(1) & vbCrLf
+    Next
+    
+    fso.WriteFile f, t
+    
 End Sub
 
 Private Sub cmdSelectProcess_Click()
@@ -667,9 +676,7 @@ End Sub
 
  
 
-Private Sub cmdTerminate_Click()
-    
-End Sub
+ 
 
 Private Sub Command1_Click()
     
@@ -698,6 +705,83 @@ Private Sub Command4_Click()
         End If
     Next
 End Sub
+
+Private Sub dm_CaptureMade(ch As CApiHandle)
+    
+    Dim pNode As Node
+    
+    If ch.ctype = ct_OpenProcess Then
+        Set pNode = TopNodeAddIfNotExist("OpenProcess")
+        If Len(Trim(ch.Resource)) = 0 Then Stop
+        AddChildIfNotExist pNode, ch.Resource
+    End If
+    
+End Sub
+
+Private Function AddChildIfNotExist(pNode As Node, name As String)
+        
+    On Error Resume Next
+    Dim c As Collection
+    Dim n As Node
+    
+    Set c = GetChildrenFor(pNode)
+    
+    If c.Count > 0 Then
+        For Each n In c
+            If n.Text = name Then Exit Function
+        Next
+    End If
+    
+    Set n = tv.Nodes.Add(pNode, tvwChild, , name)
+   
+        
+        
+End Function
+
+Private Function GetChildrenFor(pNode As Node)
+    Dim c As New Collection
+    Dim n As Node
+    On Error Resume Next
+    Set n = pNode.Child
+    
+    If n Is Nothing Then
+        Set GetChildrenFor = c
+        Exit Function
+    End If
+    
+    c.Add n
+    Do While 1
+        If n.Next Is Nothing Then Exit Do
+        If n.Next = pNode.LastSibling Then Exit Do
+        Set n = n.Next
+        c.Add n
+    Loop
+        
+    Set GetChildrenFor = c
+        
+End Function
+
+
+Private Function TopNodeAddIfNotExist(name As String) As Node
+    
+   On Error Resume Next
+   Dim n As Node
+   Set n = tv.Nodes(name)
+   If n Is Nothing Then
+        Set TopNodeAddIfNotExist = tv.Nodes.Add(, , name, name)
+   Else
+        Set TopNodeAddIfNotExist = n
+   End If
+    
+End Function
+
+Private Sub dm_GenericData(name As Variant, value As Variant)
+   On Error Resume Next
+   Dim pNode As Node
+   Set pNode = TopNodeAddIfNotExist(CStr(name))
+   AddChildIfNotExist pNode, CStr(value)
+End Sub
+
 
 Private Sub Form_Load()
     
@@ -759,13 +843,20 @@ Private Sub mnuLoadSampleApiLog_Click()
     On Error Resume Next
     Dim f As String
     Dim lines() As String
-    Dim x
+    Dim x, y, a, b
     f = dlg.OpenDialog(textFiles, , , Me.hwnd)
     If Len(f) = 0 Then Exit Sub
     f = fso.ReadFile(f)
     lines() = Split(f, vbCrLf)
+    tv.Nodes.Clear
     For Each x In lines
-        dm.HandleApiMessage x
+        If VBA.Left(x, 4) = "pid:" Then 'copy format...
+            a = Split(x, " - ", 2)
+            y = Trim(Replace(a(0), "pid:", Empty)) & "," & a(1)
+        Else
+            y = x
+        End If
+        dm.HandleApiMessage y
     Next
 End Sub
 
@@ -1051,7 +1142,7 @@ End Function
  
  
 
-Private Sub TreeView1_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub Tv_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     If Button = 2 Then PopupMenu mnuCaptures
 End Sub
 

@@ -103,7 +103,8 @@ char* findProcessByPid(int pid){
 	PROCESSENTRY32 pe;
     HANDLE hSnap;
 	int cnt=0;
-    
+    char buf[200];
+
     pe.dwSize = sizeof(pe);
     hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     
@@ -114,7 +115,9 @@ char* findProcessByPid(int pid){
 		if( pe.th32ProcessID == pid ) return strlower(strdup(pe.szExeFile));
 	}
 
-	return strdup("-- Not in ToolHelp Api! --");
+	sprintf(buf, "-- pid %x not in ToolHelp Api! --", pid);
+	
+	return strdup(buf);
 
 }
 
@@ -217,7 +220,7 @@ HANDLE __stdcall My_CreateFileA(LPCSTR a0,DWORD a1,DWORD a2,LPSECURITY_ATTRIBUTE
     }
 	catch(...){} 
 	
-	if(a0 && strstr(a0,"NTICE") > 0 ){ //to many gaobots = this		
+	/*if(a0 && strstr(a0,"NTICE") > 0 ){ //to many gaobots = this		
 		
 		_asm {
 			mov eax, [ebp+4]    ;//return addr on stack
@@ -228,10 +231,9 @@ HANDLE __stdcall My_CreateFileA(LPCSTR a0,DWORD a1,DWORD a2,LPSECURITY_ATTRIBUTE
 		Seek_n_Destroy_AntiVmWare(calledFrom, 0x900);
 		return (HANDLE)-1;
 
-	}
-	else{
-		return ret;
-	}
+	};*/
+
+	return ret;
 
 }
 
@@ -386,7 +388,7 @@ int __stdcall My_connect(SOCKET a0,SOCKADDR_IN* a1,int a2)
 	char* ip=0;	
 	ip=ipfromlng(a1);
 	
-	LogAPI("%x     connect( %s:%d )", CalledFrom(), ip, htons(a1->sin_port) );
+	LogAPI("%x     connect(s=%x, host=%s:%d )", CalledFrom(), a0, ip, htons(a1->sin_port) );
 	
 	free(ip);
 
@@ -402,7 +404,7 @@ int __stdcall My_connect(SOCKET a0,SOCKADDR_IN* a1,int a2)
 hostent* __stdcall My_gethostbyaddr(char* a0,int a1,int a2)
 {
     
-	LogAPI("%x     gethostbyaddr(%x)", CalledFrom(), a0);
+	LogAPI("%x     gethostbyaddr(%s)", CalledFrom(), a0);
 
     hostent* ret = 0;
     try {
@@ -415,24 +417,11 @@ hostent* __stdcall My_gethostbyaddr(char* a0,int a1,int a2)
 
 hostent* __stdcall My_gethostbyname(char* a0)
 {
-	LogAPI("%x     gethostbyname(%x)", CalledFrom(), a0);
+	LogAPI("%x     gethostbyname(%s)", CalledFrom(), a0);
 
     hostent* ret = 0;
     try {
         ret = Real_gethostbyname(a0);
-    }
-	catch(...){	} 
-
-    return ret;
-}
-
-int __stdcall My_gethostname(char* a0,int a1)
-{
-	LogAPI("%x     gethostname(%x)", CalledFrom(), a0);
-
-    int ret = 0;
-    try {
-        ret = Real_gethostname(a0, a1);
     }
 	catch(...){	} 
 
@@ -1310,6 +1299,7 @@ void InstallHooks(void)
 		ADDHOOK(__setargv);
 		ADDHOOK(GetVersion)
 		ADDHOOK(GetCurrentProcessId)
+		ADDHOOK(gethostname);
 	*/
 
 	ADDHOOK(GetProcAddress);  //have to always hook this because its used in CreateProcess follower...
@@ -1331,7 +1321,7 @@ void InstallHooks(void)
 	ADDHOOK(connect);
 	ADDHOOK(gethostbyaddr);
 	ADDHOOK(gethostbyname);
-	ADDHOOK(gethostname);
+	
 	ADDHOOK(listen);
 	ADDHOOK(recv);
 	ADDHOOK(send);
@@ -1434,3 +1424,16 @@ void initcfg(){
 
 */
 
+/*
+int __stdcall My_gethostname(char* a0,int a1)
+{
+	LogAPI("%x     gethostname(%x)", CalledFrom(), a0);
+
+    int ret = 0;
+    try {
+        ret = Real_gethostname(a0, a1);
+    }
+	catch(...){	} 
+
+    return ret;
+}*/

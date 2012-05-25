@@ -7,4 +7,4 @@ CProcessPorts = 88, 88, 834, 493,
 CProcessPort = 0, 0, 0, 0, C
 CMemory = 0, 0, 0, 0, C
 CApiDataManager = 110, 110, 783, 515, 
-CApiHandle = 132, 132, 805, 537, 
+CApiHandle = 132, 132, 805, 537, C

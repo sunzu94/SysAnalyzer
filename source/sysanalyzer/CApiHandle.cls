@@ -13,11 +13,14 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Public Resource As String
 Public handle As Long
-Public rtype As rTypes
+Public ctype As captureTypes
 Public pid As Long
+Public raw As String
 
-Public Enum rTypes
-    rtFile = 0
-    rtSocket = 1
-    rtProcess = 2
+Public Enum captureTypes
+    ct_file = 0
+    ct_WriteProcMem = 1
+    ct_OpenProcess
+    ct_send = 2
+    ct_recv = 3
 End Enum

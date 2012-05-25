@@ -1,17 +1,18 @@
 VERSION 5.00
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
 Begin VB.Form frmListProcess 
-   BorderStyle     =   1  'Fixed Single
+   BorderStyle     =   5  'Sizable ToolWindow
    Caption         =   "Choose Process"
    ClientHeight    =   3630
-   ClientLeft      =   45
-   ClientTop       =   330
+   ClientLeft      =   60
+   ClientTop       =   300
    ClientWidth     =   6915
    LinkTopic       =   "frmListProcess"
    MaxButton       =   0   'False
    MinButton       =   0   'False
    ScaleHeight     =   3630
    ScaleWidth      =   6915
+   ShowInTaskbar   =   0   'False
    StartUpPosition =   2  'CenterScreen
    Begin VB.CommandButton Command1 
       Caption         =   "Select"
@@ -48,7 +49,7 @@ Begin VB.Form frmListProcess
       BeginProperty ColumnHeader(2) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
          SubItemIndex    =   1
          Text            =   "USER"
-         Object.Width           =   4762
+         Object.Width           =   1764
       EndProperty
       BeginProperty ColumnHeader(3) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
          SubItemIndex    =   2
@@ -87,6 +88,7 @@ Attribute VB_Exposed = False
 '         Place, Suite 330, Boston, MA 02111-1307 USA
 
 Dim selli As ListItem
+Dim cpi As New CProcessInfo
 
 Private Sub Command1_Click()
     
@@ -103,14 +105,21 @@ Function SelectProcess(c As Collection) As CProcess
 
     Dim p As CProcess
     Dim li As ListItem
+    Dim cc As Long
     
     lv.ListItems.Clear
     
     For Each p In c
         Set li = lv.ListItems.Add(, , p.pid)
         Set li.Tag = p
-        li.SubItems(1) = p.User
-        li.SubItems(2) = p.path
+        cc = InStr(p.User, ":")
+        If cc > 0 Then
+            li.SubItems(1) = Mid(p.User, cc + 1)
+        Else
+            li.SubItems(1) = p.User
+        End If
+        'li.SubItems(2) = p.path
+        li.SubItems(2) = cpi.GetProcessPath(p.pid)
     Next
     
     On Error Resume Next
@@ -125,6 +134,15 @@ End Function
 
 Private Sub Form_Load()
     lv.ColumnHeaders(3).Width = lv.Width - lv.ColumnHeaders(3).Left - 350
+End Sub
+
+Private Sub Form_Resize()
+    On Error Resume Next
+    lv.Width = Me.Width - lv.Left - 200
+    lv.ColumnHeaders(3).Width = lv.Width - lv.ColumnHeaders(3).Left - 350
+    lv.Height = Me.Height - lv.Top - 500 - Command1.Height
+    Command1.Top = Me.Height - Command1.Height - 400
+    Command1.Left = Me.Width - Command1.Width - 400
 End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
