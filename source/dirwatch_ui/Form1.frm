@@ -13,10 +13,45 @@ Begin VB.Form frmMain
    ScaleWidth      =   10230
    StartUpPosition =   2  'CenterScreen
    Visible         =   0   'False
+   Begin MSComctlLib.ListView lv 
+      Height          =   5295
+      Left            =   60
+      TabIndex        =   8
+      Top             =   750
+      Width           =   1695
+      _ExtentX        =   2990
+      _ExtentY        =   9340
+      View            =   3
+      LabelEdit       =   1
+      LabelWrap       =   -1  'True
+      HideSelection   =   -1  'True
+      OLEDropMode     =   1
+      Checkboxes      =   -1  'True
+      GridLines       =   -1  'True
+      _Version        =   393217
+      ForeColor       =   -2147483640
+      BackColor       =   -2147483643
+      BorderStyle     =   1
+      Appearance      =   1
+      OLEDropMode     =   1
+      NumItems        =   1
+      BeginProperty ColumnHeader(1) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+         Text            =   "Watch Dirs"
+         Object.Width           =   2540
+      EndProperty
+   End
+   Begin VB.DriveListBox Drive1 
+      Height          =   315
+      Left            =   1950
+      TabIndex        =   7
+      Top             =   360
+      Visible         =   0   'False
+      Width           =   1665
+   End
    Begin VB.CommandButton cmdClear 
       Caption         =   "Clear"
       Height          =   315
-      Left            =   4320
+      Left            =   3690
       TabIndex        =   6
       Top             =   360
       Width           =   1155
@@ -24,7 +59,7 @@ Begin VB.Form frmMain
    Begin VB.CommandButton cmdCopyList 
       Caption         =   "Copy List"
       Height          =   315
-      Left            =   5640
+      Left            =   4980
       TabIndex        =   5
       Top             =   360
       Width           =   1335
@@ -32,7 +67,7 @@ Begin VB.Form frmMain
    Begin VB.CommandButton cmdSaveDirWatchFile 
       Caption         =   "Save Selected file"
       Height          =   315
-      Left            =   7140
+      Left            =   6420
       TabIndex        =   2
       Top             =   360
       Width           =   1575
@@ -45,7 +80,7 @@ Begin VB.Form frmMain
       Width           =   9495
    End
    Begin VB.CommandButton cmdDirWatch 
-      Caption         =   "Stop Monitor"
+      Caption         =   "Start Monitor"
       Height          =   315
       Left            =   8940
       TabIndex        =   0
@@ -54,11 +89,11 @@ Begin VB.Form frmMain
    End
    Begin MSComctlLib.ListView lvDirWatch 
       Height          =   5355
-      Left            =   60
+      Left            =   1800
       TabIndex        =   3
       Top             =   720
-      Width           =   10155
-      _ExtentX        =   17912
+      Width           =   8325
+      _ExtentX        =   14684
       _ExtentY        =   9446
       View            =   3
       LabelEdit       =   1
@@ -91,6 +126,22 @@ Begin VB.Form frmMain
          Object.Width           =   2540
       EndProperty
    End
+   Begin VB.Label Label2 
+      Caption         =   "(Add folders with right click or drag/drop)"
+      Height          =   315
+      Left            =   210
+      TabIndex        =   10
+      Top             =   540
+      Width           =   3465
+   End
+   Begin VB.Label Label1 
+      Caption         =   "Check Folders to watch and start monitor"
+      Height          =   225
+      Left            =   90
+      TabIndex        =   9
+      Top             =   330
+      Width           =   3555
+   End
    Begin VB.Label Label3 
       Caption         =   "Ignore"
       Height          =   315
@@ -100,99 +151,17 @@ Begin VB.Form frmMain
       Top             =   0
       Width           =   555
    End
-   Begin VB.Menu mnuProcessesPopup 
-      Caption         =   "mnuProcessesPopup"
+   Begin VB.Menu mnuPopup 
+      Caption         =   "mnuPopup"
       Visible         =   0   'False
-      Begin VB.Menu mnuShowProcessDlls 
-         Caption         =   "ShowDlls"
+      Begin VB.Menu mnuAddFolder 
+         Caption         =   "Add Folder"
       End
-      Begin VB.Menu mnuDumpProcess 
-         Caption         =   "Dump"
+      Begin VB.Menu mnuCheckAll 
+         Caption         =   "Check All"
       End
-      Begin VB.Menu mnuKillProcess 
-         Caption         =   "Kill"
-      End
-      Begin VB.Menu mnuProcessFileProps 
-         Caption         =   "File Properties"
-      End
-   End
-   Begin VB.Menu mnuDllsPopup 
-      Caption         =   "mnuDllsPopup"
-      Visible         =   0   'False
-      Begin VB.Menu mnuViewAllDllProps 
-         Caption         =   "View All Properties"
-         Enabled         =   0   'False
-      End
-      Begin VB.Menu mnuDumpDll 
-         Caption         =   "Dump Module"
-         Enabled         =   0   'False
-      End
-      Begin VB.Menu mnuCopyTo 
-         Caption         =   "Copy To"
-         Enabled         =   0   'False
-      End
-   End
-   Begin VB.Menu mnuTools 
-      Caption         =   "mnuTools"
-      Visible         =   0   'False
-      Begin VB.Menu mnuSearch 
-         Caption         =   "Search All Tabs"
-      End
-      Begin VB.Menu mnuCopySelected 
-         Caption         =   "Copy All Selected Entries"
-      End
-      Begin VB.Menu mnuSpacer 
-         Caption         =   "-"
-      End
-      Begin VB.Menu mnuToolItem 
-         Caption         =   "Show Snapshot 1"
-         Index           =   0
-      End
-      Begin VB.Menu mnuToolItem 
-         Caption         =   "Show Snapshot 2"
-         Index           =   1
-      End
-      Begin VB.Menu mnuToolItem 
-         Caption         =   "Show Diff report"
-         Index           =   2
-      End
-      Begin VB.Menu mnuToolItem 
-         Caption         =   "-"
-         Index           =   3
-      End
-      Begin VB.Menu mnuToolItem 
-         Caption         =   "Take Snapshot 1"
-         Index           =   4
-      End
-      Begin VB.Menu mnuToolItem 
-         Caption         =   "Take Snapshot 2"
-         Index           =   5
-      End
-      Begin VB.Menu mnuToolItem 
-         Caption         =   "-"
-         Index           =   6
-      End
-      Begin VB.Menu mnuToolItem 
-         Caption         =   "Start Over"
-         Index           =   7
-      End
-      Begin VB.Menu mnuToolItem 
-         Caption         =   "Show Data Report"
-         Index           =   8
-         Visible         =   0   'False
-      End
-      Begin VB.Menu mnuKnownSpacer 
-         Caption         =   "-"
-      End
-      Begin VB.Menu mnuKnownFiles 
-         Caption         =   "Build Known File DB"
-      End
-      Begin VB.Menu mnuHideKnown 
-         Caption         =   "Hide Known Files"
-      End
-      Begin VB.Menu mnuListUnknown 
-         Caption         =   "Update Known Db"
-         Enabled         =   0   'False
+      Begin VB.Menu mnuClearAll 
+         Caption         =   "Clear All"
       End
    End
 End
@@ -258,13 +227,23 @@ End Sub
 
 Private Sub cmdDirWatch_Click()
     
+    Dim li As ListItem
+    
     With cmdDirWatch
-        If Len(.Tag) = 0 Then
-            .Tag = "xx"
+        If Len(.Tag) > 0 Then
+            .Tag = ""
+            lv.Enabled = True
             DirWatchCtl False
             .Caption = "Start monitor"
         Else
-            .Tag = ""
+            Set watchDirs = New Collection
+            For Each li In lv.ListItems
+                If li.Checked = True Then
+                    watchDirs.Add li.Tag
+                End If
+            Next
+            .Tag = "xx"
+            lv.Enabled = False
             DirWatchCtl True
             .Caption = "Stop monitor"
         End If
@@ -276,15 +255,26 @@ End Sub
 
 Private Sub Form_Load()
   
+    Dim i As Long
+    Dim li As ListItem
+    On Error Resume Next
+    Dim tmp
+    
     Me.Visible = True
     Initalize
     
-    watchDirs.Add "c:\"
+    For i = 0 To Drive1.ListCount - 1
+        tmp = Split(Drive1.List(i), ":")
+        Set li = lv.ListItems.Add(, , Drive1.List(i))
+        li.Tag = tmp(0) & ":\"
+    Next
+    
+    lv.ListItems(1).Checked = True
     
     Set cApiData = New Collection
     Set cLogData = New Collection
 
-    DirWatchCtl True
+    'DirWatchCtl True
 
     
 End Sub
@@ -337,6 +327,7 @@ Private Sub Form_Resize()
     lvDirWatch.Width = Me.Width - lvDirWatch.Left - 200
     With lvDirWatch
         .Height = Me.Height - .Top - 500
+        lv.Height = .Height
     End With
 End Sub
 
@@ -350,10 +341,70 @@ Private Sub Form_Unload(Cancel As Integer)
 End Sub
  
  
+Private Sub lv_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+    If Button = 2 Then PopupMenu mnuPopup
+End Sub
+
+Private Sub lv_OLEDragDrop(Data As MSComctlLib.DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, y As Single)
+    On Error Resume Next
+    Dim f As String, li As ListItem
+    
+    f = Data.Files(1)
+    If fso.FolderExists(f) Then
+        For Each li In lv.ListItems
+            If li.Tag = f Then
+                MsgBox "This folder is already listed..", vbInformation
+                Exit Sub
+            End If
+        Next
+        
+        Set li = lv.ListItems.Add(, , f)
+        li.Tag = f
+        li.Checked = True
+    Else
+        MsgBox "You can only drop folders on here to add them", vbInformation
+    End If
+    
+End Sub
+
 Private Sub lvDirWatch_ItemClick(ByVal Item As MSComctlLib.ListItem)
     Set liDirWatch = Item
 End Sub
 
+
+Private Sub mnuAddFolder_Click()
+    Dim f As String
+    Dim li As ListItem
+    
+    f = dlg.FolderDialog(, Me.hwnd)
+    If Len(f) = 0 Then Exit Sub
+    
+    For Each li In lv.ListItems
+        If li.Tag = f Then
+            MsgBox "This folder is already listed..", vbInformation
+            Exit Sub
+        End If
+    Next
+    
+    Set li = lv.ListItems.Add(, , f)
+    li.Tag = f
+    li.Checked = True
+    
+End Sub
+
+Private Sub mnuCheckAll_Click()
+    Dim li As ListItem
+    For Each li In lv.ListItems
+        li.Checked = True
+    Next
+End Sub
+
+Private Sub mnuClearAll_Click()
+    Dim li As ListItem
+    For Each li In lv.ListItems
+        li.Checked = False
+    Next
+End Sub
 
 Private Sub subclass_MessageReceived(hwnd As Long, wMsg As Long, wParam As Long, lParam As Long, Cancel As Boolean)
     Dim msg As String
@@ -371,10 +422,15 @@ Private Sub subclass_MessageReceived(hwnd As Long, wMsg As Long, wParam As Long,
                 If KeyExistsInCollection(cLogData, msg) Then Exit Sub
                 On Error Resume Next
                 cLogData.Add msg, msg
-                tmp = Split(msg, ":", 2)
-                tmp(0) = VBA.Left(tmp(0), 1) & ":" & Format(Now, "h:m:s")
-                Set li = lvDirWatch.ListItems.Add(, , tmp(0))
-                li.SubItems(1) = Replace(Replace(Trim(tmp(1)), "\\", "\"), Chr(0), Empty)
+                If InStr(msg, ":") > 0 And VBA.Left(msg, 8) <> "Watching" Then
+                    tmp = Split(msg, ":", 2)
+                    tmp(0) = VBA.Left(tmp(0), 3) & " - " & Format(Now, "h:m:s")
+                    Set li = lvDirWatch.ListItems.Add(, , tmp(0))
+                    li.SubItems(1) = Replace(Replace(Trim(tmp(1)), "\\", "\"), Chr(0), Empty)
+                Else
+                    Set li = lvDirWatch.ListItems.Add(, , Format(Now, "h:m:s"))
+                    li.SubItems(1) = Replace(Replace(Trim(msg), "\\", "\"), Chr(0), Empty)
+                End If
                 
         End If
     End If

@@ -83,7 +83,7 @@ DWORD WINAPI ThreadHandler(void* dirPointer){
 
 		  switch(Buffer[i].Action){
 			  case FILE_ACTION_ADDED:			 strcpy(action,"Created: ");  break; 
-			  case FILE_ACTION_REMOVED:			 strcpy(action,"Deteled: ");  break; 
+			  case FILE_ACTION_REMOVED:			 strcpy(action,"Deleted: ");  break; 
 			  case FILE_ACTION_MODIFIED:		 strcpy(action,"Modifed: ");  break; 
 			  case FILE_ACTION_RENAMED_OLD_NAME: strcpy(action,"Renamed: ");  break; 
 			  case FILE_ACTION_RENAMED_NEW_NAME: strcpy(action,"Renamed: ");  break;
