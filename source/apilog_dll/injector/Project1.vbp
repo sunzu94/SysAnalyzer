@@ -13,6 +13,7 @@ Class=CProcessPort; ..\..\sysanalyzer\CProcessPort.cls
 Class=CMemory; ..\..\sysanalyzer\CMemory.cls
 Class=CApiDataManager; ..\..\sysanalyzer\CApiDataManager.cls
 Class=CApiHandle; ..\..\sysanalyzer\CApiHandle.cls
+Form=frmLogParser.frm
 IconForm="Form2"
 Startup="Form2"
 HelpFile=""

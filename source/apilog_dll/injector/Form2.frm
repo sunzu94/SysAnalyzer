@@ -5,28 +5,28 @@ Begin VB.Form Form2
    ClientHeight    =   7665
    ClientLeft      =   165
    ClientTop       =   450
-   ClientWidth     =   13545
+   ClientWidth     =   10335
    Icon            =   "Form2.frx":0000
    LinkTopic       =   "Form2"
    ScaleHeight     =   7665
-   ScaleWidth      =   13545
+   ScaleWidth      =   10335
    StartUpPosition =   3  'Windows Default
-   Begin VB.CommandButton cmdSave 
-      Caption         =   "Save"
+   Begin VB.CommandButton cmdParse 
+      Caption         =   "Parse"
       Height          =   375
-      Left            =   8040
-      TabIndex        =   37
-      Top             =   3690
-      Width           =   1335
+      Left            =   2400
+      TabIndex        =   35
+      Top             =   3720
+      Width           =   1005
    End
    Begin MSComctlLib.ListView lvProc 
-      Height          =   1515
-      Left            =   0
-      TabIndex        =   35
-      Top             =   210
-      Width           =   3165
-      _ExtentX        =   5583
-      _ExtentY        =   2672
+      Height          =   1365
+      Left            =   3240
+      TabIndex        =   31
+      Top             =   1950
+      Width           =   4125
+      _ExtentX        =   7276
+      _ExtentY        =   2408
       View            =   3
       LabelEdit       =   1
       LabelWrap       =   -1  'True
@@ -56,15 +56,51 @@ Begin VB.Form Form2
       BeginProperty ColumnHeader(4) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
          SubItemIndex    =   3
          Key             =   "reconfig"
-         Text            =   "Reconfig"
+         Text            =   "Config Handler"
          Object.Width           =   2540
       EndProperty
    End
+   Begin VB.ListBox List2 
+      Height          =   1425
+      Left            =   120
+      TabIndex        =   34
+      Top             =   2160
+      Width           =   7335
+   End
+   Begin MSComctlLib.TabStrip TabStrip1 
+      Height          =   1875
+      Left            =   30
+      TabIndex        =   33
+      Top             =   1830
+      Width           =   7515
+      _ExtentX        =   13256
+      _ExtentY        =   3307
+      _Version        =   393216
+      BeginProperty Tabs {1EFB6598-857C-11D1-B16A-00C0F0283628} 
+         NumTabs         =   2
+         BeginProperty Tab1 {1EFB659A-857C-11D1-B16A-00C0F0283628} 
+            Caption         =   "Processes"
+            ImageVarType    =   2
+         EndProperty
+         BeginProperty Tab2 {1EFB659A-857C-11D1-B16A-00C0F0283628} 
+            Caption         =   "Log"
+            ImageVarType    =   2
+         EndProperty
+      EndProperty
+   End
+   Begin VB.CommandButton cmdSave 
+      Caption         =   "Save"
+      Height          =   375
+      Left            =   4950
+      TabIndex        =   32
+      Top             =   3720
+      Width           =   1335
+   End
    Begin MSComctlLib.ListView lv 
       Height          =   3585
-      Left            =   3330
-      TabIndex        =   34
-      Top             =   4110
+      Left            =   90
+      TabIndex        =   30
+      Top             =   4140
       Width           =   10185
       _ExtentX        =   17965
       _ExtentY        =   6324
@@ -95,73 +131,58 @@ Begin VB.Form Form2
          Object.Width           =   2540
       EndProperty
    End
-   Begin MSComctlLib.TreeView tv 
-      Height          =   5565
-      Left            =   60
-      TabIndex        =   32
-      Top             =   2010
-      Width           =   3195
-      _ExtentX        =   5636
-      _ExtentY        =   9816
-      _Version        =   393217
-      LabelEdit       =   1
-      LineStyle       =   1
-      Style           =   6
-      SingleSel       =   -1  'True
-      Appearance      =   1
-   End
    Begin VB.CommandButton cmdFind 
       Caption         =   "Find"
       Height          =   375
-      Left            =   6570
-      TabIndex        =   31
-      Top             =   3690
+      Left            =   3510
+      TabIndex        =   29
+      Top             =   3720
       Width           =   1305
    End
    Begin VB.CommandButton cmdClear 
       Caption         =   "Clear"
       Height          =   375
-      Left            =   9510
-      TabIndex        =   29
-      Top             =   3690
+      Left            =   6420
+      TabIndex        =   27
+      Top             =   3720
       Width           =   1215
    End
    Begin VB.CommandButton cmdBrowse 
       Caption         =   "..."
       Height          =   315
-      Left            =   8220
-      TabIndex        =   27
-      Top             =   0
+      Left            =   4980
+      TabIndex        =   25
+      Top             =   30
       Width           =   615
    End
    Begin VB.CommandButton cmdSelectProcess 
       Caption         =   "PID"
       Height          =   315
-      Left            =   8880
-      TabIndex        =   26
-      Top             =   0
+      Left            =   5640
+      TabIndex        =   24
+      Top             =   30
       Width           =   555
    End
    Begin VB.CommandButton Command4 
       Caption         =   "Re-Apply"
       Height          =   315
-      Left            =   9480
-      TabIndex        =   18
-      Top             =   1410
+      Left            =   6240
+      TabIndex        =   16
+      Top             =   1440
       Width           =   1305
    End
    Begin VB.Frame Frame1 
       Caption         =   " Api Startup Logging Options "
       Height          =   4065
-      Left            =   10890
-      TabIndex        =   16
-      Top             =   30
+      Left            =   7650
+      TabIndex        =   14
+      Top             =   60
       Width           =   2565
       Begin VB.CheckBox chkIgnoreExitProcess 
          Caption         =   "Ignore ExitProcess"
          Height          =   315
          Left            =   180
-         TabIndex        =   30
+         TabIndex        =   28
          Top             =   3540
          Width           =   2055
       End
@@ -169,7 +190,7 @@ Begin VB.Form Form2
          Caption         =   "Block NtSystemDebugCtl"
          Height          =   285
          Left            =   180
-         TabIndex        =   28
+         TabIndex        =   26
          Top             =   3210
          Width           =   2085
       End
@@ -178,7 +199,7 @@ Begin VB.Form Form2
          Enabled         =   0   'False
          Height          =   285
          Left            =   180
-         TabIndex        =   25
+         TabIndex        =   23
          Top             =   2880
          Width           =   1965
       End
@@ -187,7 +208,7 @@ Begin VB.Form Form2
          Enabled         =   0   'False
          Height          =   255
          Left            =   180
-         TabIndex        =   24
+         TabIndex        =   22
          Top             =   2550
          Width           =   1995
       End
@@ -196,7 +217,7 @@ Begin VB.Form Form2
          Enabled         =   0   'False
          Height          =   315
          Left            =   180
-         TabIndex        =   23
+         TabIndex        =   21
          Top             =   2160
          Width           =   2145
       End
@@ -204,7 +225,7 @@ Begin VB.Form Form2
          Caption         =   "Advance GetTickCount"
          Height          =   315
          Left            =   180
-         TabIndex        =   22
+         TabIndex        =   20
          Top             =   1770
          Width           =   2205
       End
@@ -212,7 +233,7 @@ Begin VB.Form Form2
          Caption         =   "Block OpenProcess"
          Height          =   345
          Left            =   180
-         TabIndex        =   21
+         TabIndex        =   19
          Top             =   1380
          Width           =   1935
       End
@@ -220,7 +241,7 @@ Begin VB.Form Form2
          Caption         =   "No Registry Hooks"
          Height          =   285
          Left            =   180
-         TabIndex        =   20
+         TabIndex        =   18
          Top             =   1020
          Width           =   1845
       End
@@ -228,7 +249,7 @@ Begin VB.Form Form2
          Caption         =   "No GetProcAddress"
          Height          =   285
          Left            =   180
-         TabIndex        =   19
+         TabIndex        =   17
          Top             =   660
          Width           =   1725
       End
@@ -236,152 +257,121 @@ Begin VB.Form Form2
          Caption         =   "Ignore Long Sleeps"
          Height          =   315
          Left            =   180
-         TabIndex        =   17
+         TabIndex        =   15
          Top             =   300
          Width           =   2055
       End
    End
    Begin VB.TextBox txtArgs 
       Height          =   315
-      Left            =   4260
+      Left            =   1020
       OLEDropMode     =   1  'Manual
-      TabIndex        =   15
-      Top             =   330
+      TabIndex        =   13
+      Top             =   360
       Width           =   5145
    End
    Begin VB.TextBox txtIgnore 
       Height          =   315
-      Left            =   4260
-      TabIndex        =   13
+      Left            =   1020
+      TabIndex        =   11
       ToolTipText     =   "comma seperate value list of strings to ignore logging of"
-      Top             =   1380
+      Top             =   1410
       Width           =   5115
    End
    Begin VB.CommandButton Command1 
       Caption         =   "Stop Logging"
       Height          =   375
-      Left            =   4500
-      TabIndex        =   11
-      Top             =   3690
-      Width           =   1485
+      Left            =   1020
+      TabIndex        =   9
+      Top             =   3720
+      Width           =   1245
    End
    Begin VB.CommandButton cmdContinue 
       Caption         =   "Continue"
       Enabled         =   0   'False
       Height          =   315
-      Left            =   9480
-      TabIndex        =   10
-      Top             =   1050
+      Left            =   6240
+      TabIndex        =   8
+      Top             =   1080
       Width           =   1305
    End
    Begin VB.TextBox txtDumpAt 
       Height          =   285
-      Left            =   4260
-      TabIndex        =   8
-      Top             =   1020
+      Left            =   1020
+      TabIndex        =   6
+      Top             =   1050
       Width           =   5145
-   End
-   Begin VB.ListBox List2 
-      Height          =   1425
-      Left            =   3330
-      TabIndex        =   7
-      Top             =   1980
-      Width           =   7455
    End
    Begin VB.TextBox txtDll 
       Height          =   285
-      Left            =   4260
+      Left            =   1020
       OLEDropMode     =   1  'Manual
       TabIndex        =   5
-      Top             =   690
+      Top             =   720
       Width           =   5145
    End
    Begin VB.CommandButton cmdStart 
       Caption         =   "Inject && Log"
       Height          =   315
-      Left            =   9480
+      Left            =   6240
       TabIndex        =   2
-      Top             =   0
+      Top             =   30
       Width           =   1335
    End
    Begin VB.TextBox txtPacked 
       Height          =   315
-      Left            =   4260
+      Left            =   1020
       OLEDropMode     =   1  'Manual
       TabIndex        =   1
-      Top             =   -30
-      Width           =   3885
-   End
-   Begin VB.Label Label9 
-      Caption         =   "Processes"
-      Height          =   285
-      Left            =   60
-      TabIndex        =   36
       Top             =   0
-      Width           =   1335
-   End
-   Begin VB.Label Label8 
-      Caption         =   "Capture report (beta)"
-      Height          =   255
-      Left            =   30
-      TabIndex        =   33
-      Top             =   1770
-      Width           =   2475
+      Width           =   3885
    End
    Begin VB.Label Label7 
       Caption         =   "Args"
       Height          =   285
-      Left            =   3300
-      TabIndex        =   14
-      Top             =   330
+      Left            =   60
+      TabIndex        =   12
+      Top             =   360
       Width           =   945
    End
    Begin VB.Label Label6 
       Caption         =   "Ignore (Slow)"
       Height          =   285
-      Left            =   3270
-      TabIndex        =   12
-      Top             =   1440
+      Left            =   30
+      TabIndex        =   10
+      Top             =   1470
       Width           =   975
    End
    Begin VB.Label Label5 
       Caption         =   "Freeze At"
       Height          =   255
-      Left            =   3300
-      TabIndex        =   9
-      Top             =   1080
+      Left            =   60
+      TabIndex        =   7
+      Top             =   1110
       Width           =   915
-   End
-   Begin VB.Label Label4 
-      Caption         =   "Injection Details"
-      Height          =   315
-      Left            =   3300
-      TabIndex        =   6
-      Top             =   1740
-      Width           =   1755
    End
    Begin VB.Label Label3 
       Caption         =   "Inject DLL"
       Height          =   315
-      Left            =   3300
+      Left            =   60
       TabIndex        =   4
-      Top             =   720
+      Top             =   750
       Width           =   975
    End
    Begin VB.Label Label2 
       Caption         =   "API Call Log"
       Height          =   255
-      Left            =   3300
+      Left            =   60
       TabIndex        =   3
-      Top             =   3840
+      Top             =   3870
       Width           =   1035
    End
    Begin VB.Label Label1 
       Caption         =   "Executable"
       Height          =   255
-      Left            =   3300
+      Left            =   60
       TabIndex        =   0
-      Top             =   30
+      Top             =   60
       Width           =   975
    End
    Begin VB.Menu mnuPopup 
@@ -408,6 +398,12 @@ Begin VB.Form Form2
       End
       Begin VB.Menu mnuUpdateConfig 
          Caption         =   "Update Config"
+      End
+      Begin VB.Menu mnuUpdateAll 
+         Caption         =   "Update All"
+      End
+      Begin VB.Menu mnuKillAll 
+         Caption         =   "Kill All"
       End
    End
    Begin VB.Menu mnuCaptures 
@@ -512,10 +508,8 @@ Private Declare Function NtResumeProcess Lib "ntdll.dll" (ByVal hProc As Long) A
 'class technique or inline code you desire...
 Dim WithEvents sc As CSubclass2
 Attribute sc.VB_VarHelpID = -1
-Dim dlg As New clsCmnDlg
-Dim fso As New CFileSystem2
-Dim WithEvents dm As CApiDataManager
-Attribute dm.VB_VarHelpID = -1
+Public dlg As New clsCmnDlg
+Public fso As New CFileSystem2
 
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (hpvDest As Any, hpvSource As Any, ByVal cbCopy As Long)
 Private Const WM_COPYDATA = &H4A
@@ -618,6 +612,20 @@ Private Sub cmdFind_Click()
     Shell "notepad.exe """ & f & """", vbNormalFocus
 End Sub
 
+Private Sub cmdParse_Click()
+    
+    On Error Resume Next
+    Dim i As Long, t, f As String
+    Dim li As ListItem
+    
+    For Each li In lv.ListItems
+        t = t & "pid: " & li.Text & " - " & li.SubItems(1) & vbCrLf
+    Next
+    
+    frmLogParser.LoadSampleApiLog CStr(t)
+    
+End Sub
+
 Private Sub cmdSave_Click()
     On Error Resume Next
     Dim i As Long, t, f As String
@@ -706,87 +714,16 @@ Private Sub Command4_Click()
     Next
 End Sub
 
-Private Sub dm_CaptureMade(ch As CApiHandle)
-    
-    Dim pNode As Node
-    
-    If ch.ctype = ct_OpenProcess Then
-        Set pNode = TopNodeAddIfNotExist("OpenProcess")
-        If Len(Trim(ch.Resource)) = 0 Then Stop
-        AddChildIfNotExist pNode, ch.Resource
-    End If
-    
-End Sub
-
-Private Function AddChildIfNotExist(pNode As Node, name As String)
-        
-    On Error Resume Next
-    Dim c As Collection
-    Dim n As Node
-    
-    Set c = GetChildrenFor(pNode)
-    
-    If c.Count > 0 Then
-        For Each n In c
-            If n.Text = name Then Exit Function
-        Next
-    End If
-    
-    Set n = tv.Nodes.Add(pNode, tvwChild, , name)
-   
-        
-        
-End Function
-
-Private Function GetChildrenFor(pNode As Node)
-    Dim c As New Collection
-    Dim n As Node
-    On Error Resume Next
-    Set n = pNode.Child
-    
-    If n Is Nothing Then
-        Set GetChildrenFor = c
-        Exit Function
-    End If
-    
-    c.Add n
-    Do While 1
-        If n.Next Is Nothing Then Exit Do
-        If n.Next = pNode.LastSibling Then Exit Do
-        Set n = n.Next
-        c.Add n
-    Loop
-        
-    Set GetChildrenFor = c
-        
-End Function
-
-
-Private Function TopNodeAddIfNotExist(name As String) As Node
-    
-   On Error Resume Next
-   Dim n As Node
-   Set n = tv.Nodes(name)
-   If n Is Nothing Then
-        Set TopNodeAddIfNotExist = tv.Nodes.Add(, , name, name)
-   Else
-        Set TopNodeAddIfNotExist = n
-   End If
-    
-End Function
-
-Private Sub dm_GenericData(name As Variant, value As Variant)
-   On Error Resume Next
-   Dim pNode As Node
-   Set pNode = TopNodeAddIfNotExist(CStr(name))
-   AddChildIfNotExist pNode, CStr(value)
-End Sub
 
 
 Private Sub Form_Load()
     
+    With List2
+        lvProc.Move .Left, .Top, .Width, .Height
+        .Visible = False
+    End With
+    
     Set sc = New CSubclass2
-    Set dm = New CApiDataManager
     
     sc.AttachMessage Me.hwnd, WM_COPYDATA
     
@@ -839,24 +776,13 @@ Private Sub mnuClearPidList_Click()
     lvProc.ListItems.Clear
 End Sub
 
-Private Sub mnuLoadSampleApiLog_Click()
+Private Sub mnuKillAll_Click()
     On Error Resume Next
-    Dim f As String
-    Dim lines() As String
-    Dim x, y, a, b
-    f = dlg.OpenDialog(textFiles, , , Me.hwnd)
-    If Len(f) = 0 Then Exit Sub
-    f = fso.ReadFile(f)
-    lines() = Split(f, vbCrLf)
-    tv.Nodes.Clear
-    For Each x In lines
-        If VBA.Left(x, 4) = "pid:" Then 'copy format...
-            a = Split(x, " - ", 2)
-            y = Trim(Replace(a(0), "pid:", Empty)) & "," & a(1)
-        Else
-            y = x
-        End If
-        dm.HandleApiMessage y
+    Dim pid As Long
+    Dim li As ListItem
+    For Each li In lvProc.ListItems
+        pid = CLng("&h" & li.Text)
+        cpi.TerminateProces pid
     Next
 End Sub
 
@@ -897,6 +823,23 @@ Private Sub mnuTerminate_Click()
          List2.ListIndex = List2.ListCount - 1
          CloseHandle (hProcess)
     End If
+End Sub
+
+Private Sub mnuUpdateAll_Click()
+    On Error Resume Next
+    Dim pid As Long, hProcess As Long, handler As Long, hThread As Long, arg As Long
+    Dim li As ListItem
+    For Each li In lvProc.ListItems
+        pid = CLng("&h" & li.Text)
+        handler = CLng("&h" & li.SubItems(3))
+        If handler <> 0 And Err.Number = 0 Then
+            hProcess = OpenProcess(PROCESS_ALL_ACCESS, False, pid)
+            List2.AddItem "UpdateConfig(" & Hex(hProcess) & "," & Hex(handler) & ") = " & CreateRemoteThread(hProcess, ByVal 0, 0, handler, arg, 0, hThread)
+            List2.ListIndex = List2.ListCount - 1
+            CloseHandle hProcess
+        End If
+        Err.Clear
+    Next
 End Sub
 
 Private Sub mnuUpdateConfig_Click()
@@ -1142,8 +1085,9 @@ End Function
  
  
 
-Private Sub Tv_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
-    If Button = 2 Then PopupMenu mnuCaptures
+Private Sub TabStrip1_Click()
+    If TabStrip1.SelectedItem.Index = 1 Then lvProc.Visible = True Else lvProc.Visible = False
+    List2.Visible = Not lvProc.Visible
 End Sub
 
 Private Sub txtArgs_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, y As Single)

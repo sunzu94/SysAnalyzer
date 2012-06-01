@@ -310,6 +310,10 @@ Private Sub Form_Load()
      
 End Sub
 
+Private Sub Form_Unload(Cancel As Integer)
+    abort = True
+End Sub
+
 Private Sub lv_DblClick()
     mnuView_Click
 End Sub
