@@ -17,6 +17,10 @@ Source: ./dependancy\mscomctl.ocx; DestDir: {win}; Flags: uninsneveruninstall re
 Source: ./dependancy\MSWINSCK.OCX; DestDir: {win}; Flags: uninsneveruninstall regserver
 Source: ./dependancy\hexed.ocx; DestDir: {win}; Flags: uninsneveruninstall regserver
 Source: ./dependancy\zlib.dll; DestDir: {app}
+Source: ./\source\proc_watch\Project1.vbw; DestDir: {app}\source\proc_watch
+Source: ./\source\proc_watch\Form2.frx; DestDir: {app}\source\proc_watch
+Source: ./\source\proc_watch\Form2.frm; DestDir: {app}\source\proc_watch
+Source: ./\source\proc_watch\Project1.vbp; DestDir: {app}\source\proc_watch
 Source: ./\source\apilog_dll\injector\Project1.vbw; DestDir: {app}\source\apilog_dll\injector
 Source: ./\source\apilog_dll\injector\hook.ico; DestDir: {app}\source\apilog_dll\injector
 Source: ./\source\apilog_dll\injector\Form2.frx; DestDir: {app}\source\apilog_dll\injector
@@ -79,6 +83,7 @@ Source: ./\api_logger.exe; DestDir: {app}; Flags: ignoreversion
 Source: ./\dir_watch.dll; DestDir: {app}; Flags: ignoreversion
 Source: ./\exploit_sigs.txt; DestDir: {app}
 Source: ./\proc_analyzer.exe; DestDir: {app}; Flags: ignoreversion
+Source: ./\proc_watch.exe; DestDir: {app}; Flags: ignoreversion
 Source: ./\safe_test1.exe; DestDir: {app}
 Source: ./\sniff_hit.exe; DestDir: {app}; Flags: ignoreversion
 Source: ./\sysAnalyzer.exe; DestDir: {app}; Flags: ignoreversion
@@ -136,6 +141,9 @@ Name: {group}\Help File; Filename: {app}\SysAnalyzer_help.chm; WorkingDir: {app}
 Name: {userdesktop}\DirWatch; Filename: {app}\dirwatch_ui.exe; IconIndex: 0
 Name: {userdesktop}\Sniffhit; Filename: {app}\sniff_hit.exe; IconIndex: 0
 Name: {userdesktop}\ApiLogger; Filename: {app}\api_logger.exe; IconIndex: 0
+Name: {group}\ProcWatch; Filename: {app}\proc_watch.exe
+Name: {userdesktop}\ProcWatch; Filename: {app}\proc_watch.exe
+Name: {group}\Source\ProcWatch.vbp; Filename: {app}\source\proc_watch\Project1.vbp
 
 [CustomMessages]
 NameAndVersion=%1 version %2

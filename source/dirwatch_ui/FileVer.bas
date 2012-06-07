@@ -44,8 +44,8 @@ Global cLogData As New Collection
 
 
 Public Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
-Private Declare Function SHGetPathFromIDList Lib "Shell32" Alias "SHGetPathFromIDListA" (ByVal pidl As Long, ByVal pszPath As String) As Long
-Private Declare Function SHGetSpecialFolderLocation Lib "Shell32" (ByVal hwndOwner As Long, ByVal nFolder As Long, pidl As Long) As Long
+Private Declare Function SHGetPathFromIDList Lib "shell32" Alias "SHGetPathFromIDListA" (ByVal pidl As Long, ByVal pszPath As String) As Long
+Private Declare Function SHGetSpecialFolderLocation Lib "shell32" (ByVal hWndOwner As Long, ByVal nFolder As Long, pidl As Long) As Long
 Private Declare Sub CoTaskMemFree Lib "ole32" (ByVal pv As Long)
 Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (hpvDest As Any, hpvSource As Any, ByVal cbCopy As Long)
 
@@ -61,7 +61,10 @@ Public Function UserDeskTopFolder() As String
       UserDeskTopFolder = Left(p, InStr(p, Chr(0)) - 1)
       CoTaskMemFree idl
         
-      UserDeskTopFolder = UserDeskTopFolder & "\"
+      UserDeskTopFolder = UserDeskTopFolder & "\analysis\"
+      
+      On Error Resume Next
+      If Not fso.FolderExists(UserDeskTopFolder) Then MkDir UserDeskTopFolder
   
 End Function
 
