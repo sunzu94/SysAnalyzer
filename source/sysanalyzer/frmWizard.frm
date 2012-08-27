@@ -474,12 +474,7 @@ Private Sub Form_Load()
         End If
     Next
             
-    If cboIp.ListCount = 0 Then  'no active interfaces ?
-        chkPacketCapture.Enabled = False
-        chkPacketCapture.Value = 0
-        chkNetworkAnalyzer.Value = 0
-        chkNetworkAnalyzer.Enabled = False
-    Else
+    If cboIp.ListCount <> 0 Then  'no active interfaces ?
         cboIp.ListIndex = 0
     End If
     
@@ -497,6 +492,13 @@ Private Sub Form_Load()
     
     LoadConfig
 
+    If cboIp.ListCount = 0 Then  'no active interfaces ?
+        chkPacketCapture.Enabled = False
+        chkPacketCapture.Value = 0
+        chkNetworkAnalyzer.Value = 0
+        chkNetworkAnalyzer.Enabled = False
+    End If
+    
     If Len(Command) > 0 Then
         Dim cmd As String
         cmd = Trim(Replace(Command, """", Empty))

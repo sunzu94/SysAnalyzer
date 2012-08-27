@@ -33,6 +33,13 @@ Option Explicit
 '         Place, Suite 330, Boston, MA 02111-1307 USA
 
 'Used in several projects do not change interface!
+'
+'8.25.12
+'  changed interface, added cx64 class dependancy to support info on x64 processes
+'  changed GetRunningProcesses to use WTSQuerySessionInformation for better support across privledge levels/os
+'  fixed GetProcessCmdLine
+'  Fixed GetUsername to work across more privledge levels/os
+'  added is64Bit, domain, fullpath, sessionID to CProcess
 
 Private Declare Function NtQuerySystemInformation Lib "ntdll.dll" ( _
     ByVal dwInfoType As Long, _
@@ -41,9 +48,9 @@ Private Declare Function NtQuerySystemInformation Lib "ntdll.dll" ( _
     dwReserved As Long) As Long
 
 Private Type SYSTEM_MODULE_INFORMATION
-    reserved(1) As Long                'ULONG reserved[2];
-    base As Long                       'PVOID Base;
-    size As Long                       'ULONG Size;
+    Reserved(1) As Long                'ULONG reserved[2];
+    Base As Long                       'PVOID Base;
+    Size As Long                       'ULONG Size;
     flags As Long                      'ULONG Flags;
     Index As Integer                   'USHORT Index;
     unkn As Integer                    'USHORT Unknown;
@@ -92,7 +99,7 @@ Private Type MEMORY_BASIC_INFORMATION
    AllocationBase As Long
    InitialProtect As Long
    RegionSize As Long
-   state As Long
+   State As Long
    Protect As Long
    Type As Long
 End Type
@@ -156,7 +163,7 @@ Private Declare Function GetModuleFileNameExA Lib "PSAPI.DLL" (ByVal hProcess As
 
 Private Declare Function OpenProcessToken Lib "advapi32.dll" (ByVal ProcessHandle As Long, ByVal DesiredAccess As Long, TokenHandle As Long) As Long
 Private Declare Function GetTokenInformation Lib "advapi32.dll" (ByVal TokenHandle As Long, ByVal TokenInformationClass As Integer, TokenInformation As Any, ByVal TokenInformationLength As Long, ReturnLength As Long) As Long
-Private Declare Function LookupAccountSid Lib "advapi32.dll" Alias "LookupAccountSidA" (ByVal lpSystemName As String, ByVal Sid As Long, ByVal name As String, cbName As Long, ByVal ReferencedDomainName As String, cbReferencedDomainName As Long, peUse As Integer) As Long
+Private Declare Function LookupAccountSid Lib "advapi32.dll" Alias "LookupAccountSidA" (ByVal lpSystemName As String, ByVal sID As Long, ByVal name As String, cbName As Long, ByVal ReferencedDomainName As String, cbReferencedDomainName As Long, peUse As Integer) As Long
 'Private Declare Function VirtualQueryEx Lib "kernel32" (ByVal hProcess As Long, lpAddress As Any, lpBuffer As MEMORY_BASIC_INFORMATION, ByVal dwLength As Long) As Long
 Private Declare Function VirtualQueryEx Lib "kernel32" (ByVal hProcess As Long, ByVal lpAddress As Long, lpBuffer As MEMORY_BASIC_INFORMATION, ByVal dwLength As Long) As Long
 
@@ -166,19 +173,84 @@ Private Declare Function LookupPrivilegeValue Lib "advapi32.dll" Alias "LookupPr
 Private Declare Function GetLastError Lib "kernel32.dll" () As Long
 Private Declare Function AdjustTokenPrivileges Lib "advapi32.dll" (ByVal TokenHandle As Long, ByVal DisableAllPrivileges As Long, ByRef NewState As TOKEN_PRIVILEGES, ByVal BufferLength As Long, ByRef PreviousState As TOKEN_PRIVILEGES, ByRef ReturnLength As Long) As Long
 
+Private Declare Function GetProcAddress Lib "kernel32" (ByVal hModule As Long, ByVal lpProcName As String) As Long
+Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
+
+Private Declare Function GetProcessImageFileNameA Lib "PSAPI.DLL" _
+        (ByVal hProcess As Long, _
+         ByVal lpImageName As String, _
+         ByVal nSize As Long) As Long
+
+Private Declare Function NtQueryInformationProcess Lib "ntdll" ( _
+    ByVal ProcessHandle As Long, ByVal InformationClass As Long, _
+    ByRef ProcessInformation As Any, ByVal ProcessInformationLength As Long, _
+    ByRef ReturnLength As Any) As Long
+
+Private Const WTS_CURRENT_SERVER_HANDLE = 0&
+
+Private Declare Function WTSQuerySessionInformation _
+    Lib "wtsapi32" Alias "WTSQuerySessionInformationW" ( _
+    ByVal hServer As Long, _
+    ByVal sessionID As Long, _
+    ByVal WTSInfoClass As Long, _
+    ByRef Address As Long, _
+    ByRef pBytesReturned As Long _
+) As Long
+
+'Private Declare Function LookupAccountSid Lib "advapi32.dll" Alias "LookupAccountSidA" _
+'                                        (ByVal lpSystemName As String, _
+'                                         ByVal sID As Long, _
+'                                         ByVal name As String, _
+'                                         cbName As Long, _
+'                                         ByVal ReferencedDomainName As String, _
+'                                         cbReferencedDomainName As Long, _
+'                                         peUse As Integer) As Long
+
+Private Declare Function GetCurrentProcessId Lib "kernel32.dll" () As Long
+Private Declare Sub ProcessIdToSessionId Lib "kernel32.dll" (ByVal lngPID As Long, ByRef lngSID As Long)
+
+Private Declare Function QueryDosDeviceW Lib "kernel32.dll" ( _
+    ByVal lpDeviceName As Long, _
+    ByVal lpTargetPath As Long, _
+    ByVal ucchMax As Long _
+    ) As Long
+Private Const MAX_PATH = 260
+
+Private Declare Function GetLogicalDriveStringsA Lib "kernel32" ( _
+    ByVal nBufferLength As Long, lpBuffer As Any) As Long
 
 
-Private Type SID_AND_ATTRIBUTES
-       Sid As Long
-       Attributes As Long
-       Spare(SPARE_LEN) As Byte
+Private Type WTS_PROCESS_INFO
+   sessionID As Long
+   ProcessID As Long
+   pProcessName As Long
+   pUserSid As Long
 End Type
 
-Private Type LPMODULEINFO
-    lpBaseOfDll As Long
-    SizeOfImage As Long
-    EntryPoint As Long
-End Type
+Private Declare Function WTSEnumerateProcesses _
+   Lib "wtsapi32.dll" Alias "WTSEnumerateProcessesA" _
+   (ByVal hServer As Long, ByVal Reserved As Long, _
+   ByVal Version As Long, ByRef ppProcessInfo As Long, _
+   ByRef pCount As Long _
+   ) As Long
+
+Private Declare Sub WTSFreeMemory Lib "wtsapi32.dll" _
+   (ByVal pMemory As Long)
+
+'Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" _
+'   (Destination As Any, Source As Any, ByVal length As Long)
+
+'Private Declare Function LookupAccountName _
+'   Lib "advapi32.dll" Alias "LookupAccountNameA" _
+'   (ByVal lpSystemName As String, _
+'    ByVal lpAccountName As String, _
+'    sID As Any, _
+'    cbSid As Long, _
+'    ReferencedDomainName As Any, _
+'    cbReferencedDomainName As Long, _
+'    peUse As Integer) As Long
+    
+Private Const ProcessBasicInformation = 0
 
 Private Type PROCESS_BASIC_INFORMATION
     ExitStatus As Long
@@ -187,6 +259,18 @@ Private Type PROCESS_BASIC_INFORMATION
     BasePriority As Long
     UniqueProcessId As Long
     InheritedFromUniqueProcessId As Long
+End Type
+
+Private Type SID_AND_ATTRIBUTES
+       sID As Long
+       Attributes As Long
+       Spare(SPARE_LEN) As Byte
+End Type
+
+Private Type LPMODULEINFO
+    lpBaseOfDll As Long
+    SizeOfImage As Long
+    EntryPoint As Long
 End Type
 
 Private Type strucPEB
@@ -224,6 +308,7 @@ Private Type TOKEN_PRIVILEGES
 End Type
 
 Public SeDebugEnabled As Boolean
+Public x64 As New Cx64
 
 Function GetRunningProcesses() As Collection 'of CProcess classes
     
@@ -233,67 +318,134 @@ Function GetRunningProcesses() As Collection 'of CProcess classes
     Dim proc As CProcess
     Dim n As Long
     
-    myProcess.dwSize = Len(myProcess)
-    mySnapshot = CreateToolhelpSnapshot(TH32CS_SNAPPROCESS, 0&)
-    
-    ProcessFirst mySnapshot, myProcess
-    
-    Set proc = New CProcess
-    With proc
-        .path = GetProcessPath(myProcess.th32ProcessID)
-        .pid = myProcess.th32ProcessID
-        .ParentPID = myProcess.th32ParentProcessID
-        '.CmdLine = GetProcessCmdLine(.pid)
-        .User = GetProcessUser(.pid)
-    End With
-    
-    m_col.Add proc, "pid:" & myProcess.th32ProcessID
-    
-     
-    While ProcessNext(mySnapshot, myProcess)
-        Set proc = New CProcess
-        With proc
-            .path = myProcess.szexeFile
-            .pid = myProcess.th32ProcessID
-            .ParentPID = myProcess.th32ParentProcessID
-            '.CmdLine = GetProcessCmdLine(.pid)
-            .User = GetProcessUser(.pid)
-        End With
-        
-        n = InStr(proc.path, Chr(0))
-        If n > 1 Then proc.path = Mid(proc.path, 1, n - 1)
-        proc.path = Replace(proc.path, "\??\", Empty)
-        proc.path = Replace(proc.path, "\SystemRoot", Environ("Windir"))
-        
-        m_col.Add proc, "pid:" & myProcess.th32ProcessID
-    Wend
+    Dim RetVal As Long
+    Dim Count As Long
+    Dim i As Integer
+    Dim lpBuffer As Long
+    Dim p As Long
+    Dim udtProcessInfo As WTS_PROCESS_INFO
+    Dim itmAdd As ListItem
 
-    Set GetRunningProcesses = m_col
+    
+    RetVal = WTSEnumerateProcesses(WTS_CURRENT_SERVER_HANDLE, 0&, 1, lpBuffer, Count)
+   
+    If RetVal Then
+          p = lpBuffer
+          For i = 1 To Count
+                CopyMemory udtProcessInfo, ByVal p, LenB(udtProcessInfo)
+                Set proc = New CProcess
+                With proc
+                    .sessionID = udtProcessInfo.sessionID
+                    .pid = udtProcessInfo.ProcessID
+                    .path = GetStringFromLP(udtProcessInfo.pProcessName)
+                    .fullpath = GetProcessPath(.pid)
+                    .ParentPID = GetParentProcessId(.pid)
+                    .CmdLine = GetProcessCmdLine(.pid, .fullpath)
+                    GetUserName udtProcessInfo.pUserSid, proc
+                    .is64Bit = (x64.IsProcess_x64(.pid) = r_64bit)
+                    m_col.Add proc, "pid:" & .pid
+                End With
+                         
+                p = p + LenB(udtProcessInfo)
+          Next i
+    
+          Set itmAdd = Nothing
+          WTSFreeMemory lpBuffer   'Free your memory buffer
+   Else
+        Set m_col = Legacy_GetRunningProcesses() 'win2k
+   End If
+   
+   Set GetRunningProcesses = m_col
     
 End Function
 
-'this will fail for XP SP 2
-Function GetProcessCmdLine(pid As Long) As String
+Function Legacy_GetRunningProcesses() As Collection 'of CProcess classes
 
-    Exit Function 'fix me sometime
+    Dim m_col As New Collection
+    Dim myProcess As PROCESSENTRY32
+    Dim mySnapshot As Long
+    Dim proc As CProcess
+    Dim n As Long
+
+    myProcess.dwSize = Len(myProcess)
+    mySnapshot = CreateToolhelpSnapshot(TH32CS_SNAPPROCESS, 0&)
+
+    ProcessFirst mySnapshot, myProcess
+
+    If myProcess.th32ProcessID <> 0 Then
+        Set proc = New CProcess
+        With proc
+            .path = myProcess.szexeFile
+             If InStr(.path, Chr(0)) > 0 Then
+                .path = Mid(.path, 1, InStr(.path, Chr(0)) - 1)
+             End If
+            .fullpath = GetProcessPath(myProcess.th32ProcessID)
+            .pid = myProcess.th32ProcessID
+            .ParentPID = myProcess.th32ParentProcessID
+            .CmdLine = GetProcessCmdLine(.pid, .fullpath)
+            .User = GetProcessUser(.pid)
+            .is64Bit = (x64.IsProcess_x64(.pid) = r_64bit)
+        End With
+
+        m_col.Add proc, "pid:" & myProcess.th32ProcessID
+    End If
+
+    While ProcessNext(mySnapshot, myProcess)
+
+        If myProcess.th32ProcessID <> 4 Then
+            Set proc = New CProcess
+            With proc
+                .path = myProcess.szexeFile
+                 If InStr(.path, Chr(0)) > 0 Then
+                    .path = Mid(.path, 1, InStr(.path, Chr(0)) - 1)
+                 End If
+                .fullpath = GetProcessPath(myProcess.th32ProcessID)
+                .pid = myProcess.th32ProcessID
+                .ParentPID = myProcess.th32ParentProcessID
+                .CmdLine = GetProcessCmdLine(.pid, .fullpath)
+                .User = GetProcessUser(.pid) 'OpenProcessToken Fails for Local/Network Service
+                'If Len(.User) = 0 Then Stop
+                .is64Bit = (x64.IsProcess_x64(.pid) = r_64bit)
+            End With
+
+            n = InStr(proc.path, Chr(0))
+            If n > 1 Then proc.path = Mid(proc.path, 1, n - 1)
+            proc.path = Replace(proc.path, "\??\", Empty)
+            proc.path = Replace(proc.path, "\SystemRoot", Environ("Windir"))
+
+            m_col.Add proc, "pid:" & myProcess.th32ProcessID
+        End If
+
+    Wend
+
+    Set Legacy_GetRunningProcesses = m_col
+
+End Function
+
+'using static PEB address will fail for XP SP 2 and above...
+Function GetProcessCmdLine(pid As Long, Optional fullpath As String) As String
+
+    'Exit Function 'fix me sometime
     
    'Converted from C Source by Matt pietrek in 1997 MSDJ
    '1. find the Process Environment Block
-   'the PEB is always at address 0x7ffdf000 but here is the "right" way to do it
-   'iReturn = NtQueryInformationProcess(hProcess,ProcessBasicInformation,&pbi,sizeof(pbi),&dwSize)
-   Dim hProcess As Long
-   hProcess = OpenProcess(PROCESS_VM_READ, False, pid)
    
-   Dim pbi As PROCESS_BASIC_INFORMATION
-   pbi.PebBaseAddress = &H7FFDF000
-    
+   Dim hProcess As Long
+   Dim PBI As PROCESS_BASIC_INFORMATION
+   Dim r As Long
    Dim dwSize As Long
    Dim peb As strucPEB
    Dim udt() As Byte
    ReDim udt(Len(peb))
    
-   If ReadProcessMemory(hProcess, pbi.PebBaseAddress, udt(0), Len(peb), dwSize) < 0 Then
-       MsgBox Err.LastDllError
+   hProcess = OpenProcess(PROCESS_VM_READ Or PROCESS_QUERY_INFORMATION, False, pid)
+   'pbi.PebBaseAddress = &H7FFDF000 'unsafe...
+    
+   r = NtQueryInformationProcess(hProcess, ProcessBasicInformation, PBI, Len(PBI), Len(PBI))
+   
+   If ReadProcessMemory(hProcess, PBI.PebBaseAddress, udt(0), Len(peb), dwSize) < 0 Then
+       'MsgBox Err.LastDllError
+       CloseHandle hProcess
        Exit Function
    End If
     
@@ -306,7 +458,8 @@ Function GetProcessCmdLine(pid As Long) As String
    ReDim udt(Len(Block))
     
    If ReadProcessMemory(hProcess, peb.InfoBlockAdderss, udt(0), Len(Block), dwSize) < 0 Then
-          MsgBox Err.LastDllError
+          'MsgBox Err.LastDllError
+          CloseHandle hProcess
           Exit Function
    End If
 
@@ -317,14 +470,20 @@ Function GetProcessCmdLine(pid As Long) As String
    Dim CmdLine As String
      
    If ReadProcessMemory(hProcess, Block.wszCmdLineAddress, wszCmdLine(0), UBound(wszCmdLine), dwSize) < 0 Then
-            MsgBox Err.LastDllError
+            'MsgBox Err.LastDllError
+            CloseHandle hProcess
             Exit Function
    End If
+    
+    Dim i As Long
+    
+   For i = 0 To UBound(wszCmdLine) - 1
+        If wszCmdLine(i) = 0 And wszCmdLine(i + 1) = 0 Then Exit For
+        If wszCmdLine(i) <> 0 Then CmdLine = CmdLine & Chr(wszCmdLine(i))
+   Next
      
-   CmdLine = StrConv(wszCmdLine, vbUnicode) 'unicode byte array to string
-   CmdLine = Replace(CmdLine, Chr(0), " ")
-     
-   'Debug.Print hexdump(cmdLine)
+   CmdLine = Replace(CmdLine, """" & fullpath & """", Empty, , , vbTextCompare)
+   CmdLine = Replace(CmdLine, fullpath, Empty, , , vbTextCompare)
      
    GetProcessCmdLine = Trim(CmdLine)
    
@@ -361,8 +520,8 @@ Function GetProcessModules(pid As Long) As Collection
          
         Set cmod = New CModule
         cmod.path = mfn
-        cmod.base = lmi.lpBaseOfDll
-        cmod.size = lmi.SizeOfImage
+        cmod.Base = lmi.lpBaseOfDll
+        cmod.Size = lmi.SizeOfImage
          
         On Error Resume Next
         mCol.Add cmod, cmod.path
@@ -375,7 +534,8 @@ Function GetProcessModules(pid As Long) As Collection
 hell:
 End Function
 
-
+'this will fail for Local Service and Network Service processes even with Admin and sedebug...
+'use the data in cprocess instead if possible..
 Function GetProcessUser(pid As Long) As String
    'Microsoft Visual Basic Developer Support
    'This posting is provided “AS IS” with no warranties, and confers no rights.
@@ -408,7 +568,7 @@ Function GetProcessUser(pid As Long) As String
            domain = String$(100, 0)
            lu = Len(User)
            ld = Len(domain)
-           success = LookupAccountSid(vbNullString, InfoStructure.Sid, User, lu, domain, ld, sid_name_use)
+           success = LookupAccountSid(vbNullString, InfoStructure.sID, User, lu, domain, ld, sid_name_use)
 
            If success = 0 Then
                ErrNo = Err.LastDllError
@@ -478,17 +638,17 @@ Function ReadMemory(pid As Long, start As Long, Length As Long) As String
     
 End Function
 
+'less restrictions on GetProcessImageFileName ?
 Function GetProcessPath(pid As Long) As String
     Dim hProc As Long
     Dim hMods() As Long, ret As Long, retMax As Long
     Dim sPath As String
     Dim n As Long
     
-    hProc = OpenProcess(PROCESS_QUERY_INFORMATION Or PROCESS_VM_READ, False, pid)
+    hProc = OpenProcess(PROCESS_QUERY_INFORMATION Or PROCESS_VM_READ, False, pid) '2k and XP
     If hProc <> 0 Then
         ReDim hMods(900)
         ret = EnumProcessModules(hProc, hMods(0), 900, retMax)
-                
         sPath = Space$(260)
         ret = GetModuleFileNameExA(hProc, hMods(0), sPath, 260)
         GetProcessPath = Left$(sPath, ret)
@@ -497,8 +657,30 @@ Function GetProcessPath(pid As Long) As String
         n = InStr(GetProcessPath, Chr(0))
         If n > 1 Then GetProcessPath = Mid(GetProcessPath, 1, n - 1)
         
-        Call CloseHandle(hProc)
     End If
+    
+    If hProc <> 0 Then CloseHandle hProc
+    
+    If Len(GetProcessPath) = 0 Then 'handles more permission issues in Vista+
+        hProc = OpenProcess(PROCESS_QUERY_INFORMATION, False, pid)
+        If hProc = 0 Then Exit Function
+        sPath = String(1024, " ")
+        ret = GetProcAddress(LoadLibrary("psapi.dll"), "GetProcessImageFileNameA")
+        If ret = 0 Then
+            ret = GetProcAddress(LoadLibrary("kernel32.dll"), "GetProcessImageFileNameA") 'Vista+
+        End If
+        If ret = 0 Then Exit Function
+        ret = GetProcessImageFileNameA(hProc, sPath, 1024) 'this returns NT style names \DeviceHardDiskVolume1\...
+        If ret <> 0 Then
+            GetProcessPath = Left$(sPath, ret)
+            n = InStr(GetProcessPath, Chr(0))
+            If n > 1 Then GetProcessPath = Mid(GetProcessPath, 1, n - 1)
+            sPath = GetDosPathForNtDevicePath(GetProcessPath)
+            If Len(sPath) > 0 Then GetProcessPath = sPath
+        End If
+        CloseHandle hProc
+    End If
+    
 End Function
 
 Function EnumDrivers() As Collection
@@ -568,7 +750,7 @@ Function GetSeDebug() As Boolean
     tkp.PrivilegeCount = 1
     tkp.Attributes = 2 'SE_PRIVILEGE_ENABLED
     
-    AdjustTokenPrivileges hToken, False, tkp, Len(tkp), tkp, lret
+    If AdjustTokenPrivileges(hToken, False, tkp, Len(tkp), tkp, lret) = 0 Then Exit Function
         
     If GetLastError = 0 Then GetSeDebug = True
 
@@ -598,16 +780,16 @@ Function GetMemoryMap(pid As Long) As Collection 'of CMem
     Do While cur < &H7FFEFFFF
          x = VirtualQueryEx(hProc, cur, meminfo, LenB(meminfo))
          
-         If meminfo.state <> MEM_FREE Then
+         If meminfo.State <> MEM_FREE Then
             Set cMem = New CMemory
             cMem.pid = pid
-            cMem.size = meminfo.RegionSize
-            cMem.base = cur
+            cMem.Size = meminfo.RegionSize
+            cMem.Base = cur
             cMem.AllocBase = meminfo.AllocationBase
             cMem.InitialProtection = meminfo.InitialProtect
             cMem.MemType = meminfo.Type
             cMem.Protection = meminfo.Protect
-            cMem.state = meminfo.state
+            cMem.State = meminfo.State
                        
             If cur > 0 Then
                n = String(256, Chr(0))
@@ -636,4 +818,122 @@ Private Function ToNull(v As String) As String
     x = InStr(v, Chr(0))
     If x > 0 Then ToNull = Left(v, x - 1)
 End Function
+
+Private Function GetStringFromLP(ByVal StrPtr As Long) As String
+   Dim b As Byte
+   Dim tempStr As String
+   Dim bufferStr As String
+   Dim Done As Boolean
+
+   Done = False
+   Do
+      ' Get the byte/character that StrPtr is pointing to.
+      CopyMemory b, ByVal StrPtr, 1
+      If b = 0 Then  ' If you've found a null character, then you're done.
+         Done = True
+      Else
+         tempStr = Chr$(b)  ' Get the character for the byte's value
+         bufferStr = bufferStr & tempStr 'Add it to the string
+                
+         StrPtr = StrPtr + 1  ' Increment the pointer to next byte/char
+      End If
+   Loop Until Done
+   GetStringFromLP = bufferStr
+End Function
+
+Private Function GetUserName(sID As Long, p As CProcess) As String
+    On Error Resume Next
+    Dim retname As String
+    Dim retdomain As String
+    retname = String(255, 0)
+    retdomain = String(255, 0)
+    LookupAccountSid vbNullString, sID, retname, 255, retdomain, 255, 0
+    p.domain = Left$(retdomain, InStr(retdomain, vbNullChar) - 1)
+    p.User = Left$(retname, InStr(retname, vbNullChar) - 1)
+    GetUserName = p.domain & "\" & p.User
+End Function
+
+Public Function GetParentProcessId(ByVal pid As Long) As Long
+    Dim PBI As PROCESS_BASIC_INFORMATION
+    Dim hProcess As Long
+    hProcess = OpenProcess(PROCESS_VM_READ Or PROCESS_QUERY_INFORMATION, False, pid)
+    Call NtQueryInformationProcess(hProcess, ProcessBasicInformation, PBI, Len(PBI), ByVal 0&)
+    GetParentProcessId = PBI.InheritedFromUniqueProcessId
+    CloseHandle hProcess
+End Function
+
+
+'-----------------------------------------------------------
+'http://www.vbaccelerator.com/home/VB/Tips/Mapping_NT_Device_Names/article.asp
+'-----------------------------------------------------------
+Private Function GetNtDeviceNameForDrive( _
+   ByVal sDrive As String) As String
+Dim bDrive() As Byte
+Dim bResult() As Byte
+Dim lR As Long
+Dim sDeviceName As String
+
+   If Right(sDrive, 1) = "\" Then
+      If Len(sDrive) > 1 Then
+         sDrive = Left(sDrive, Len(sDrive) - 1)
+      End If
+   End If
+   bDrive = sDrive
+   ReDim Preserve bDrive(0 To UBound(bDrive) + 2) As Byte
+   ReDim bResult(0 To MAX_PATH * 2 + 1) As Byte
+   lR = QueryDosDeviceW(VarPtr(bDrive(0)), VarPtr(bResult(0)), MAX_PATH)
+   If (lR > 2) Then
+      sDeviceName = bResult
+      sDeviceName = Left(sDeviceName, lR - 2)
+      GetNtDeviceNameForDrive = sDeviceName
+   End If
+   
+End Function
+
+Private Function GetDrives() As Collection
+Dim colDrives As New Collection
+Dim lSize As Long
+Dim lR As Long
+Dim iLastPos As Long
+Dim iPos As Long
+Dim sDrive As String
+Dim sDriveStrings As String
+
+   lSize = GetLogicalDriveStringsA(0, ByVal 0&)
+   sDriveStrings = String(lSize + 1, 0)
+   lR = GetLogicalDriveStringsA(lSize, ByVal sDriveStrings)
+   iLastPos = 1
+   Do
+      iPos = InStr(iLastPos, sDriveStrings, vbNullChar)
+      If Not (iPos = 0) Then
+         sDrive = Mid$(sDriveStrings, iLastPos, iPos - iLastPos)
+         iLastPos = iPos + 1
+      Else
+         sDrive = Mid$(sDriveStrings, iLastPos)
+      End If
+      If Len(sDrive) > 0 Then
+         colDrives.Add sDrive
+      End If
+   Loop While Not (iPos = 0)
+   Set GetDrives = colDrives
+   
+End Function
+
+Private Function GetDosPathForNtDevicePath(ByVal sDevicePath As String) As String
+Dim sFoundDrive As String
+Dim colDrives As Collection
+Dim vDrive As Variant
+Dim tmp As String
+
+   For Each vDrive In GetDrives()
+      tmp = GetNtDeviceNameForDrive(vDrive)
+      If InStr(1, sDevicePath, tmp, vbTextCompare) > 0 Then
+         GetDosPathForNtDevicePath = Replace(sDevicePath, tmp, vDrive, , 1, vbTextCompare)
+         GetDosPathForNtDevicePath = Replace(GetDosPathForNtDevicePath, "\\", "\")
+         Exit Function
+      End If
+   Next
+   
+End Function
+'-------------------------------------------------
 
