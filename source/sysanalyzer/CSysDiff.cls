@@ -275,14 +275,14 @@ Private Sub ShowSnapShot(procs As Collection, ports As Collection, servcs As Col
     For Each proc In procs
         mm = not_found
         If known.Ready And known.Loaded Then
-            mm = known.isFileKnown(CProc.GetProcessPath(proc.pid))
+            mm = known.isFileKnown(proc.fullpath) 'CProc.GetProcessPath(proc.pid))
             If known.HideKnownInDisplays And mm = exact_match Then GoTo next_proc
         End If
-        Set li = frmMain.lvProcesses.ListItems.Add(, , proc.pid)
+        Set li = frmMain.lvProcesses.ListItems.Add(, , pad(proc.pid))
         li.Tag = proc.pid
-        li.SubItems(1) = proc.ParentPID
-        li.SubItems(2) = proc.User
-        li.SubItems(3) = CProc.GetProcessPath(proc.pid)
+        li.SubItems(1) = pad(proc.ParentPID)
+        li.SubItems(2) = proc.User & IIf(proc.is64Bit, "  *64 ", Empty)
+        li.SubItems(3) = proc.fullpath ' CProc.GetProcessPath(proc.pid)
         li.ToolTipText = proc.CmdLine
         If mm = exact_match Then SetLiColor li, my_green
         If mm = hash_changed Then SetLiColor li, my_orange
@@ -296,8 +296,8 @@ next_proc:
             mm = known.isFileKnown(Port.path)
             If known.HideKnownInDisplays And mm = exact_match Then GoTo next_port
         End If
-        Set li = frmMain.lvPorts.ListItems.Add(, , Port.Port)
-        li.SubItems(1) = Port.pid
+        Set li = frmMain.lvPorts.ListItems.Add(, , pad(Port.Port))
+        li.SubItems(1) = pad(Port.pid)
         li.SubItems(2) = IIf(Port.isTCP, "TCP", "UDP")
         li.SubItems(3) = Port.path
         If mm = exact_match Then SetLiColor li, my_green
@@ -396,9 +396,21 @@ next_driver:
         li.SubItems(1) = s
     Next
     
-    If iedlls.Count = 0 Then frmMain.lvIE.ListItems.Add , , IIf(isCompare, "No changes Found", "IE PID Not found")
-    If expdlls.Count = 0 Then frmMain.lvExplorer.ListItems.Add , , IIf(isCompare, "No changes Found", "Explorer PID Not found?")
+    If iedlls.count = 0 Then frmMain.lvIE.ListItems.Add , , IIf(isCompare, "No changes Found", "IE PID Not found")
+    If expdlls.count = 0 Then frmMain.lvExplorer.ListItems.Add , , IIf(isCompare, "No changes Found", "Explorer PID Not found?")
     
     ado.CloseConnection
 End Sub
 
+'for listview sorting...
+Private Function pad(v, Optional l As Long = 5)
+    On Error GoTo hell
+    Dim x As Long
+    x = Len(v)
+    If x < l Then
+        pad = String(l - x, " ") & v
+    Else
+hell:
+        pad = v
+    End If
+End Function
