@@ -39,5 +39,9 @@ Public path As String
 Public CmdLine As String
 Public ParentPID As Long
 Public User As String
-Public base As Long
-Public size As Long
+Public Base As Long
+Public Size As Long
+Public is64Bit As Boolean
+Public domain As String
+Public fullpath As String
+Public sessionID As Long

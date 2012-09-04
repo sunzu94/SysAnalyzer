@@ -386,9 +386,8 @@ Private Sub Form_Load()
         tmp = Split(Drive1.List(i), ":")
         Set li = lv.ListItems.Add(, , Drive1.List(i))
         li.Tag = tmp(0) & ":\"
+        If VBA.Left(LCase(lv.ListItems(i + 1).Text), 2) = "c:" Then lv.ListItems(i + 1).Checked = True
     Next
-    
-    lv.ListItems(1).Checked = True
     
     Set cApiData = New Collection
     Set cLogData = New Collection
@@ -444,6 +443,7 @@ End Sub
 Private Sub Form_Resize()
     On Error Resume Next
     lvDirWatch.Width = Me.Width - lvDirWatch.Left - 200
+    lvDirWatch.ColumnHeaders(2).Width = lvDirWatch.Width - lvDirWatch.ColumnHeaders(2).Left - 100
     With lvDirWatch
         .Height = Me.Height - .Top - 500
         lv.Height = .Height
@@ -638,10 +638,15 @@ Private Sub subclass_MessageReceived(hwnd As Long, wMsg As Long, wParam As Long,
     If wMsg = WM_COPYDATA Then
         If RecieveTextMessage(lParam, msg) Then
                 
+                msg = Replace(msg, "\\", "\")
+                
                 If InStr(msg, "NTUSER.DAT") > 0 Then Exit Sub
                 If InStr(msg, "\Prefetch\") > 0 Then Exit Sub
                 If Right(msg, 4) = ".lnk" Then Exit Sub
                 If AnyOfTheseInstr(msg, txtIgnore) Then Exit Sub
+                
+                'If InStr(msg, "analysis") > 0 Then Stop
+                
                 If chkAutoSave.value = 1 And InStr(1, msg, UserDeskTopFolder, vbTextCompare) > 0 Then Exit Sub
                 
                 On Error Resume Next
@@ -681,27 +686,28 @@ End Sub
 Sub SafeFileCopy(org As String)
     On Error Resume Next
     Dim p As String, i As Long, f As String
+    Dim tmp
     
     i = 1
     p = UserDeskTopFolder & "\"
     f = fso.FileNameFromPath(org)
     
-    While fso.FileExists(p & "\" & f)
-        f = f & "_" & i
+    tmp = f
+    While fso.FileExists(p & "\" & tmp)
+        tmp = f & "_" & i
         i = i + 1
     Wend
     
     Err.Clear
-    FileCopy org, p & "\" & f
+    FileCopy org, p & "\" & tmp
     
     If Err.Number <> 0 Then
-        Debug.Print Err.Description & " : org: " & org & " -> " & p & "\" & f
+        Debug.Print Err.Description & " : org: " & org & " -> " & p & "\" & tmp
     Else
-        Debug.Print "Auto Saved: " & org & " -> " & p & "\" & f
+        Debug.Print "Auto Saved: " & org & " -> " & p & "\" & tmp
     End If
     
 End Sub
-
 
 Function LogMessage(msg As String)
     If chkLogToFile.value = 0 Then Exit Function

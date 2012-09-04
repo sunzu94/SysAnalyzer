@@ -1,7 +1,7 @@
 VERSION 5.00
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
 Begin VB.Form frmInjectionScan 
-   Caption         =   "Injection Scan"
+   Caption         =   "32bit process Injection Scan"
    ClientHeight    =   3585
    ClientLeft      =   60
    ClientTop       =   345
@@ -188,7 +188,11 @@ Function StealthInjectionScan()
     
     For Each cp In c
         Me.Caption = "Scanning " & pb.Value & "/" & c.count & "  Found: " & lv.ListItems.count & " Processing: " & cp.path & " TotalRWEFound: " & totalRWEFound & " Total Allocs Scanned: " & totalScanned
-        FindStealthInjections cp.pid, pi.GetProcessPath(cp.pid)
+       
+        If diff.CProc.x64.IsProcess_x64(cp.pid) = r_32bit Then
+            FindStealthInjections cp.pid, pi.GetProcessPath(cp.pid)
+        End If
+        
         DoEvents
         Sleep 20
         pb.Value = pb.Value + 1
@@ -219,6 +223,11 @@ Sub FindStealthInjections(pid As Long, pName As String)
     On Error Resume Next
     Me.Visible = True
     minEntropy = CLng(txtMinEntropy)
+    
+    If diff.CProc.x64.IsProcess_x64(pid) <> r_32bit Then
+        MsgBox x64Error, vbInformation
+        Exit Sub
+    End If
     
     If Err.Number <> 0 Then
         minEntropy = 50
@@ -421,7 +430,7 @@ Private Sub lv_ItemClick(ByVal Item As MSComctlLib.ListItem)
     Set selli = Item
 End Sub
 
-Private Sub lv_MouseUp(Button As Integer, Shift As Integer, x As Single, Y As Single)
+Private Sub lv_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     If Button = 2 Then PopupMenu mnuPopup
 End Sub
 

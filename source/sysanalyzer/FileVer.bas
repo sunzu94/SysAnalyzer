@@ -40,6 +40,8 @@ Global hash As New CWinHash
     Global apiDataManager As New CApiDataManager
 #End If
 
+Public Const x64Error = "This feature is only currently available for 32 bit processes."
+
 Global tcpdump As String
 Global networkAnalyzer As String
 Global watchIDs() As Long
@@ -155,7 +157,7 @@ Private Declare Function WSAIoctl Lib "ws2_32.dll" (ByVal s As Long, ByVal dwIoC
 Private Declare Sub CopyMemory2 Lib "kernel32" Alias "RtlMoveMemory" (pDst As Any, ByVal pSrc As Long, ByVal ByteLen As Long)
 Private Declare Function WSAStartup Lib "ws2_32.dll" (ByVal wVR As Long, lpWSAD As WSAData) As Long
 
-Function LaunchStrings(Data As String, Optional isPath As Boolean = False)
+Function LaunchStrings(data As String, Optional isPath As Boolean = False)
 
     Dim b() As Byte
     Dim f As String
@@ -171,10 +173,10 @@ Function LaunchStrings(Data As String, Optional isPath As Boolean = False)
     End If
     
     If isPath Then
-        If fso.FileExists(Data) Then
-            f = Data
+        If fso.FileExists(data) Then
+            f = data
         Else
-            MsgBox "Can not launch strings, File not found: " & Data, vbInformation
+            MsgBox "Can not launch strings, File not found: " & data, vbInformation
         End If
     Else
         b() = StrConv(dataOrPath, vbFromUnicode, LANG_US)
@@ -351,10 +353,10 @@ Sub DirWatchCtl(enable As Boolean)
    
 End Sub
 
-Function QuickInfo(filename As String)
+Function QuickInfo(fileName As String)
     Dim f As FILEPROPERTIE
     
-    f = FileInfo(filename)
+    f = FileInfo(fileName)
     
     QuickInfo = "CompanyName      " & f.CompanyName & vbCrLf & _
                 "FileDescription  " & f.FileDescription & vbCrLf & _
@@ -578,12 +580,12 @@ Function GetAllText(lv As ListView, Optional subItemRow As Long = 0) As String
 End Function
 
 
-Function ReadFile(filename)
+Function ReadFile(fileName)
 Dim f, Temp
   f = FreeFile
   Temp = ""
-   Open filename For Binary As #f        ' Open file.(can be text or image)
-     Temp = Input(FileLen(filename), #f) ' Get entire Files data
+   Open fileName For Binary As #f        ' Open file.(can be text or image)
+     Temp = Input(FileLen(fileName), #f) ' Get entire Files data
    Close #f
    ReadFile = Temp
 End Function

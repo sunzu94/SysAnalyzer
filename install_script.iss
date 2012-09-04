@@ -54,6 +54,7 @@ Source: ./\source\sysanalyzer\wormy.ico; DestDir: {app}\source\sysanalyzer
 Source: ./\source\sysanalyzer\CModule.cls; DestDir: {app}\source\sysanalyzer
 Source: ./\source\sysanalyzer\CProcess.cls; DestDir: {app}\source\sysanalyzer
 Source: ./\source\sysanalyzer\CProcessInfo.cls; DestDir: {app}\source\sysanalyzer
+Source: ./\source\sysanalyzer\Cx64.cls; DestDir: {app}\source\sysanalyzer
 Source: ./\source\sysanalyzer\CProcessPort.cls; DestDir: {app}\source\sysanalyzer
 Source: ./\source\sysanalyzer\image.bmp; DestDir: {app}\source\sysanalyzer
 Source: ./\source\sysanalyzer\CRegDiff.cls; DestDir: {app}\source\sysanalyzer

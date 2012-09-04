@@ -37,3 +37,10 @@ Public pid As Long
 Public path As String
 Public isTCP As Boolean
 
+'if new method was used (XPsp2+)
+'Public dwState As Long
+Public State As String
+Public dwLocalAddr As Long
+Public dwRemoteAddr As Long 'tcp only
+Public dwRemotePort As Long 'tcp only
+     

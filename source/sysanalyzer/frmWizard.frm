@@ -20,7 +20,7 @@ Begin VB.Form frmWizard
       ForeColor       =   &H00E0E0E0&
       Height          =   315
       Left            =   120
-      TabIndex        =   21
+      TabIndex        =   20
       Top             =   3930
       Visible         =   0   'False
       Width           =   2445
@@ -28,7 +28,7 @@ Begin VB.Form frmWizard
    Begin VB.TextBox txtArgs 
       Height          =   285
       Left            =   4350
-      TabIndex        =   20
+      TabIndex        =   19
       Top             =   570
       Width           =   3975
    End
@@ -209,19 +209,9 @@ Begin VB.Form frmWizard
       Height          =   255
       Index           =   2
       Left            =   3390
-      TabIndex        =   19
+      TabIndex        =   18
       Top             =   630
       Width           =   915
-   End
-   Begin VB.Label Label1 
-      BackColor       =   &H005A5963&
-      ForeColor       =   &H00E0E0E0&
-      Height          =   1485
-      Index           =   1
-      Left            =   0
-      TabIndex        =   18
-      Top             =   2970
-      Width           =   3255
    End
    Begin VB.Label lblSkip 
       BackColor       =   &H005A5963&
@@ -243,11 +233,11 @@ Begin VB.Form frmWizard
       Width           =   435
    End
    Begin VB.Image Image1 
-      Height          =   4320
+      Height          =   2970
       Left            =   0
       Picture         =   "frmWizard.frx":0000
       Top             =   0
-      Width           =   3240
+      Width           =   3210
    End
    Begin VB.Label Label2 
       BackColor       =   &H005A5963&
@@ -357,9 +347,9 @@ Private Sub lblSkip_Click()
     
 End Sub
 
-Private Sub txtBinary_OLEDragDrop(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, Y As Single)
+Private Sub txtBinary_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, Y As Single)
     On Error Resume Next
-    txtBinary = Data.files(1)
+    txtBinary = data.files(1)
 End Sub
 
 Sub SetConfigDefaults()
@@ -474,12 +464,7 @@ Private Sub Form_Load()
         End If
     Next
             
-    If cboIp.ListCount = 0 Then  'no active interfaces ?
-        chkPacketCapture.Enabled = False
-        chkPacketCapture.Value = 0
-        chkNetworkAnalyzer.Value = 0
-        chkNetworkAnalyzer.Enabled = False
-    Else
+    If cboIp.ListCount <> 0 Then  'no active interfaces ?
         cboIp.ListIndex = 0
     End If
     
@@ -497,6 +482,13 @@ Private Sub Form_Load()
     
     LoadConfig
 
+    If cboIp.ListCount = 0 Then  'no active interfaces ?
+        chkPacketCapture.Enabled = False
+        chkPacketCapture.Value = 0
+        chkNetworkAnalyzer.Value = 0
+        chkNetworkAnalyzer.Enabled = False
+    End If
+    
     If Len(Command) > 0 Then
         Dim cmd As String
         cmd = Trim(Replace(Command, """", Empty))
@@ -527,6 +519,13 @@ Sub cmdStart_Click()
     
     If Not FileExists(txtBinary) Then
         MsgBox "Binary not found: " & txtBinary
+        Exit Sub
+    End If
+    
+    Dim cx As New Cx64
+    If cx.isExe_x64(txtBinary) = r_64bit And chkApiLog.Value = 1 Then
+        MsgBox "ApiLogger option is not yet compatiable with x64 targets", vbInformation
+        chkApiLog.Value = 0
         Exit Sub
     End If
     

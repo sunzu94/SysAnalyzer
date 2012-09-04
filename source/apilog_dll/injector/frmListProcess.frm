@@ -3,14 +3,14 @@ Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
 Begin VB.Form frmListProcess 
    BorderStyle     =   5  'Sizable ToolWindow
    Caption         =   "Choose Process"
-   ClientHeight    =   3630
+   ClientHeight    =   3720
    ClientLeft      =   60
    ClientTop       =   300
    ClientWidth     =   6915
    LinkTopic       =   "frmListProcess"
    MaxButton       =   0   'False
    MinButton       =   0   'False
-   ScaleHeight     =   3630
+   ScaleHeight     =   3720
    ScaleWidth      =   6915
    ShowInTaskbar   =   0   'False
    StartUpPosition =   2  'CenterScreen
@@ -19,7 +19,7 @@ Begin VB.Form frmListProcess
       Height          =   315
       Left            =   5880
       TabIndex        =   1
-      Top             =   3300
+      Top             =   3360
       Width           =   975
    End
    Begin MSComctlLib.ListView lv 
@@ -89,6 +89,8 @@ Attribute VB_Exposed = False
 
 Dim selli As ListItem
 Dim cpi As New CProcessInfo
+Private Declare Function GetCurrentProcessId Lib "Kernel32.dll" () As Long
+Dim baseCaption As String
 
 Private Sub Command1_Click()
     
@@ -118,8 +120,9 @@ Function SelectProcess(c As Collection) As CProcess
         Else
             li.SubItems(1) = p.User
         End If
+        li.SubItems(1) = IIf(p.is64Bit, "*64 ", "") & li.SubItems(1)
         'li.SubItems(2) = p.path
-        li.SubItems(2) = cpi.GetProcessPath(p.pid)
+        li.SubItems(2) = p.fullpath 'can fail on win7?
     Next
     
     On Error Resume Next
@@ -133,7 +136,20 @@ End Function
  
 
 Private Sub Form_Load()
+    Dim User As String
+    On Error Resume Next
+    
     lv.ColumnHeaders(3).Width = lv.Width - lv.ColumnHeaders(3).Left - 350
+    
+    User = cpi.GetProcessUser(GetCurrentProcessId())
+    If InStr(User, ":") > 0 Then
+        User = Mid(User, InStr(User, ":") + 1)
+    End If
+    
+    If Len(User) > 0 Then Me.Caption = Me.Caption & "   -   Running As: " & User
+    Me.Caption = Me.Caption & "   -   SeDebug?: " & cpi.SeDebugEnabled
+    baseCaption = Me.Caption
+    
 End Sub
 
 Private Sub Form_Resize()
@@ -156,4 +172,9 @@ End Sub
 
 Private Sub lv_ItemClick(ByVal Item As MSComctlLib.ListItem)
     Set selli = Item
+    
+    On Error Resume Next
+    Dim p As CProcess
+    Set p = Item.Tag
+    Me.Caption = baseCaption & "  - cmdline " & p.CmdLine
 End Sub

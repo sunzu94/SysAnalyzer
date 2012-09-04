@@ -123,6 +123,73 @@ Private Declare Function LookupPrivilegeValue Lib "advapi32.dll" Alias "LookupPr
 Private Declare Function AdjustTokenPrivileges Lib "advapi32.dll" (ByVal TokenHandle As Long, ByVal DisableAllPrivileges As Long, ByRef NewState As TOKEN_PRIVILEGES, ByVal BufferLength As Long, ByRef PreviousState As TOKEN_PRIVILEGES, ByRef ReturnLength As Long) As Long
 Private Declare Function OpenProcessToken Lib "advapi32.dll" (ByVal ProcessHandle As Long, ByVal DesiredAccess As Long, ByRef TokenHandle As Long) As Long
 Private Declare Function GetLastError Lib "kernel32.dll" () As Long
+Private Declare Function GetProcAddress Lib "kernel32" (ByVal hModule As Long, ByVal lpProcName As String) As Long
+Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
+
+'XPsp2+ safe way to do it..
+'----------------------------------------------------------------------
+Private Type MIB_TCPROW_OWNER_PID
+     dwState As Long
+     dwLocalAddr As Long
+     dwLocalPort As Long
+     dwRemoteAddr As Long
+     dwRemotePort As Long
+     dwOwningPid As Long
+End Type
+
+
+Private Type MIB_UDPROW_OWNER_PID
+     dwLocalAddr As Long
+     dwLocalPort As Long
+     dwOwningPid As Long
+End Type
+
+Private Declare Function GetExtendedTcpTable Lib "IPHLPAPI.dll" ( _
+    ByVal pTcpTable As Long, _
+    ByRef dwSize As Long, _
+    ByVal bOrder As Long, _
+    ByVal ulAf As Long, _
+    ByVal TCP_TABLE_CLASS As Long, _
+    ByVal Reserved As Long _
+) As Long
+
+Private Declare Function GetExtendedUdpTable Lib "IPHLPAPI.dll" ( _
+    ByVal pUdpTable As Long, _
+    ByRef dwUdpTableSize As Long, _
+    ByVal ubOrder As Long, _
+    ByVal uulAf As Long, _
+    ByVal UDP_TABLE_CLASS As Long, _
+    ByVal uReserved As Long _
+) As Integer
+
+'Private Declare Sub ToStruc Lib "kernel32.dll" Alias "RtlMoveMemory" (ByRef struc As Any, ByRef buf As Byte, ByVal Length As Long)
+Private Declare Sub ToLong Lib "kernel32.dll" Alias "RtlMoveMemory" (ByRef lng As Long, ByRef buf As Byte, Optional ByVal Length As Long = 4)
+Private Declare Sub ToByte Lib "kernel32.dll" Alias "RtlMoveMemory" (ByRef buf As Byte, ByRef lng As Long, Optional ByVal Length As Long = 4)
+
+Private Const ERROR_INSUFFICIENT_BUFFER = 122&
+Private Const AF_INET = 2
+Private Const NO_ERROR = 0
+Private Const ERROR_BUFFER_OVERFLOW = 111
+Private Const ERROR_INVALID_PARAMETER = 87
+Private Const ERROR_NO_DATA = 232
+Private Const ERROR_NOT_SUPPORTED = 50
+Private Const ERROR_SUCCESS = 0
+ 
+Private Const MIB_TCP_STATE_CLOSED = 1
+Private Const MIB_TCP_STATE_LISTEN = 2
+Private Const MIB_TCP_STATE_SYN_SENT = 3
+Private Const MIB_TCP_STATE_SYN_RCVD = 4
+Private Const MIB_TCP_STATE_ESTAB = 5
+Private Const MIB_TCP_STATE_FIN_WAIT1 = 6
+Private Const MIB_TCP_STATE_FIN_WAIT2 = 7
+Private Const MIB_TCP_STATE_CLOSE_WAIT = 8
+Private Const MIB_TCP_STATE_CLOSING = 9
+Private Const MIB_TCP_STATE_LAST_ACK = 10
+Private Const MIB_TCP_STATE_TIME_WAIT = 11
+Private Const MIB_TCP_STATE_DELETE_TCB = 12
+Dim cpi As New CProcessInfo
+'----------------------------------------------------------------------
+
 
 Private ports As Collection 'of cprocessport
 
@@ -130,7 +197,83 @@ Private ports As Collection 'of cprocessport
 '    MsgBox "todo"
 'End Function
 
-'there is a bug in here under XP and XPsp2 now CRRRASH :(
+Private Function NewApi_Mathod() As Collection
+    
+    Dim dwSize As Long
+    Dim r As Long
+    Dim tcp As MIB_TCPROW_OWNER_PID
+    Dim udp As MIB_UDPROW_OWNER_PID
+    Dim iNumberOfStructures As Long
+    Dim pStructPointer As Long
+    Dim p As Long
+    Dim buf() As Byte
+    Dim proc As CProcessPort
+    Dim i As Long
+    
+    On Error Resume Next
+    
+    r = GetExtendedTcpTable(pStructPointer, dwSize, 1, AF_INET, 5, 0)
+
+    ReDim buf(dwSize)
+    pStructPointer = VarPtr(buf(0))
+     
+    r = GetExtendedTcpTable(pStructPointer, dwSize, 1, AF_INET, 5, 0)
+    ToLong iNumberOfStructures, buf(0)
+    p = 4
+
+    For i = 0 To iNumberOfStructures - 1
+        ToStruc tcp, buf(p), LenB(tcp)
+        p = p + LenB(tcp)
+        
+        Set proc = New CProcessPort
+        proc.pid = tcp.dwOwningPid
+        proc.Port = GetPortNumber(tcp.dwLocalPort)
+        proc.path = cpi.GetProcessPath(tcp.dwOwningPid)
+        proc.dwLocalAddr = GetIpFromLong(tcp.dwLocalAddr)
+        proc.State = GetState(tcp.dwState)
+        If tcp.dwState <> MIB_TCP_STATE_LISTEN Then
+            proc.dwRemoteAddr = GetIpFromLong(tcp.dwRemoteAddr)
+            proc.dwRemotePort = GetPortNumber(tcp.dwRemotePort)
+        End If
+        proc.isTCP = True
+        ports.Add proc, "TCPPORT:" & proc.Port
+        
+    Next
+
+    'udp
+    r = GetExtendedUdpTable(pStructPointer, dwSize, 1, AF_INET, 1, 0)
+
+    ReDim buf(dwSize)
+    pStructPointer = VarPtr(buf(0))
+     
+    r = GetExtendedUdpTable(pStructPointer, dwSize, 1, AF_INET, 1, 0)
+    
+    'If r = ERROR_INVALID_PARAMETER Then Stop
+        
+    ToLong iNumberOfStructures, buf(0)
+    p = 4
+
+    For i = 0 To iNumberOfStructures - 1
+        ToStruc udp, buf(p), LenB(udp)
+        p = p + LenB(udp)
+        
+        Set proc = New CProcessPort
+        proc.pid = udp.dwOwningPid
+        proc.Port = GetPortNumber(udp.dwLocalPort)
+        proc.path = cpi.GetProcessPath(udp.dwOwningPid)
+        proc.dwLocalAddr = GetIpFromLong(udp.dwLocalAddr)
+        proc.isTCP = False
+        ports.Add proc, "UDPPORT:" & proc.Port
+        
+    Next
+    
+    SortPorts
+    Set NewApi_Mathod = ports
+    
+End Function
+
+
+'there is a bug in here under XP and XPsp2 now CRRRASH -> 8.26.12 now defaults to new api if available...
 Function TakePortProcSnapshot() As Collection ' of CProcessPort
     Dim ret As Long, hCount As Long, l As Long
     Dim shi As SYSTEM_HANDLE_INFORMATION
@@ -138,6 +281,13 @@ Function TakePortProcSnapshot() As Collection ' of CProcessPort
             
     Set ports = New Collection
     
+    ret = GetProcAddress(LoadLibrary("IPHLPAPI.dll"), "GetExtendedUdpTable")
+    If ret <> 0 Then
+        Set TakePortProcSnapshot = NewApi_Mathod()
+        Exit Function
+    End If
+    
+    'pre xpsp2 use the old method...
     If Not GetSeDebug() Then MsgBox "Couldnot obtain SeDebugPrivledge, you should run this app as administrator", vbInformation
     
     l = 20
@@ -277,9 +427,9 @@ Private Function KeyExistsInCollection(c As Collection, val As String) As Boolea
 nope: KeyExistsInCollection = False
 End Function
 
-Private Function UnsignedToInteger(value As Long) As Integer
-    If value <= 32767 Then UnsignedToInteger = value _
-    Else UnsignedToInteger = value - 65536
+Private Function UnsignedToInteger(Value As Long) As Integer
+    If Value <= 32767 Then UnsignedToInteger = Value _
+    Else UnsignedToInteger = Value - 65536
 End Function
 
 Private Function GetSeDebug() As Boolean
@@ -313,7 +463,7 @@ Private Sub SortPorts()
     
     'first sort by port number (udp and tcp both at once)
     For Each p In ports
-        If c1.Count < 1 Then
+        If c1.count < 1 Then
             c1.Add p
         Else
             i = 0
@@ -323,7 +473,7 @@ Private Sub SortPorts()
                     c1.Add p, , i
                     Exit For
                 End If
-                If i = c1.Count Then c1.Add p
+                If i = c1.count Then c1.Add p
             Next
         End If
     Next
@@ -345,3 +495,32 @@ End Sub
 Private Sub Class_Initialize()
     GetSeDebug
 End Sub
+
+Private Function GetIpFromLong(ByRef lngIPAddress As Long) As String
+    Dim b(0 To 3) As Byte
+    ToByte b(0), lngIPAddress
+    GetIpFromLong = b(0) & "." & b(1) & "." & b(2) & "." & b(3)
+End Function
+
+Private Function GetPortNumber(ByRef DWord As Long) As Long
+    GetPortNumber = DWord / 256 + (DWord Mod 256) * 256
+End Function
+
+Private Function GetState(ByRef lngState As Long) As String
+ 
+    Select Case lngState
+        Case MIB_TCP_STATE_CLOSED: GetState = "CLOSED"
+        Case MIB_TCP_STATE_LISTEN: GetState = "LISTEN"
+        Case MIB_TCP_STATE_SYN_SENT: GetState = "SYN_SENT"
+        Case MIB_TCP_STATE_SYN_RCVD: GetState = "SYN_RCVD"
+        Case MIB_TCP_STATE_ESTAB: GetState = "ESTAB"
+        Case MIB_TCP_STATE_FIN_WAIT1: GetState = "FIN_WAIT1"
+        Case MIB_TCP_STATE_FIN_WAIT2: GetState = "FIN_WAIT2"
+        Case MIB_TCP_STATE_CLOSE_WAIT: GetState = "CLOSE_WAIT"
+        Case MIB_TCP_STATE_CLOSING: GetState = "CLOSING"
+        Case MIB_TCP_STATE_LAST_ACK: GetState = "LAST_ACK"
+        Case MIB_TCP_STATE_TIME_WAIT: GetState = "TIME_WAIT"
+        Case MIB_TCP_STATE_DELETE_TCB: GetState = "DELETE_TCB"
+    End Select
+ 
+End Function

@@ -653,6 +653,8 @@ End Sub
 Private Sub cmdStart_Click()
         
     Dim exe As String
+    Dim isX64 As Boolean
+    On Error GoTo hell
     
     lv.ListItems.Clear
     List2.Clear
@@ -664,11 +666,13 @@ Private Sub cmdStart_Click()
     
     If VBA.Left(txtPacked, 4) = "pid:" Then
         exe = Replace(txtPacked, "pid:", Empty)
+        If cpi.x64.IsProcess_x64(CLng(exe)) = r_64bit Then isX64 = True
     Else
         If Not FileExists(txtPacked) Then
             MsgBox "Executable not found"
             Exit Sub
         End If
+        If cpi.x64.isExe_x64(txtPacked) = r_64bit Then isX64 = True
         exe = txtPacked
     End If
     
@@ -677,8 +681,26 @@ Private Sub cmdStart_Click()
         Exit Sub
     End If
     
+    If isX64 Then
+        If Not cpi.x64.isExe_x64(txtDll) <> r_64bit Then
+            MsgBox "You can not inject a 32 bit dll into a 64 bit process.", vbInformation
+            Exit Sub
+        End If
+    End If
+    
+    If isX64 Then
+        MsgBox "Injecting into x64 bit processes is not yet supported.", vbInformation
+        Exit Sub
+    End If
+    
+    'if x64, find x64.k32base (process and peb ASR), calculate LoadLibrary address from rva.
+    
     If Len(txtArgs) > 0 Then exe = exe & " " & txtArgs
-    StartProcessWithDLL exe, txtDll
+    StartProcessWithDLL exe, txtDll '<--does this work with an x64 process and dll?
+    
+    Exit Sub
+hell:
+    MsgBox "Error: " & Err.Description
     
 End Sub
 
