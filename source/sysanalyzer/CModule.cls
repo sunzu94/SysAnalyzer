@@ -36,6 +36,31 @@ Option Explicit
 
 Public path As String
 Attribute path.VB_VarUserMemId = 0
-Public base As Long
-Public size As Long
+Public Base As Long
+Public Size As Long
+
+Public isX64 As Boolean
+Public x64Base As String
+Public x64Size As String
+
+Property Get HexBase() As String
+    HexBase = pad(IIf(isX64, x64Base, Hex(Base)))
+End Property
+
+Property Get HexSize() As String
+    HexSize = pad(IIf(isX64, x64Size, Hex(Size)))
+End Property
+
+'for listview sorting...
+Private Function pad(v, Optional l As Long = 8)
+    On Error GoTo hell
+    Dim x As Long
+    x = Len(v)
+    If x < l Then
+        pad = String(l - x, " ") & v
+    Else
+hell:
+        pad = v
+    End If
+End Function
 

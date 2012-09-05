@@ -10,7 +10,16 @@ Begin VB.Form Form2
    LinkTopic       =   "Form2"
    ScaleHeight     =   7665
    ScaleWidth      =   10335
-   StartUpPosition =   3  'Windows Default
+   StartUpPosition =   2  'CenterScreen
+   Begin VB.CommandButton cmdBrowse 
+      Caption         =   "..."
+      Height          =   315
+      Index           =   1
+      Left            =   6240
+      TabIndex        =   36
+      Top             =   720
+      Width           =   615
+   End
    Begin VB.CommandButton cmdParse 
       Caption         =   "Parse"
       Height          =   375
@@ -150,6 +159,7 @@ Begin VB.Form Form2
    Begin VB.CommandButton cmdBrowse 
       Caption         =   "..."
       Height          =   315
+      Index           =   0
       Left            =   4980
       TabIndex        =   25
       Top             =   30
@@ -578,11 +588,15 @@ Function ignoreit(v) As Boolean
 End Function
 
 
-Private Sub cmdBrowse_Click()
+Private Sub cmdBrowse_Click(Index As Integer)
     Dim f As String
     f = dlg.OpenDialog(AllFiles, , "Open Executable to monitor", Me.hwnd)
     If Len(f) = 0 Then Exit Sub
-    txtPacked = f
+    If Index = 0 Then
+        txtPacked = f
+    Else
+        txtDll = f
+    End If
 End Sub
 
 Private Sub cmdClear_Click()
@@ -608,7 +622,7 @@ Private Sub cmdFind_Click()
     Next
     Dim fso As New CFileSystem2
     f = fso.GetFreeFileName(Environ("temp"))
-    fso.WriteFile f, t
+    fso.writeFile f, t
     Shell "notepad.exe """ & f & """", vbNormalFocus
 End Sub
 
@@ -638,7 +652,7 @@ Private Sub cmdSave_Click()
         t = t & "pid: " & li.Text & " - " & li.SubItems(1) & vbCrLf
     Next
     
-    fso.WriteFile f, t
+    fso.writeFile f, t
     
 End Sub
 
@@ -654,6 +668,8 @@ Private Sub cmdStart_Click()
         
     Dim exe As String
     Dim isX64 As Boolean
+    Dim x As String, tmp, y
+    
     On Error GoTo hell
     
     lv.ListItems.Clear
@@ -682,21 +698,37 @@ Private Sub cmdStart_Click()
     End If
     
     If isX64 Then
-        If Not cpi.x64.isExe_x64(txtDll) <> r_64bit Then
+        If cpi.x64.isExe_x64(txtDll) <> r_64bit Then
             MsgBox "You can not inject a 32 bit dll into a 64 bit process.", vbInformation
             Exit Sub
         End If
     End If
     
     If isX64 Then
-        MsgBox "Injecting into x64 bit processes is not yet supported.", vbInformation
+    
+        If IsNumeric(exe) Then
+            If Not cpi.x64.x64Inject(CLng(exe), txtDll, x) Then
+                MsgBox x
+                Exit Sub
+            End If
+        Else
+            'dont forget the args too...
+            MsgBox "Starting an x64 bit processes with a dll is not yet supported.", vbInformation
+            Exit Sub
+        End If
+        
+        tmp = Split(x, vbCrLf)
+        List2.Clear
+        For Each y In tmp
+           List2.AddItem y
+        Next
+        
         Exit Sub
+        
     End If
     
-    'if x64, find x64.k32base (process and peb ASR), calculate LoadLibrary address from rva.
-    
     If Len(txtArgs) > 0 Then exe = exe & " " & txtArgs
-    StartProcessWithDLL exe, txtDll '<--does this work with an x64 process and dll?
+    StartProcessWithDLL exe, txtDll
     
     Exit Sub
 hell:

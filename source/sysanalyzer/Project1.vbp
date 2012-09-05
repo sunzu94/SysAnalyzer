@@ -32,6 +32,7 @@ Module=modZLIB; modZLIB.bas
 Form=frmDlg.frm
 Object={9A143468-B450-48DD-930D-925078198E4D}#1.0#0; hexed.ocx
 Class=Cx64; Cx64.cls
+Module=CmdOutput; CmdOutput.bas
 IconForm="frmMain"
 Startup="frmWizard"
 HelpFile=""

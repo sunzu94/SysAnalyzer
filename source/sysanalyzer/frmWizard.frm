@@ -337,7 +337,8 @@ Private Sub lblSkip_Click()
         .cmdDirWatch_Click
         .SSTab1.TabVisible(5) = False
         .lblTimer.Visible = False
-        .lblDisplay = "Use the tools menu to manually proceed"
+        .mnuToolItem_Click 4 'take base snapshot..
+        .lblDisplay = "Displaying Base Snapshot"
         .Visible = True
     End With
     
@@ -347,7 +348,7 @@ Private Sub lblSkip_Click()
     
 End Sub
 
-Private Sub txtBinary_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, Y As Single)
+Private Sub txtBinary_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, y As Single)
     On Error Resume Next
     txtBinary = data.files(1)
 End Sub

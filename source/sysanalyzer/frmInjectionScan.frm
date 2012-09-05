@@ -257,7 +257,7 @@ Sub FindStealthInjections(pid As Long, pName As String)
         If cMem.Protection = PAGE_EXECUTE_READWRITE And cMem.MemType <> MEM_IMAGE Then
             
             totalRWEFound = totalRWEFound + 1
-            s = pi.ReadMemory(cMem.pid, cMem.base, cMem.size) 'doesnt add that much time
+            s = pi.ReadMemory(cMem.pid, cMem.Base, cMem.size) 'doesnt add that much time
             entropy = CalculateEntropy(s)
             s = Empty
              
@@ -266,13 +266,13 @@ Sub FindStealthInjections(pid As Long, pName As String)
             'End If
             
             Set li = lv.ListItems.Add(, , pid)
-            li.SubItems(1) = Hex(cMem.base)
+            li.SubItems(1) = Hex(cMem.Base)
             li.SubItems(2) = Hex(cMem.size)
             li.SubItems(3) = cMem.MemTypeAsString()
             li.SubItems(4) = cMem.ProtectionAsString()
             li.SubItems(5) = pName
             
-            If VBA.Left(pi.ReadMemory(cMem.pid, cMem.base, 2), 2) = "MZ" Then
+            If VBA.Left(pi.ReadMemory(cMem.pid, cMem.Base, 2), 2) = "MZ" Then
                 SetLiColor li, vbRed
             End If
 
@@ -374,11 +374,11 @@ Private Sub mnuSearchMem_Click()
         Set cMem = li.Tag
         DoEvents
         lv.Refresh
-        m = pi.ReadMemory(cMem.pid, cMem.base, cMem.size)
+        m = pi.ReadMemory(cMem.pid, cMem.Base, cMem.size)
         a = InStr(1, m, s, vbTextCompare)
         b = InStr(1, m, s2, vbTextCompare)
-        If a > 0 Then ret = ret & "pid: " & li.Text & " base: " & li.SubItems(1) & " offset: " & Hex(cMem.base + a) & " ASCII " & li.SubItems(5) & vbCrLf
-        If b > 0 Then ret = ret & "pid: " & li.Text & " base: " & li.SubItems(1) & " offset: " & Hex(cMem.base + b) & " UNICODE " & li.SubItems(5) & vbCrLf
+        If a > 0 Then ret = ret & "pid: " & li.Text & " base: " & li.SubItems(1) & " offset: " & Hex(cMem.Base + a) & " ASCII " & li.SubItems(5) & vbCrLf
+        If b > 0 Then ret = ret & "pid: " & li.Text & " base: " & li.SubItems(1) & " offset: " & Hex(cMem.Base + b) & " UNICODE " & li.SubItems(5) & vbCrLf
         pb.Value = pb.Value + 1
     Next
             
@@ -410,17 +410,17 @@ Private Sub mnuView_Click()
     If selli Is Nothing Then Exit Sub
     Dim s As String
     Dim pid As Long
-    Dim base As Long
+    Dim Base As Long
     On Error Resume Next
-    base = CLng("&h" & selli.SubItems(1))
+    Base = CLng("&h" & selli.SubItems(1))
     pid = CLng(selli.Text)
-    s = pi.ReadMemory(pid, base, CLng("&h" & selli.SubItems(2)))
+    s = pi.ReadMemory(pid, Base, CLng("&h" & selli.SubItems(2)))
     If Len(s) = 0 Then
         MsgBox "Failed to readmemory?"
         Exit Sub
     End If
     Dim f As New rhexed.CHexEditor
-    f.Editor.AdjustBaseOffset = base
+    f.Editor.AdjustBaseOffset = Base
     f.Editor.LoadString s
 End Sub
 

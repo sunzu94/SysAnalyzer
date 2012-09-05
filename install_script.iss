@@ -54,7 +54,6 @@ Source: ./\source\sysanalyzer\wormy.ico; DestDir: {app}\source\sysanalyzer
 Source: ./\source\sysanalyzer\CModule.cls; DestDir: {app}\source\sysanalyzer
 Source: ./\source\sysanalyzer\CProcess.cls; DestDir: {app}\source\sysanalyzer
 Source: ./\source\sysanalyzer\CProcessInfo.cls; DestDir: {app}\source\sysanalyzer
-Source: ./\source\sysanalyzer\Cx64.cls; DestDir: {app}\source\sysanalyzer
 Source: ./\source\sysanalyzer\CProcessPort.cls; DestDir: {app}\source\sysanalyzer
 Source: ./\source\sysanalyzer\image.bmp; DestDir: {app}\source\sysanalyzer
 Source: ./\source\sysanalyzer\CRegDiff.cls; DestDir: {app}\source\sysanalyzer
@@ -113,6 +112,16 @@ Source: source\sysanalyzer\CApiHandle.cls; DestDir: {app}\source\sysanalyzer
 Source: source\sysanalyzer\CApiDataManager.cls; DestDir: {app}\source\sysanalyzer
 Source: source\sysanalyzer\modZLIB.bas; DestDir: {app}\source\sysanalyzer
 Source: source\sysanalyzer\frmDlg.frm; DestDir: {app}\source\sysanalyzer
+Source: source\x64Helper\main.cpp; DestDir: {app}\source\x64Helper\
+Source: source\x64Helper\x64Helper.sln; DestDir: {app}\source\x64Helper\
+Source: source\x64Helper\x64Helper.suo; DestDir: {app}\source\x64Helper\
+Source: source\x64Helper\x64Helper.vcxproj; DestDir: {app}\source\x64Helper\
+Source: source\x64Helper\x64Helper.vcxproj.filters; DestDir: {app}\source\x64Helper\
+Source: source\x64Helper\x64Helper.vcxproj.user; DestDir: {app}\source\x64Helper\
+Source: source\sysanalyzer\CmdOutput.bas; DestDir: {app}\source\sysanalyzer\
+Source: source\sysanalyzer\frmDlls.frm; DestDir: {app}\source\sysanalyzer\
+Source: source\sysanalyzer\Cx64.cls; DestDir: {app}\source\sysanalyzer\
+Source: x64Helper.exe; DestDir: {app}
 
 [Dirs]
 Name: {app}\source
@@ -123,6 +132,7 @@ Name: {app}\source\dirwatch_dll
 Name: {app}\source\proc_analyzer
 Name: {app}\source\sysanalyzer
 Name: {app}\source\dirwatch_ui
+Name: {app}\source\x64Helper
 
 [Icons]
 Name: {group}\SysAnalyzer; Filename: {app}\sysAnalyzer.exe

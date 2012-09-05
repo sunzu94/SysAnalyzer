@@ -57,6 +57,16 @@ Begin VB.Form frmListProcess
          Object.Width           =   2540
       EndProperty
    End
+   Begin VB.Menu mnuPopup 
+      Caption         =   "mnuPopup"
+      Visible         =   0   'False
+      Begin VB.Menu mnuShowDlls 
+         Caption         =   "Show Dlls"
+      End
+      Begin VB.Menu mnuDumpProcess 
+         Caption         =   "Dump Process"
+      End
+   End
 End
 Attribute VB_Name = "frmListProcess"
 Attribute VB_GlobalNameSpace = False
@@ -89,7 +99,7 @@ Attribute VB_Exposed = False
 
 Dim selli As ListItem
 Dim cpi As New CProcessInfo
-Private Declare Function GetCurrentProcessId Lib "Kernel32.dll" () As Long
+Private Declare Function GetCurrentProcessId Lib "kernel32.dll" () As Long
 Dim baseCaption As String
 
 Private Sub Command1_Click()
@@ -112,7 +122,7 @@ Function SelectProcess(c As Collection) As CProcess
     lv.ListItems.Clear
     
     For Each p In c
-        Set li = lv.ListItems.Add(, , p.pid)
+        Set li = lv.ListItems.Add(, , pad(p.pid))
         Set li.Tag = p
         cc = InStr(p.User, ":")
         If cc > 0 Then
@@ -166,6 +176,10 @@ Private Sub Form_Unload(Cancel As Integer)
     Set selli = Nothing
 End Sub
 
+Private Sub lv_ColumnClick(ByVal ColumnHeader As MSComctlLib.ColumnHeader)
+    LV_ColumnSort lv, ColumnHeader
+End Sub
+
 Private Sub lv_DblClick()
     Command1_Click
 End Sub
@@ -178,3 +192,68 @@ Private Sub lv_ItemClick(ByVal Item As MSComctlLib.ListItem)
     Set p = Item.Tag
     Me.Caption = baseCaption & "  - cmdline " & p.CmdLine
 End Sub
+
+Private Sub lv_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+    If Button = 2 Then PopupMenu mnuPopup
+End Sub
+
+Private Sub mnuDumpProcess_Click()
+    If selli Is Nothing Then Exit Sub
+    Dim p As String
+    Dim b As Boolean
+    
+    p = App.path & "\mem.dmp"
+    b = cpi.DumpProcess(CLng(selli.Text), p)
+    
+    MsgBox "saved memory dump? " & b & vbCrLf & vbCrLf & "Output file: " & p
+    
+End Sub
+
+Private Sub mnuShowDlls_Click()
+    If selli Is Nothing Then Exit Sub
+    
+    frmDlls.ShowDllsFor (CLng(selli.Text)), Me
+    
+'    Dim c As Collection
+'    Dim cm As CModule
+'    Dim tmp
+'
+'    Set c = cpi.GetProcessModules(CLng(selli.Text))
+'
+'    For Each cm In c
+'        tmp = tmp & cm.HexBase & vbTab & cm.path & vbCrLf
+'    Next
+'
+'    MsgBox tmp
+    
+End Sub
+
+Public Sub LV_ColumnSort(ListViewControl As ListView, Column As ColumnHeader)
+     On Error Resume Next
+    With ListViewControl
+       If .SortKey <> Column.Index - 1 Then
+             .SortKey = Column.Index - 1
+             .SortOrder = lvwAscending
+       Else
+             If .SortOrder = lvwAscending Then
+              .SortOrder = lvwDescending
+             Else
+              .SortOrder = lvwAscending
+             End If
+       End If
+       .Sorted = -1
+    End With
+End Sub
+
+'for listview sorting...
+Private Function pad(v, Optional l As Long = 5)
+    On Error GoTo hell
+    Dim x As Long
+    x = Len(v)
+    If x < l Then
+        pad = String(l - x, " ") & v
+    Else
+hell:
+        pad = v
+    End If
+End Function

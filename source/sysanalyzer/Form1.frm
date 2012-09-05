@@ -1224,7 +1224,7 @@ Private Sub mnuScanProcsForDll_Click()
                     tmp2 = Empty
                     For Each cm In m
                         If InStr(1, cm.path, find, vbTextCompare) > 0 Then
-                           tmp2 = tmp2 & vbTab & Hex(cm.base) & vbTab & cm.path & vbCrLf
+                           tmp2 = tmp2 & vbTab & Hex(cm.Base) & vbTab & cm.path & vbCrLf
                            hit = True
                         End If
                     Next
@@ -1530,7 +1530,7 @@ End Sub
  
 
 
-Private Sub mnuToolItem_Click(Index As Integer)
+Public Sub mnuToolItem_Click(Index As Integer)
     
     'show1, show2, diff, - , take1, take2, - , startover, report
     
@@ -1698,14 +1698,16 @@ Private Sub mnuDumpProcess_Click()
     pth = frmDlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save Dump as", , Me, pth)
     If Len(pth) = 0 Then Exit Sub
 
-    Dim cmod As CModule
-    Dim col As Collection
+    diff.CProc.DumpProcess pid, pth 'x64 safe...
     
-    Set col = diff.CProc.GetProcessModules(pid)
-    Set cmod = col(1)
-
-    
-    Call diff.CProc.DumpProcessMemory(pid, cmod.base, cmod.size, pth)
+'    Dim cmod As CModule
+'    Dim col As Collection
+'
+'    Set col = diff.CProc.GetProcessModules(pid)
+'    Set cmod = col(1)
+'
+'
+'    Call diff.CProc.DumpProcessMemory(pid, cmod.Base, cmod.size, pth)
 
 End Sub
 
@@ -1784,19 +1786,3 @@ End Sub
     LV_ColumnSort lvProcesses, ColumnHeader
 End Sub
 
-Public Sub LV_ColumnSort(ListViewControl As ListView, Column As ColumnHeader)
-     On Error Resume Next
-    With ListViewControl
-       If .SortKey <> Column.Index - 1 Then
-             .SortKey = Column.Index - 1
-             .SortOrder = lvwAscending
-       Else
-             If .SortOrder = lvwAscending Then
-              .SortOrder = lvwDescending
-             Else
-              .SortOrder = lvwAscending
-             End If
-       End If
-       .Sorted = -1
-    End With
-End Sub

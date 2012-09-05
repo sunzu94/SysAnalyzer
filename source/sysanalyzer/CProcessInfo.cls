@@ -41,6 +41,11 @@ Option Explicit
 '  Fixed GetUsername to work across more privledge levels/os
 '  added is64Bit, domain, fullpath, sessionID to CProcess
 
+' x64 safe functions..
+'    DumpProcess, DumpMemory, GetProcessModules, EnumDrivers, GetRunningProcesses
+'
+' x64unsafe: GetMemoryMap,ReadMemory
+
 Private Declare Function NtQuerySystemInformation Lib "ntdll.dll" ( _
     ByVal dwInfoType As Long, _
     ByRef lpStructure As Any, _
@@ -505,6 +510,11 @@ Function GetProcessModules(pid As Long) As Collection
     Dim mCol As New Collection
     Dim cmod As CModule
     
+    If x64.IsProcess_x64(pid) = r_64bit Then
+        Set GetProcessModules = x64.GetProcessModules(pid)
+        Exit Function
+    End If
+    
     ReDim hMod(200)
     hProcess = OpenProcess(PROCESS_ALL_ACCESS, False, pid)
     EnumProcessModules hProcess, hMod(0), 1000, dwSize
@@ -587,6 +597,37 @@ Function GetProcessUser(pid As Long) As String
    End If
 
    CloseHandle hProcess
+    
+End Function
+
+Function DumpProcess(pid As Long, fpath As String) As Boolean
+    
+    If x64.IsProcess_x64(pid) = r_64bit Then
+        DumpProcess = x64.DumpProcess(pid, fpath)
+        Exit Function
+    End If
+    
+    Dim cmod As CModule
+    Dim col As Collection
+    
+    Set col = GetProcessModules(pid)
+    Set cmod = col(1)
+
+    DumpProcess = DumpProcessMemory(pid, cmod.Base, cmod.Size, fpath)
+    
+End Function
+
+Function DumpMemory(pid As Long, hex_start As String, hex_size As String, ByVal fpath As String) As Boolean
+    
+    Dim s As Long, l As Long
+    
+    If x64.IsProcess_x64(pid) = r_64bit Then
+        DumpMemory = x64.DumpMemory(pid, Trim(hex_start), Trim(hex_size), fpath)
+    Else
+        s = CLng("&h" & Trim(hex_start))
+        l = CLng("&h" & Trim(hex_size))
+        DumpMemory = DumpProcessMemory(pid, s, l, fpath)
+    End If
     
 End Function
 
@@ -686,7 +727,7 @@ End Function
 Function EnumDrivers() As Collection
   Dim entries As Long
   Dim numBytes As Long
-  Dim bufSize As Long
+  Dim BUFSIZE As Long
   Dim buf() As Byte
   Dim smi As SYSTEM_MODULE_INFORMATION
   Dim offset As Long
@@ -697,11 +738,11 @@ Function EnumDrivers() As Collection
   NtQuerySystemInformation SYSMODINFO_SPECIFIER, entries, 4, numBytes
     
   'allocate buffer for num strucs returned
-  bufSize = Len(smi) * (entries + 1)
-  ReDim buf(bufSize)
+  BUFSIZE = Len(smi) * (entries + 1)
+  ReDim buf(BUFSIZE)
 
   'load buffer with all structures
-  NtQuerySystemInformation SYSMODINFO_SPECIFIER, buf(0), bufSize, numBytes
+  NtQuerySystemInformation SYSMODINFO_SPECIFIER, buf(0), BUFSIZE, numBytes
      
   'first 4 bytes are num Entries returned
   CopyMemory entries, buf(0), 4
@@ -714,9 +755,9 @@ Function EnumDrivers() As Collection
   For i = 1 To entries
         CopyMemory smi, buf(offset), Len(smi)
         
-        bufSize = InStr(smi.ImageName, Chr(0))
-        If bufSize > 0 Then
-            tmp = Mid(smi.ImageName, 1, bufSize - 1)
+        BUFSIZE = InStr(smi.ImageName, Chr(0))
+        If BUFSIZE > 0 Then
+            tmp = Mid(smi.ImageName, 1, BUFSIZE - 1)
         Else
             tmp = smi.ImageName
         End If
@@ -737,7 +778,7 @@ Function TerminateProces(pid As Long) As Boolean
 End Function
 
 Function GetSeDebug() As Boolean
-    Dim hToken As Long, hProcess As Long, lret As Long
+    Dim hToken As Long, hProcess As Long, lRet As Long
     Dim tkp As TOKEN_PRIVILEGES
     
     Const TOKEN_ADJUST_PRIVILEGES As Long = &H20
@@ -750,7 +791,7 @@ Function GetSeDebug() As Boolean
     tkp.PrivilegeCount = 1
     tkp.Attributes = 2 'SE_PRIVILEGE_ENABLED
     
-    If AdjustTokenPrivileges(hToken, False, tkp, Len(tkp), tkp, lret) = 0 Then Exit Function
+    If AdjustTokenPrivileges(hToken, False, tkp, Len(tkp), tkp, lRet) = 0 Then Exit Function
         
     If GetLastError = 0 Then GetSeDebug = True
 

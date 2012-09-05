@@ -28,6 +28,7 @@ Private Declare Function GetLastError Lib "kernel32.dll" () As Long
 Private Declare Function AdjustTokenPrivileges Lib "advapi32.dll" (ByVal TokenHandle As Long, ByVal DisableAllPrivileges As Long, ByRef NewState As TOKEN_PRIVILEGES, ByVal BufferLength As Long, ByRef PreviousState As TOKEN_PRIVILEGES, ByRef ReturnLength As Long) As Long
 Private Declare Function CloseHandle Lib "kernel32" (ByVal hObject As Long) As Long
 Private Declare Function OpenProcess Lib "kernel32" (ByVal dwDesiredAccess As Long, ByVal bInheritHandle As Long, ByVal dwProcessId As Long) As Long
+Private Declare Function GetShortPathName Lib "kernel32" Alias "GetShortPathNameA" (ByVal lpszLongPath As String, ByVal lpszShortPath As String, ByVal cchBuffer As Long) As Long
 
 Private Type LUID
     LowPart As Long
@@ -63,6 +64,11 @@ End Enum
 
 Private m_WindowsIs64Bit As Boolean
 Private m_SeDebugEnabled As Boolean
+Private helperPath As String
+
+Property Get HelperEnabled() As Boolean
+    If FileExists(helperPath) Then HelperEnabled = True
+End Property
 
 Property Get isWindows64Bit() As Boolean
     isWindows64Bit = m_WindowsIs64Bit
@@ -75,6 +81,8 @@ End Property
 Private Sub Class_Initialize()
     m_SeDebugEnabled = GetSeDebug()   'some x64 bit processes require this access to check..
     m_WindowsIs64Bit = Is64BitProcessor()
+    helperPath = App.path & IIf(isIde(), "/../../", "/") & "x64Helper.exe"
+    If FileExists(helperPath) Then helperPath = GetShortName(helperPath)
 End Sub
 
 Private Function Is64BitProcessor() As Boolean
@@ -129,9 +137,9 @@ Function IsProcess_x64(pid As Long) As results
     CloseHandle h
     
     If ret = 1 Then
-        IsProcess_x64 = r_64bit
-    Else
         IsProcess_x64 = r_32bit
+    Else
+        IsProcess_x64 = r_64bit
     End If
     
 End Function
@@ -187,9 +195,117 @@ hell:
     Err.Clear
 End Function
 
+Public Function x64Inject(pid As Long, ByVal dll As String, out_injLog As String) As Boolean
+    
+    If IsProcess_x64(pid) <> r_64bit Then
+        out_injLog = "target pid is not detected as an x64 process.."
+        Exit Function
+    End If
+    
+    If Not HelperEnabled Then
+        out_injLog = "x64Helper not found: " & exe
+        Exit Function
+    End If
+    
+    If Not FileExists(dll) Then
+        out_injLog = "dll not found: " & dll
+        Exit Function
+    End If
+    
+    If isExe_x64(dll) <> r_64bit Then
+        out_injLog = "dll is not 64 bit"
+        Exit Function
+    End If
+    
+    dll = GetShortName(dll)
+    out_injLog = GetCommandOutput(helperPath & " /inject " & pid & " " & dll)
+    
+    If InStr(1, out_injLog, "Error:", vbTextCompare) > 0 Then
+        Exit Function
+    End If
+    
+    x64Inject = True
+    
+End Function
+
+
+Public Function x64StartWithDll(exePath As String, ByVal dll As String, out_injLog As String) As Boolean
+
+    If Not FileExists(exePath) Then
+        out_injLog = "Executable not found: " & exePath
+        Exit Function
+    End If
+    
+    If Not HelperEnabled Then
+        out_injLog = "x64Helper not found: " & exe
+        Exit Function
+    End If
+    
+    If Not FileExists(dll) Then
+        out_injLog = "dll not found: " & dll
+        Exit Function
+    End If
+    
+    If isExe_x64(dll) <> r_64bit Then
+        out_injLog = "dll is not 64 bit"
+        Exit Function
+    End If
+    
+    If isExe_x64(exePath) <> r_64bit Then
+        out_injLog = "Executable is not 64 bit"
+        Exit Function
+    End If
+    
+    dll = GetShortName(dll)
+    exePath = GetShortName(exePath)
+    
+    out_injLog = GetCommandOutput(helperPath & " /startwdll " & exePath & " " & dll)
+    
+    If InStr(1, out_injLog, "Error:", vbTextCompare) > 0 Then
+        Exit Function
+    End If
+    
+    x64StartWithDll = True
+    
+End Function
+
+Private Function isIde() As Boolean
+    On Error GoTo hell
+    Debug.Print 1 / 0
+    isIde = False
+    Exit Function
+hell:
+    isIde = True
+End Function
+
+Private Function FileExists(path) As Boolean
+  On Error Resume Next
+  If Len(path) = 0 Then Exit Function
+  If Dir(path, vbHidden Or vbNormal Or vbReadOnly Or vbSystem) <> "" Then
+     If Err.Number <> 0 Then Exit Function
+     FileExists = True
+  End If
+End Function
+
+Private Function GetShortName(sFile As String) As String
+    Dim sShortFile As String * 67
+    Dim lResult As Long
+    
+    'the path must actually exist to get the short path name !!
+    If Not FileExists(sFile) Then writeFile sFile, " "
+    
+    'Make a call to the GetShortPathName API
+    lResult = GetShortPathName(sFile, sShortFile, Len(sShortFile))
+
+    'Trim out unused characters from the string.
+    GetShortName = Left$(sShortFile, lResult)
+    
+    'If Len(GetShortName) = 0 Then GetShortName = sFile
+
+End Function
 
 Private Function GetSeDebug() As Boolean
-    Dim hToken As Long, hProcess As Long, lret As Long
+    Dim hToken As Long, hProcess As Long, lRet As Long
     Dim tkp As TOKEN_PRIVILEGES
     
     Const TOKEN_ADJUST_PRIVILEGES As Long = &H20
@@ -202,9 +318,112 @@ Private Function GetSeDebug() As Boolean
     tkp.PrivilegeCount = 1
     tkp.Attributes = 2 'SE_PRIVILEGE_ENABLED
     
-    If AdjustTokenPrivileges(hToken, False, tkp, Len(tkp), tkp, lret) = 0 Then Exit Function
+    If AdjustTokenPrivileges(hToken, False, tkp, Len(tkp), tkp, lRet) = 0 Then Exit Function
         
     If GetLastError = 0 Then GetSeDebug = True
 
+End Function
+
+Function ReadFile(filename) As String 'this one should be binary safe...
+  On Error GoTo hell
+  f = FreeFile
+  Dim b() As Byte
+  Open filename For Binary As #f
+  ReDim b(LOF(f) - 1)
+  Get f, , b()
+  Close #f
+  ReadFile = StrConv(b(), vbUnicode, LANG_US)
+  Exit Function
+hell:   ReadFile = ""
+End Function
+
+Function GetProcessModules(pid As Long) As Collection
+
+    On Error Resume Next
+     
+    Dim mCol As New Collection
+    Dim cmod As CModule
+    Dim exe
+    Dim dlls, x, parts
+    
+    If Not HelperEnabled Then GoTo hell
+ 
+    x = GetCommandOutput(helperPath & " /dlls " & pid)
+    'dlls = ReadFile("D:\__share\sample.txt")
+    
+    If InStr(1, x, "Error:", vbTextCompare) > 0 Then
+        GoTo hell
+    End If
+    
+    dlls = Split(x, vbCrLf)
+     
+    For Each x In dlls
+        
+        parts = Split(x, ",")
+        If UBound(parts) = 2 Then
+            Set cmod = New CModule
+            cmod.path = parts(2)
+            cmod.x64Base = parts(0)
+            cmod.x64Size = parts(1)
+            cmod.isX64 = True
+            mCol.Add cmod, cmod.path
+        End If
+        
+    Next
+    
+hell:
+    Set GetProcessModules = mCol
+        
+End Function
+
+Private Function writeFile(path, it) As Boolean 'this one should be binary safe...
+    On Error GoTo hell
+    Dim b() As Byte
+    If FileExists(path) Then Kill path
+    f = FreeFile
+    b() = StrConv(it, vbFromUnicode, LANG_US)
+    Open path For Binary As #f
+    Put f, , b()
+    Close f
+    writeFile = True
+    Exit Function
+hell: writeFile = False
+End Function
+
+Function DumpProcess(pid As Long, ByVal fpath As String) As Boolean
+    
+    Dim x As String
+    
+    If Not HelperEnabled Then Exit Function
+    
+    fpath = GetShortName(fpath)
+    If FileExists(fpath) Then Kill fpath
+    
+    x = GetCommandOutput(helperPath & " /dumpprocess " & pid & " " & fpath)
+    
+    If InStr(1, x, "Error:", vbTextCompare) > 0 Then
+        Exit Function
+    End If
+    
+    DumpProcess = True
+    
+End Function
+
+Function DumpMemory(pid As Long, hex_start As String, hex_size As String, ByVal fpath As String) As Boolean
+    Dim x As String
+    
+    If Not HelperEnabled Then Exit Function
+    
+    fpath = GetShortName(fpath)
+    If FileExists(fpath) Then Kill fpath
+    
+    x = GetCommandOutput(helperPath & " /dumpmodule " & pid & " " & hex_start & " " & hex_size & " " & fpath)
+    
+    If InStr(1, x, "Error:", vbTextCompare) > 0 Then
+        Exit Function
+    End If
+    
+    DumpMemory = True
+    
 End Function
 
