@@ -190,9 +190,90 @@ int inject(char* dll, uint pid){
 	}
 
 	printf("CreateRemoteThread() = %x\n", hThread); 
+	CloseHandle(hProcess);
+
 	return 0;
 
 }
+
+int startwdll(char* dll, char* exePath){
+	
+	PROCESS_INFORMATION pi;
+	STARTUPINFO si;
+
+	printf("exe: %s\n", exePath);
+	printf("dll: %s\n", dll);
+
+	memset(&pi, 0, sizeof(PROCESS_INFORMATION) );
+	memset(&si, 0, sizeof(STARTUPINFO) );
+
+	if( CreateProcess(0, exePath, 0, 0, 1, CREATE_SUSPENDED, 0, 0, &si, &pi) == 0){;
+		printf("Error: failed to start process %s\n", exePath);
+		return 1;
+	}
+	
+	
+	int sz = strlen(dll) + 1;
+	HANDLE hProcess = pi.hProcess;
+
+	if (hProcess == INVALID_HANDLE_VALUE)
+	{
+		printf("Error: cannot open pid %x\n", pi.dwProcessId);
+		return 1;
+	}
+
+	printf("CreateProcess( pid = %d, hProcess = %x)\n", pi.dwProcessId, hProcess);
+
+	PVOID mem = VirtualAllocEx(hProcess, NULL, sz, MEM_COMMIT, PAGE_READWRITE);
+
+	if (mem == NULL)
+	{
+		printf("Error: can't allocate memory for dll name\n");
+		CloseHandle(hProcess);
+		return 1;
+	}
+
+	printf("VirtualAllocEx() = %x\n", mem);
+
+	if (WriteProcessMemory(hProcess, mem, (void*)dll, sz, NULL) == 0)
+	{
+		printf("Error: failed to write to dll name to remote process memory\n");
+		VirtualFreeEx(hProcess, mem, sz, MEM_RELEASE);
+		CloseHandle(hProcess);
+		return 1;
+	}
+
+	printf("WriteProcessMemory() = success\n");
+
+	FARPROC lpstart = GetProcAddress(GetModuleHandle("KERNEL32.DLL"),"LoadLibraryA");
+	printf("start address = %x\n", lpstart);
+
+	HANDLE hThread = CreateRemoteThread(hProcess, NULL, 0, (LPTHREAD_START_ROUTINE) lpstart, mem, 0, NULL);
+	if (hThread == INVALID_HANDLE_VALUE)
+	{
+		printf("Error: CreateRemoteThread failed\n");
+		VirtualFreeEx(hProcess, mem, sz , MEM_RELEASE);
+		CloseHandle(hProcess);
+		return 1;
+	}
+
+	printf("CreateRemoteThread() = %x\n", hThread); 
+	CloseHandle(hProcess);
+
+
+	Sleep(300);
+
+	if( ResumeThread(pi.hThread) == -1){
+		printf("Error: Resume thread failed...\n");
+		return 1;
+	}
+
+	CloseHandle(pi.hProcess);
+
+	return 0;
+
+}
+
 
 int dump(int pid, uint base, uint size, char* out_file){
 
@@ -278,6 +359,7 @@ void usage(int invalidOptionCount=0){
 	printf("\t/dlls decimal_pid\n");
 	printf("\t/dumpmodule decimal_pid hex_string_base hex_string_size out_file_path\n");
 	printf("\t/dumpprocess decimal_pid out_file_path\n");
+	printf("\t/startwdll exe_path dll_path\n");
 	if( IsDebuggerPresent() ) getch();
 	exit(0);
 }
@@ -345,7 +427,18 @@ int main(int argc, char* argv[] )
 		handled = true;
 	}
 
-	
+	// /startwdll exe_path dll_path
+	if(strstr(argv[1],"/startwdll") > 0 ){ 
+		if(argc!=4) usage(3);
+		char* exe = strdup(argv[2]);
+		dll = strdup(argv[3]);
+		if(!FileExists(dll)){
+			printf("Error: dll file not found: %s\n\n",dll);
+			usage();
+		}
+		rv = startwdll(dll,exe);
+		handled = true;
+	}
 
 
 	if(handled==false){
