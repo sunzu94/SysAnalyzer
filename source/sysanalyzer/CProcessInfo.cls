@@ -68,6 +68,34 @@ Private Const SYSMODINFO_SPECIFIER = 11
 
 Private Const STANDARD_RIGHTS_REQUIRED = &HF0000
 
+Private Type PROCESS_INFORMATION
+   hProcess As Long
+   hThread As Long
+   dwProcessId As Long
+   dwThreadId As Long
+End Type
+
+Private Type STARTUPINFO
+        cb As Long
+        lpReserved As String
+        lpDesktop As String
+        lpTitle As String
+        dwX As Long
+        dwY As Long
+        dwXSize As Long
+        dwYSize As Long
+        dwXCountChars As Long
+        dwYCountChars As Long
+        dwFillAttribute As Long
+        dwFlags As Long
+        wShowWindow As Integer
+        cbReserved2 As Integer
+        lpReserved2 As Long
+        hStdInput As Long
+        hStdOutput As Long
+        hStdError As Long
+End Type
+
 Private Enum ProcessAccessTypes
   PROCESS_TERMINATE = (&H1)
   PROCESS_CREATE_THREAD = (&H2)
@@ -161,10 +189,13 @@ Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Destination
 Private Declare Function OpenProcess Lib "kernel32" (ByVal dwDesiredAccess As Long, ByVal bInheritHandle As Long, ByVal dwProcessId As Long) As Long
 Private Declare Function WriteProcessMemory Lib "kernel32" (ByVal hProcess As Long, ByVal lpBaseAddress As Any, ByVal lpBuffer As Any, ByVal nSize As Long, lpNumberOfBytesWritten As Long) As Long
 Private Declare Function ReadProcessMemory Lib "kernel32" (ByVal hProcess As Long, ByVal lpBaseAddress As Any, lpBuffer As Byte, ByVal nSize As Long, lpNumberOfBytesWritten As Long) As Long
-                           
+Private Declare Function WriteProcessBytes Lib "kernel32" Alias "WriteProcessMemory" (ByVal hProcess As Long, lpBaseAddress As Long, lpBuffer As Any, ByVal nSize As Long, lpNumberOfBytesWritten As Long) As Long
+
 Private Declare Function EnumProcessModules Lib "PSAPI.DLL" (ByVal hProcess As Long, ByRef lphModule As Long, ByVal cb As Long, ByRef cbNeeded As Long) As Long
 Private Declare Function GetModuleInformation Lib "PSAPI.DLL" (ByVal hProcess As Long, ByVal hModule As Long, ByRef lpmodinfo As LPMODULEINFO, ByVal cb As Long) As Long
 Private Declare Function GetModuleFileNameExA Lib "PSAPI.DLL" (ByVal hProcess As Long, ByVal hModule As Long, ByVal ModuleName As String, ByVal nSize As Long) As Long
+Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
+Private Declare Function ResumeThread Lib "kernel32" (ByVal hThread As Long) As Long
 
 Private Declare Function OpenProcessToken Lib "advapi32.dll" (ByVal ProcessHandle As Long, ByVal DesiredAccess As Long, TokenHandle As Long) As Long
 Private Declare Function GetTokenInformation Lib "advapi32.dll" (ByVal TokenHandle As Long, ByVal TokenInformationClass As Integer, TokenInformation As Any, ByVal TokenInformationLength As Long, ReturnLength As Long) As Long
@@ -172,13 +203,19 @@ Private Declare Function LookupAccountSid Lib "advapi32.dll" Alias "LookupAccoun
 'Private Declare Function VirtualQueryEx Lib "kernel32" (ByVal hProcess As Long, lpAddress As Any, lpBuffer As MEMORY_BASIC_INFORMATION, ByVal dwLength As Long) As Long
 Private Declare Function VirtualQueryEx Lib "kernel32" (ByVal hProcess As Long, ByVal lpAddress As Long, lpBuffer As MEMORY_BASIC_INFORMATION, ByVal dwLength As Long) As Long
 
+Private Declare Function CreateRemoteThread Lib "kernel32" (ByVal ProcessHandle As Long, lpThreadAttributes As Long, ByVal dwStackSize As Long, ByVal lpStartAddress As Any, ByVal lpParameter As Any, ByVal dwCreationFlags As Long, lpThreadID As Long) As Long
+Private Declare Function GetModuleHandle Lib "kernel32" Alias "GetModuleHandleA" (ByVal lpModuleName As String) As Long
+Private Declare Function GetProcAddress Lib "kernel32" (ByVal hModule As Long, ByVal lpProcName As String) As Long
+Private Declare Function VirtualAllocEx Lib "kernel32" (ByVal hProcess As Long, lpAddress As Any, ByVal dwSize As Long, ByVal fAllocType As Long, FlProtect As Long) As Long
+Private Declare Function CreateProcess Lib "kernel32" Alias "CreateProcessA" (ByVal lpApplicationName As Long, ByVal lpCommandLine As String, ByVal lpProcessAttributes As Long, ByVal lpThreadAttributes As Long, ByVal bInheritHandles As Long, ByVal dwCreationFlags As Long, ByVal lpEnvironment As Long, ByVal lpCurrentDriectory As Long, lpStartupInfo As STARTUPINFO, lpProcessInformation As PROCESS_INFORMATION) As Long
+
 Private Declare Function TerminateProcess Lib "kernel32" (ByVal hProcess As Long, ByVal uExitCode As Long) As Long
 Private Declare Function GetCurrentProcess Lib "kernel32.dll" () As Long
 Private Declare Function LookupPrivilegeValue Lib "advapi32.dll" Alias "LookupPrivilegeValueA" (ByVal lpSystemName As String, ByVal lpName As String, lpLuid As LUID) As Long
 Private Declare Function GetLastError Lib "kernel32.dll" () As Long
 Private Declare Function AdjustTokenPrivileges Lib "advapi32.dll" (ByVal TokenHandle As Long, ByVal DisableAllPrivileges As Long, ByRef NewState As TOKEN_PRIVILEGES, ByVal BufferLength As Long, ByRef PreviousState As TOKEN_PRIVILEGES, ByRef ReturnLength As Long) As Long
 
-Private Declare Function GetProcAddress Lib "kernel32" (ByVal hModule As Long, ByVal lpProcName As String) As Long
+'Private Declare Function GetProcAddress Lib "kernel32" (ByVal hModule As Long, ByVal lpProcName As String) As Long
 Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
 
 Private Declare Function GetProcessImageFileNameA Lib "PSAPI.DLL" _
@@ -903,6 +940,191 @@ Public Function GetParentProcessId(ByVal pid As Long) As Long
     CloseHandle hProcess
 End Function
 
+Function GetProcess(pid As Long, cp As CProcess) As Boolean
+    Dim c As Collection
+    
+    Set c = GetRunningProcesses()
+    
+    For Each cp In c
+        If cp.pid = pid Then
+            GetProcess = True
+            Exit Function
+        End If
+    Next
+    
+    Set cp = Nothing
+    
+End Function
+
+'64 bit safe
+Public Function InjectDLL(pid As Long, dllPath As String, Optional injLog As String, Optional cp As CProcess) As Boolean
+
+    Dim hProcess As Long
+    Dim lpfnLoadLib As Long
+    Dim ret As Long
+    Dim lpdllPath As Long
+    Dim pi As PROCESS_INFORMATION
+    Dim si As STARTUPINFO
+    Dim hThread As Long
+    Dim writeLen As Long
+    Dim b() As Byte
+    Dim buflen As Long
+    Dim li As ListItem
+    Dim c As Collection
+    Dim found As Boolean
+    Dim rv As Boolean
+    
+    Const PAGE_READWRITE = 4
+    Const CREATE_SUSPENDED = &H4
+    Const MEM_COMMIT = &H1000
+    
+    injLog = Empty
+    
+    If Not GetProcess(pid, cp) Then
+        injLog = "pid " & pid & " not found"
+        GoTo hell
+    End If
+    
+    If cp.is64Bit Then
+        If x64.isExe_x64(dllPath) <> r_64bit Then
+            injLog = "Can not inject a 32 bit dll into a 64 bit process."
+            GoTo hell
+        End If
+        rv = x64.x64Inject(pid, dllPath, injLog)
+        GoTo hell
+    End If
+    
+    If x64.isExe_x64(dllPath) <> r_32bit Then
+            injLog = "Can not inject a 64 bit dll in a 32 bit process."
+            GoTo hell
+    End If
+    
+    b() = StrConv(dllPath & Chr(0), vbFromUnicode)
+    buflen = UBound(b) + 1
+ 
+    hProcess = OpenProcess(PROCESS_ALL_ACCESS, False, pid)
+    injLog = injLog & "Opening PID: " & pid & " Process Handle=" & hProcess & vbCrLf
+    If hProcess = -1 Then GoTo hell
+     
+    lpdllPath = VirtualAllocEx(hProcess, ByVal 0, buflen, MEM_COMMIT, ByVal PAGE_READWRITE)
+    injLog = injLog & "Remote Allocation base: " & Hex(lpdllPath) & vbCrLf
+    If lpdllPath = 0 Then GoTo hell
+    
+    ret = WriteProcessBytes(hProcess, ByVal lpdllPath, b(0), buflen, writeLen)
+    injLog = injLog & "WriteProcessMemory=" & ret & " BufLen=" & buflen & " Bytes Written: " & writeLen & vbCrLf
+    If ret = 0 Then GoTo hell
+     
+    lpfnLoadLib = GetProcAddress(GetModuleHandle("kernel32.dll"), "LoadLibraryA")
+    injLog = injLog & "LoadLibraryA = " & Hex(lpfnLoadLib) & vbCrLf
+    
+    'DebugBreak
+    ret = CreateRemoteThread(hProcess, ByVal 0, 0, lpfnLoadLib, lpdllPath, 0, hThread)
+    injLog = injLog & "CreateRemoteThread = " & ret & " ThreadID: " & Hex(hThread) & vbCrLf
+    If ret = -1 Then GoTo hell
+    
+    Sleep 300
+    rv = True
+    
+hell:
+   CloseHandle hProcess
+   InjectDLL = rv
+    
+End Function
+
+'64 bit safe..
+Public Function StartProcessWithDLL(exePath As String, dllPath As String, Optional injLog As String, Optional cp As CProcess) As Boolean
+
+    Dim hProcess As Long
+    Dim lpfnLoadLib As Long
+    Dim ret As Long
+    Dim lpdllPath As Long
+    Dim pi As PROCESS_INFORMATION
+    Dim si As STARTUPINFO
+    Dim hThread As Long
+    Dim writeLen As Long
+    Dim b() As Byte
+    Dim buflen As Long
+    Dim rv As Boolean
+    
+    Const PAGE_READWRITE = 4
+    Const CREATE_SUSPENDED = &H4
+    Const MEM_COMMIT = &H1000
+    
+    injLog = Empty
+    Set cp = New CProcess
+    cp.fullpath = exePath
+    cp.path = exePath
+    
+    If x64.isExe_x64(exePath) = r_64bit Then
+        If x64.isExe_x64(dllPath) <> r_64bit Then
+            injLog = "Can not start a 32 bit dll in a 64 bit executable."
+            GoTo hell
+        End If
+        rv = x64.x64StartWithDll(exePath, dllPath, injLog)
+        If rv Then cp.pid = parsePid(injLog)
+        GoTo hell
+    End If
+    
+    If x64.isExe_x64(dllPath) <> r_32bit Then
+            injLog = "Can not start a 64 bit dll in a 32 bit executable."
+            GoTo hell
+    End If
+        
+    b() = StrConv(dllPath & Chr(0), vbFromUnicode)
+    buflen = UBound(b) + 1
+
+    ret = CreateProcess(0&, exePath, 0&, 0&, 1&, CREATE_SUSPENDED, 0&, 0&, si, pi)
+    injLog = injLog & "Create Process Suspended: " & ret & IIf(ret = 0, " Failed", " PID: " & pi.dwProcessId) & vbCrLf
+    cp.pid = pi.dwProcessId
+    If ret = 0 Then GoTo hell
+    
+    hProcess = OpenProcess(PROCESS_ALL_ACCESS, False, pi.dwProcessId)
+    injLog = injLog & "OpenProcess Handle=" & hProcess & vbCrLf
+    If hProcess = -1 Then GoTo hell
+    
+    lpdllPath = VirtualAllocEx(hProcess, ByVal 0, buflen, MEM_COMMIT, ByVal PAGE_READWRITE)
+    injLog = injLog & "Remote Allocation base: " & Hex(lpdllPath) & vbCrLf
+    If lpdllPath = 0 Then GoTo hell
+    
+    ret = WriteProcessBytes(hProcess, ByVal lpdllPath, b(0), buflen, writeLen)
+    injLog = injLog & "WriteProcessMemory=" & ret & " BufLen=" & buflen & " Bytes Written: " & writeLen & vbCrLf
+    If ret = 0 Then GoTo hell
+     
+    lpfnLoadLib = GetProcAddress(GetModuleHandle("kernel32.dll"), "LoadLibraryA")
+    injLog = injLog & "LoadLibraryA = " & Hex(lpfnLoadLib) & vbCrLf
+    
+    'DebugBreak
+    ret = CreateRemoteThread(hProcess, ByVal 0, 0, lpfnLoadLib, lpdllPath, 0, hThread)
+    injLog = injLog & "CreateRemoteThread = " & ret & " ThreadID: " & Hex(hThread) & vbCrLf
+    If ret = -1 Then GoTo hell
+    
+    Sleep 300
+    ret = ResumeThread(pi.hThread)
+    injLog = injLog & "ResumeThread = " & ret & vbCrLf
+    If ret = -1 Then GoTo hell
+
+    rv = True
+    
+hell:
+    CloseHandle hProcess
+    StartProcessWithDLL = rv
+    
+End Function
+
+Private Function parsePid(injLog As String) As Long
+    On Error Resume Next
+    Dim a As Long, b As Long, tmp
+    a = InStr(injLog, "pid")
+    If a > 0 Then
+        a = a + 3
+        b = InStr(a, injLog, ",")
+        If b > 0 Then
+            tmp = Mid(injLog, a, b - a)
+            tmp = Trim(Replace(tmp, "=", Empty))
+            parsePid = CLng(tmp)
+        End If
+    End If
+End Function
 
 '-----------------------------------------------------------
 'http://www.vbaccelerator.com/home/VB/Tips/Mapping_NT_Device_Names/article.asp

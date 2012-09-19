@@ -451,34 +451,8 @@ Option Explicit
 '         this program; if not, write to the Free Software Foundation, Inc., 59 Temple
 '         Place, Suite 330, Boston, MA 02111-1307 USA
 
-Private Type PROCESS_INFORMATION
-   hProcess As Long
-   hThread As Long
-   dwProcessId As Long
-   dwThreadId As Long
-End Type
 
-Private Type STARTUPINFO
-        cb As Long
-        lpReserved As String
-        lpDesktop As String
-        lpTitle As String
-        dwX As Long
-        dwY As Long
-        dwXSize As Long
-        dwYSize As Long
-        dwXCountChars As Long
-        dwYCountChars As Long
-        dwFillAttribute As Long
-        dwFlags As Long
-        wShowWindow As Integer
-        cbReserved2 As Integer
-        lpReserved2 As Long
-        hStdInput As Long
-        hStdOutput As Long
-        hStdError As Long
-End Type
-
+'
 Private Enum ProcessAccessTypes
     PROCESS_TERMINATE = (&H1)
     PROCESS_CREATE_THREAD = (&H2)
@@ -495,15 +469,10 @@ Private Enum ProcessAccessTypes
     SYNCHRONIZE = &H100000
     PROCESS_ALL_ACCESS = (STANDARD_RIGHTS_REQUIRED Or SYNCHRONIZE Or &HFFF)
 End Enum
-
+'
 Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
 Private Declare Function OpenProcess Lib "kernel32" (ByVal dwDesiredAccess As Long, ByVal bInheritHandle As Long, ByVal dwProcessId As Long) As Long
-Private Declare Function WriteProcessMemory Lib "kernel32" (ByVal hProcess As Long, lpBaseAddress As Long, lpBuffer As Any, ByVal nSize As Long, lpNumberOfBytesWritten As Long) As Long
 Private Declare Function CreateRemoteThread Lib "kernel32" (ByVal ProcessHandle As Long, lpThreadAttributes As Long, ByVal dwStackSize As Long, ByVal lpStartAddress As Any, ByVal lpParameter As Any, ByVal dwCreationFlags As Long, lpThreadID As Long) As Long
-Private Declare Function GetModuleHandle Lib "kernel32" Alias "GetModuleHandleA" (ByVal lpModuleName As String) As Long
-Private Declare Function GetProcAddress Lib "kernel32" (ByVal hModule As Long, ByVal lpProcName As String) As Long
-Private Declare Function VirtualAllocEx Lib "kernel32" (ByVal hProcess As Long, lpAddress As Any, ByVal dwSize As Long, ByVal fAllocType As Long, FlProtect As Long) As Long
-Private Declare Function CreateProcess Lib "kernel32" Alias "CreateProcessA" (ByVal lpApplicationName As Long, ByVal lpCommandLine As String, ByVal lpProcessAttributes As Long, ByVal lpThreadAttributes As Long, ByVal bInheritHandles As Long, ByVal dwCreationFlags As Long, ByVal lpEnvironment As Long, ByVal lpCurrentDriectory As Long, lpStartupInfo As STARTUPINFO, lpProcessInformation As PROCESS_INFORMATION) As Long
 Private Declare Function ResumeThread Lib "kernel32" (ByVal hThread As Long) As Long
 Private Declare Sub DebugBreak Lib "kernel32" ()
 Private Declare Function CloseHandle Lib "kernel32" (ByVal hObject As Long) As Long
@@ -668,6 +637,11 @@ Private Sub cmdStart_Click()
         
     Dim exe As String
     Dim isX64 As Boolean
+    Dim isPid As Boolean
+    Dim pid As Long
+    Dim failed As Boolean
+    Dim li As ListItem
+    
     Dim x As String, tmp, y
     
     On Error GoTo hell
@@ -681,7 +655,9 @@ Private Sub cmdStart_Click()
     End If
     
     If VBA.Left(txtPacked, 4) = "pid:" Then
+        isPid = True
         exe = Replace(txtPacked, "pid:", Empty)
+        pid = CLng(Trim(exe))
         If cpi.x64.IsProcess_x64(CLng(exe)) = r_64bit Then isX64 = True
     Else
         If Not FileExists(txtPacked) Then
@@ -697,38 +673,33 @@ Private Sub cmdStart_Click()
         Exit Sub
     End If
     
-    If isX64 Then
-        If cpi.x64.isExe_x64(txtDll) <> r_64bit Then
-            MsgBox "You can not inject a 32 bit dll into a 64 bit process.", vbInformation
-            Exit Sub
+    Dim cp As CProcess
+    
+    If Not isX64 And Len(txtArgs) > 0 Then exe = exe & " " & txtArgs
+    
+    If isPid Then
+        If Not cpi.InjectDLL(pid, txtDll, x, cp) Then
+            failed = True
+            MsgBox "Injection failed", vbInformation
+        End If
+    Else
+        If Not cpi.StartProcessWithDLL(exe, txtDll, x, cp) Then
+            failed = True
+            MsgBox "Injection failed", vbInformation
         End If
     End If
     
-    If isX64 Then
-    
-        If IsNumeric(exe) Then
-            If Not cpi.x64.x64Inject(CLng(exe), txtDll, x) Then
-                MsgBox x
-                Exit Sub
-            End If
-        Else
-            'dont forget the args too...
-            MsgBox "Starting an x64 bit processes with a dll is not yet supported.", vbInformation
-            Exit Sub
-        End If
-        
-        tmp = Split(x, vbCrLf)
-        List2.Clear
-        For Each y In tmp
-           List2.AddItem y
-        Next
-        
-        Exit Sub
-        
+    If Not failed Then
+        Set li = lvProc.ListItems.Add(, , Hex(cp.pid))
+        li.SubItems(1) = fso.FileNameFromPath(cp.fullpath)
+        li.Tag = cp.pid
     End If
     
-    If Len(txtArgs) > 0 Then exe = exe & " " & txtArgs
-    StartProcessWithDLL exe, txtDll
+    tmp = Split(x, vbCrLf)
+    List2.Clear
+    For Each y In tmp
+       List2.AddItem y
+    Next
     
     Exit Sub
 hell:
@@ -1059,72 +1030,6 @@ Private Sub IncrementLastCount()
     v = CLng(lv.ListItems(i).SubItems(2))
     lv.ListItems(i).SubItems(2) = v + 1
 End Sub
-
-Public Function StartProcessWithDLL(exePath As String, dllPath As String) As Long
-
-    Dim hProcess As Long
-    Dim lpfnLoadLib As Long
-    Dim ret As Long
-    Dim lpdllPath As Long
-    Dim pi As PROCESS_INFORMATION
-    Dim si As STARTUPINFO
-    Dim hThread As Long
-    Dim writeLen As Long
-    Dim b() As Byte
-    Dim buflen As Long
-    Dim li As ListItem
-    
-    Const PAGE_READWRITE = 4
-    Const CREATE_SUSPENDED = &H4
-    Const MEM_COMMIT = &H1000
-    
-    b() = StrConv(dllPath & Chr(0), vbFromUnicode)
-    buflen = UBound(b) + 1
-    
-    With List2
-        .Clear
-        
-        If IsNumeric(exePath) Then
-            hProcess = OpenProcess(PROCESS_ALL_ACCESS, False, CLng(exePath))
-            .AddItem "Opening PID: " & exePath & " Process Handle=" & hProcess
-            Set li = lvProc.ListItems.Add(, , Hex(CLng(exePath)))
-            li.SubItems(1) = fso.FileNameFromPath(cpi.GetProcessPath(CLng(exePath)))
-            li.Tag = CLng(exePath)
-        Else
-            ret = CreateProcess(0&, exePath, 0&, 0&, 1&, CREATE_SUSPENDED, 0&, 0&, si, pi)
-            .AddItem "Create Process Suspended: " & ret & IIf(ret = 0, " Failed", " PID: " & pi.dwProcessId)
-            
-            hProcess = OpenProcess(PROCESS_ALL_ACCESS, False, pi.dwProcessId)
-            .AddItem "OpenProcess Handle=" & hProcess
-            
-            Set li = lvProc.ListItems.Add(, , Hex(pi.dwProcessId))
-            li.SubItems(1) = fso.FileNameFromPath(exePath)
-            li.Tag = pi.dwProcessId
-            
-        End If
-                    
-        lpdllPath = VirtualAllocEx(hProcess, ByVal 0, buflen, MEM_COMMIT, ByVal PAGE_READWRITE)
-        .AddItem "Remote Allocation base: " & Hex(lpdllPath)
-            
-        ret = WriteProcessMemory(hProcess, ByVal lpdllPath, b(0), buflen, writeLen)
-        .AddItem "WriteProcessMemory=" & ret & " BufLen=" & buflen & " Bytes Written: " & writeLen
-                
-        lpfnLoadLib = GetProcAddress(GetModuleHandle("kernel32.dll"), "LoadLibraryA")
-        .AddItem "LoadLibraryA = " & Hex(lpfnLoadLib)
-        
-        'DebugBreak
-        ret = CreateRemoteThread(hProcess, ByVal 0, 0, lpfnLoadLib, lpdllPath, 0, hThread)
-        .AddItem "CreateRemoteThread = " & ret & " ThreadID: " & Hex(hThread)
-                
-        Sleep 900
-        
-        If Not IsNumeric(exePath) Then ResumeThread pi.hThread
-        
-        CloseHandle hProcess
-        
-    End With
-
-End Function
 
 
 
