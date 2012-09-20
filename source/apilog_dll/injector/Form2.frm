@@ -25,7 +25,7 @@ Begin VB.Form Form2
       Height          =   375
       Left            =   2400
       TabIndex        =   35
-      Top             =   3720
+      Top             =   3900
       Width           =   1005
    End
    Begin MSComctlLib.ListView lvProc 
@@ -102,17 +102,17 @@ Begin VB.Form Form2
       Height          =   375
       Left            =   4950
       TabIndex        =   32
-      Top             =   3720
+      Top             =   3900
       Width           =   1335
    End
    Begin MSComctlLib.ListView lv 
-      Height          =   3585
-      Left            =   90
+      Height          =   3225
+      Left            =   60
       TabIndex        =   30
-      Top             =   4140
+      Top             =   4380
       Width           =   10185
       _ExtentX        =   17965
-      _ExtentY        =   6324
+      _ExtentY        =   5689
       View            =   3
       LabelEdit       =   1
       LabelWrap       =   -1  'True
@@ -145,7 +145,7 @@ Begin VB.Form Form2
       Height          =   375
       Left            =   3510
       TabIndex        =   29
-      Top             =   3720
+      Top             =   3900
       Width           =   1305
    End
    Begin VB.CommandButton cmdClear 
@@ -153,7 +153,7 @@ Begin VB.Form Form2
       Height          =   375
       Left            =   6420
       TabIndex        =   27
-      Top             =   3720
+      Top             =   3900
       Width           =   1215
    End
    Begin VB.CommandButton cmdBrowse 
@@ -183,11 +183,19 @@ Begin VB.Form Form2
    End
    Begin VB.Frame Frame1 
       Caption         =   " Api Startup Logging Options "
-      Height          =   4065
-      Left            =   7650
+      Height          =   4245
+      Left            =   7680
       TabIndex        =   14
       Top             =   60
       Width           =   2565
+      Begin VB.ComboBox cboLogLevel 
+         Height          =   315
+         Left            =   1620
+         Style           =   2  'Dropdown List
+         TabIndex        =   38
+         Top             =   3840
+         Width           =   735
+      End
       Begin VB.CheckBox chkIgnoreExitProcess 
          Caption         =   "Ignore ExitProcess"
          Height          =   315
@@ -271,6 +279,14 @@ Begin VB.Form Form2
          Top             =   300
          Width           =   2055
       End
+      Begin VB.Label Label4 
+         Caption         =   "Hook Lib Log Level"
+         Height          =   255
+         Left            =   120
+         TabIndex        =   37
+         Top             =   3900
+         Width           =   1395
+      End
    End
    Begin VB.TextBox txtArgs 
       Height          =   315
@@ -293,7 +309,7 @@ Begin VB.Form Form2
       Height          =   375
       Left            =   1020
       TabIndex        =   9
-      Top             =   3720
+      Top             =   3900
       Width           =   1245
    End
    Begin VB.CommandButton cmdContinue 
@@ -373,7 +389,7 @@ Begin VB.Form Form2
       Height          =   255
       Left            =   60
       TabIndex        =   3
-      Top             =   3870
+      Top             =   4050
       Width           =   1035
    End
    Begin VB.Label Label1 
@@ -683,10 +699,12 @@ Private Sub cmdStart_Click()
             MsgBox "Injection failed", vbInformation
         End If
     Else
+        cpi.x64.DisableRedir
         If Not cpi.StartProcessWithDLL(exe, txtDll, x, cp) Then
             failed = True
             MsgBox "Injection failed", vbInformation
         End If
+        cpi.x64.RevertRedir
     End If
     
     If Not failed Then
@@ -747,6 +765,12 @@ Private Sub Form_Load()
         lvProc.Move .Left, .Top, .Width, .Height
         .Visible = False
     End With
+    
+    Dim i As Integer
+    For i = 0 To 3
+        cboLogLevel.AddItem i
+    Next
+    cboLogLevel.ListIndex = 0
     
     Set sc = New CSubclass2
     
@@ -906,6 +930,8 @@ Private Sub HandleConfig(msg As String, spid As String)
         Case "blockopenprocess": If chkBlockOpenProcess.value = 1 Then sc.OverRideRetVal 1
         Case "blockdebugcontrol": If chkBlockDebugControl.value = 1 Then sc.OverRideRetVal 1
         Case "ignoreexitprocess": If chkIgnoreExitProcess.value = 1 Then sc.OverRideRetVal 1
+        Case "hooklibloglevel": sc.OverRideRetVal CLng(cboLogLevel.Text)
+        
         Case "handler": 'reconfig handler that can be called with CreateRemoteThread()
                 pid = CLng("&h" & spid)
                 For Each li In lvProc.ListItems
@@ -1039,7 +1065,9 @@ End Sub
 
 Function FileExists(path) As Boolean
   If Len(path) = 0 Then Exit Function
+  cpi.x64.DisableRedir
   If Dir(path, vbHidden Or vbNormal Or vbReadOnly Or vbSystem) <> "" Then FileExists = True
+  cpi.x64.RevertRedir
 End Function
  
  

@@ -22,19 +22,21 @@
 
 #define _WIN32_WINNT 0x0401  //for IsDebuggerPresent 
 #include <windows.h>
-#include <Winsock2.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <wininet.h>
+//#include <Winsock2.h>
 #include <tlhelp32.h>
 
+#pragma warning(disable:4996)
+#pragma comment(lib, "Wininet.lib")
 void InstallHooks(void);
 
-extern "C" void __setargv(void);
+ 
 
-#include "hooker.h"
+#include "NtHookEngine.h"
 #include "main.h"   //contains a bunch of library functions in it too..
 
 //todo:  
@@ -55,7 +57,7 @@ extern "C" void __setargv(void);
 
 bool Installed =false;
 
-void Closing(void){ msg("***** Injected Process Terminated *****"); }
+void Closing(void){ msg("***** Injected Process Terminated *****"); exit(0);}
 	
 //Config options..these must all default to 0 because default windProc response = 0 if unhandled by client..
 int noSleep = 0;
@@ -77,9 +79,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 		 Installed=true;
 		 InstallHooks();
 		 atexit(Closing);
-
-		 WSADATA WsaDat;			 
-  		 WSAStartup(MAKEWORD(1,1), &WsaDat);
 	}
 
 	return TRUE;
@@ -166,7 +165,7 @@ int My_ZwSystemDebugControl( int Command, int InputBuffer, int InputBufferLength
 VOID __stdcall My_Sleep( DWORD a0 )
 {
 	
-	int minToLog = 3000; //if its under 3 seconds who cares just do it dont spam me with it...
+	DWORD minToLog = 3000; //if its under 3 seconds who cares just do it dont spam me with it...
 	
 	if( a0 > minToLog){
 		if(noSleep){
@@ -220,19 +219,6 @@ HANDLE __stdcall My_CreateFileA(LPCSTR a0,DWORD a1,DWORD a2,LPSECURITY_ATTRIBUTE
     }
 	catch(...){} 
 	
-	/*if(a0 && strstr(a0,"NTICE") > 0 ){ //to many gaobots = this		
-		
-		_asm {
-			mov eax, [ebp+4]    ;//return addr on stack
-			sub eax, 900h       ;//vmware code in 900h buffer before ret addr
-   			mov calledFrom, eax
-		} 
-
-		Seek_n_Destroy_AntiVmWare(calledFrom, 0x900);
-		return (HANDLE)-1;
-
-	};*/
-
 	return ret;
 
 }
@@ -498,22 +484,6 @@ SOCKET __stdcall My_socket(int a0,int a1,int a2)
     return ret;
 }
 
-SOCKET __stdcall My_WSASocketA(int a0,int a1,int a2,struct _WSAPROTOCOL_INFOA* a3,GROUP a4,DWORD a5)
-{
-
-    SOCKET ret = 0;
-    try {
-        ret = Real_WSASocketA(a0, a1, a2, a3, a4, a5);
-    }
-	catch(...){	} 
-
-	LogAPI("%x     WSASocketA(fam=%x,typ=%x,proto=%x) = %x", CalledFrom(), a0, a1, a2, ret);
-
-    return ret;
-}
-
-
-
 //untested
 int My_URLDownloadToFileA(int a0,char* a1, char* a2, DWORD a3, int a4)
 {
@@ -570,34 +540,6 @@ void __stdcall My_ExitThread(DWORD a0)
     }
 	catch(...){	} 
 
-}
-
-FILE* __stdcall My_fopen(const char* a0, const char* a1)
-{
-
-	LogAPI("%x     fopen(%s)", CalledFrom(), a0);
-
-	FILE* rt=0;
-    try {
-        rt = Real_fopen(a0,a1);
-    }
-	catch(...){	} 
-
-	return rt;
-}
-
-size_t __stdcall My_fwrite(const void* a0, size_t a1, size_t a2, FILE* a3)
-{
-
-	LogAPI("%x     fwrite(h=%x)", CalledFrom(), a3);
-
-	size_t rt=0;
-    try {
-        rt = Real_fwrite(a0,a1,a2,a3);
-    }
-	catch(...){	} 
-
-	return rt;
 }
 
 HANDLE __stdcall My_OpenProcess(DWORD a0,BOOL a1,DWORD a2)
@@ -690,11 +632,11 @@ BOOL __stdcall My_DeleteFileA(LPCSTR a0)
 BOOL __stdcall My_CreateProcessA(LPCSTR a0,LPSTR a1,LPSECURITY_ATTRIBUTES a2,LPSECURITY_ATTRIBUTES a3,BOOL a4,DWORD a5,LPVOID a6,LPCSTR a7,struct _STARTUPINFOA* si,LPPROCESS_INFORMATION pi)
 {
 
-	unsigned long (__stdcall  *lpfnLoadLib)(void *);
+	//type def unsigned long (__stdcall  *lpfnLoadLib)(void *);
 
 	char* flags = a5 == CREATE_SUSPENDED ? "CREATE_SUSPENDED" : "";
 
-	int buflen, ret ; 
+	int buflen, ret, lpfnLoadLib ; 
 	unsigned long writeLen, hThread;
 	HANDLE hProcess, lpdllPath;
    
@@ -718,13 +660,13 @@ BOOL __stdcall My_CreateProcessA(LPCSTR a0,LPSTR a1,LPSECURITY_ATTRIBUTES a2,LPS
 		ret = Real_WriteProcessMemory(hProcess, lpdllPath, dllPath, buflen, &writeLen);
 		LogAPI("*****   WriteProcessMemory=%x BufLen=%x  BytesWritten:%x", ret, buflen, writeLen);
             
-		Real_GetProcAddress(Real_GetModuleHandleA("kernel32.dll"), "LoadLibraryA");
+		lpfnLoadLib = (int)Real_GetProcAddress(Real_GetModuleHandleA("kernel32.dll"), "LoadLibraryA");
 		
-		_asm mov lpfnLoadLib, eax
+		//_asm mov lpfnLoadLib, eax
 
 		LogAPI("*****   LoadLibraryA=%x",lpfnLoadLib);
     
-		ret = (int)Real_CreateRemoteThread(hProcess, 0, 0, lpfnLoadLib, lpdllPath, 0, &hThread);
+		ret = (int)Real_CreateRemoteThread(hProcess, 0, 0, (LPTHREAD_START_ROUTINE)lpfnLoadLib, lpdllPath, 0, &hThread);
 		LogAPI("*****   CreateRemoteThread=%x" , ret);
             
 	    if(a5 != CREATE_SUSPENDED) ResumeThread(pi->hThread);
@@ -743,22 +685,6 @@ BOOL __stdcall My_CreateProcessA(LPCSTR a0,LPSTR a1,LPSECURITY_ATTRIBUTES a2,LPS
     return retv;
 
 
-
-}
-
-int My_system(const char* cmd)
-{
-    
-	
-	LogAPI("%x     system(%s)",  CalledFrom(), cmd);
-
-	int ret=0;
-	try {
-        ret = Real_system(cmd);
-    }
-	catch(...){	} 
-
-    return ret;
 
 }
 
@@ -885,18 +811,6 @@ BOOL __stdcall My_IsDebuggerPresent(void)
 	catch(...){}
 	
 	return ret;*/
-}
-
-void My___setargv(void){
-
-	LogAPI("%x     __setargv()", CalledFrom() );
-
-	
-	try{
-		Real___setargv();
-	}
-	catch(...){}
-	
 }
 
 BOOL __stdcall My_GetVersionExA( LPOSVERSIONINFOA a0 )
@@ -1242,20 +1156,41 @@ int __stdcall My_RegSetValueExA ( HKEY a0, LPCSTR a1, DWORD a2, DWORD a3, CONST 
 
 //_______________________________________________ install hooks fx 
 
-void DoHook(void* real, void* hook, void* thunk, char* name){
+bool InstallHook( void* real, void* hook, int* thunk, char* name, enum hookType ht){
+	if( HookFunction((ULONG_PTR) real, (ULONG_PTR)hook, name, ht) ){ 
+		*thunk = (int)GetOriginalFunction((ULONG_PTR) hook);
+		return true;
+	}
+	return false;
+}
 
-	char err[400];
+HMODULE hKernelBase = 0;
 
-	if ( !InstallHook( real, hook, thunk) ){ //try to install the real hook here
-		sprintf(err,"***** Install %s hook failed...Error: %s", name, &lastError);
-		msg(err);
-	} 
+void DoHook(void* real, void* hook, int* thunk, char* name){
 
+	void *lpReal = 0;
+	
+	if(hKernelBase != 0){//its Vista+, see if the export exists there if its in both, 
+		if(Real_GetProcAddress == NULL){
+			lpReal = (void*)GetProcAddress(hKernelBase, name); //k32 is just a forwarder which we cant hook...
+		}else{
+			lpReal = (void*)Real_GetProcAddress(hKernelBase, name); 
+		}
+	}
+	
+	if(lpReal == 0) lpReal = real;
+
+	if(!InstallHook( lpReal, hook, thunk, name, ht_auto ) ){
+		LogAPI("Install %s hook failed...\r\nError: %s\r\n", name, GetHookError());
+	}
+
+	 
 }
 
 
+
 //Macro wrapper to build DoHook() call
-#define ADDHOOK(name) DoHook( name, My_##name, Real_##name, #name );
+#define ADDHOOK(name) DoHook( name, My_##name, (int*)&Real_##name, #name );
 	
 int ConfigHandlerThreadProc(int x){
 	
@@ -1266,6 +1201,7 @@ int ConfigHandlerThreadProc(int x){
 	blockOpenProcess = msg("***config:blockOpenProcess");
 	blockDebugControl = msg("***config:blockDebugControl");
     ignoreExitProcess = msg("***config:ignoreExitProcess");
+    logLevel = msg("***config:hooklibLogLevel");
 
 	if(noSleep) msg("OPTION_SET = noSleep");
 	if(noRegistry) msg("OPTION_SET = noRegistry");
@@ -1274,36 +1210,29 @@ int ConfigHandlerThreadProc(int x){
 	if(blockOpenProcess) msg("OPTION_SET = blockOpenProcess");
 	if(blockDebugControl) msg("OPTION_SET = blockDebugControl");
 	if(ignoreExitProcess) msg("OPTION_SET = ignoreExitProcess");
-
+    if(logLevel > 0) LogAPI("OPTION_SET = hooklibLogLevel = %d", logLevel);
 	return 1;
 
 }
 
+void HookEngineDebugMessage(char* msg){
+	LogAPI("Debug> %s", msg);
+}
+
 void InstallHooks(void)
 {
+
+	logLevel = 0;
+	debugMsgHandler = HookEngineDebugMessage;
 
 	myPID = GetCurrentProcessId();
 	msg("***** Installing Hooks *****");	
 	LogAPI("***config:handler:%x", ConfigHandlerThreadProc);
 	ConfigHandlerThreadProc(0); //first one we do automatically to stay in sync...
 
+	//DO NOT HOOK GetProcAddress or GetModuleHandle we use them below (not in hook engine)..
+	hKernelBase = GetModuleHandle("kernelbase.dll");
 
-	/* not all that useful and/or spamy...
-		ADDHOOK(WaitForSingleObject)  
-		ADDHOOK(fwrite);     //
-		ADDHOOK(WriteFileEx);
-		ADDHOOK(WriteFile);
-		ADDHOOK(_lread);
-		ADDHOOK(_lwrite);
-		ADDHOOK(ReadFile)
-		ADDHOOK(__setargv);
-		ADDHOOK(GetVersion)
-		ADDHOOK(GetCurrentProcessId)
-		ADDHOOK(gethostname);
-	*/
-
-	ADDHOOK(GetProcAddress);  //have to always hook this because its used in CreateProcess follower...
-	ADDHOOK(LoadLibraryA); 
 	ADDHOOK(CreateFileA);
 	ADDHOOK(_lcreat);
 	ADDHOOK(_lopen);
@@ -1314,7 +1243,6 @@ void InstallHooks(void)
 	ADDHOOK(CreateRemoteThread);
 	ADDHOOK(OpenProcess);
 	ADDHOOK(WriteProcessMemory);
-	ADDHOOK(GetModuleHandleA);
 	ADDHOOK(accept);
 	ADDHOOK(bind);
 	ADDHOOK(closesocket);
@@ -1327,18 +1255,13 @@ void InstallHooks(void)
 	ADDHOOK(send);
 	ADDHOOK(shutdown);
 	ADDHOOK(socket);
-	ADDHOOK(WSASocketA);
-
-	ADDHOOK(system);     //are these hooking the dll version for sure?
-	ADDHOOK(fopen);      //
-
 	ADDHOOK(URLDownloadToFileA);    //todo: in sclog this had to go manual lookup test me..
 	ADDHOOK(URLDownloadToCacheFile); // ""
-	ADDHOOK(GetCommandLineA);   //useful for finding end of packer
+	//ADDHOOK(GetCommandLineA);   //useful for finding end of packer
 	ADDHOOK(IsDebuggerPresent);
 	
-	ADDHOOK(GetVersionExA);
-	ADDHOOK(GlobalAlloc)
+	//ADDHOOK(GetVersionExA);
+	//ADDHOOK(GlobalAlloc)
 	ADDHOOK(DebugActiveProcess)
 	ADDHOOK(GetSystemTime)
 	ADDHOOK(CreateMutex)
@@ -1367,7 +1290,7 @@ void InstallHooks(void)
 	ADDHOOK(CloseHandle)
 
 
-	void* real = Real_GetProcAddress( Real_GetModuleHandleA("ntdll.dll"), "ZwQuerySystemInformation");
+	void* real = GetProcAddress( GetModuleHandleA("ntdll.dll"), "ZwQuerySystemInformation");
 	/*if ( !InstallHook( real, My_ZwQuerySystemInformation, Real_ZwQuerySystemInformation) ){ 
 		msg("Install hook ZwQuerySystemInformation failed...Error: \r\n");
 		ExitProcess(0);
@@ -1379,61 +1302,10 @@ void InstallHooks(void)
 		ExitProcess(0);
 	}*/
 
-	real = Real_GetProcAddress( Real_GetModuleHandleA("ntdll.dll"), "NtSystemDebugControl");
-	if ( !InstallHook( real, My_ZwSystemDebugControl, Real_ZwSystemDebugControl) ){ 
+	real = GetProcAddress( GetModuleHandleA("ntdll.dll"), "NtSystemDebugControl");
+	if ( !InstallHook( real, My_ZwSystemDebugControl, (int*)&Real_ZwSystemDebugControl,"ZwSystemDebugControl", ht_jmp ) ){ 
 		msg("Install hook NtSystemDebugControl failed...Error: \r\n");
-		ExitProcess(0);
 	}
 
 	
 }
-
-
-/* 
-   overly complex for the few settings we will need, 
-   plus dont want to bulk up code in dllmain can lead to bad things its a fickle place to play...
-
-int cfg[20];
-enum cfgNames{ noSleep=0, noRegistry, blockOpenProcess, noGetProc, queryGetTick };
-char* cfgText[] = {"noSleep", "noRegistry", "blockOpenProcess", "noGetProc", "queryGetTick" };
-int cfgCount = 4;
-
-void setcfg(int v, enum cfgNames n){
-	cfg[(int)n] = v;
-}
-
-int getcfg(enum cfgNames n){
-	return cfg[(int)n];
-}
-
-int getcfgname(enum cfgNames n){
-	return cfgText[(int)n];
-}
-
-void initcfg(){
-	memset(cfg, 0, cfgCount * 4);
-}
-
-  	/*char buf[200];
-	initcfg();
-	for(int i = 0; i<=cfgCount ; i++){
-		sprintf(buf,"***config:%s", getcfgname(i));
-		setcfg(i, msg(buf) );
-		if(getcfg(i) 
-	}* /
-
-*/
-
-/*
-int __stdcall My_gethostname(char* a0,int a1)
-{
-	LogAPI("%x     gethostname(%x)", CalledFrom(), a0);
-
-    int ret = 0;
-    try {
-        ret = Real_gethostname(a0, a1);
-    }
-	catch(...){	} 
-
-    return ret;
-}*/

@@ -62,9 +62,76 @@ Enum results
     r_error = 3
 End Enum
 
+Private Declare Function Wow64DisableWow64FsRedirection Lib "kernel32.dll" (ByRef old As Long) As Long
+Private Declare Function Wow64RevertWow64FsRedirection Lib "kernel32.dll" (ByRef old As Long) As Long
+Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
+'Private Declare Function GetModuleHandle Lib "kernel32" Alias "GetModuleHandleA" (ByVal lpModuleName As String) As Long
+'Private Declare Function GetProcAddress Lib "kernel32" (ByVal hModule As Long, ByVal lpProcName As String) As Long
+
+'Dim firstHandle As Long
+Dim dCount As Long
+Dim RedirCapable As Boolean
+
 Private m_WindowsIs64Bit As Boolean
 Private m_SeDebugEnabled As Boolean
 Private helperPath As String
+
+Function DisableRedir()
+
+    If Not RedirCapable Then Exit Function
+    
+    If dCount > 0 Then
+        dCount = dCount + 1
+        Exit Function
+    End If
+
+    Dim r As Long, lastRedir As Long
+    r = Wow64DisableWow64FsRedirection(lastRedir)
+    DisableRedir = IIf(r <> 0, True, False)
+    dCount = 1
+
+End Function
+
+Function RevertRedir()
+
+    If Not RedirCapable Then Exit Function
+    
+    If dCount > 1 Then
+        dCount = dCount - 1
+        Exit Function
+    End If
+
+    Dim r As Long
+    r = Wow64RevertWow64FsRedirection(old)
+    If r <> 0 Then RevertRedir = True
+    dCount = 0
+
+End Function
+
+'Function DisableRedir() As Long
+'
+'    If Not RedirCapable Then Exit Function
+'    If firstHandle <> 0 Then Exit Function 'defaults to 0 on subsequent calls...
+'
+'    Dim r As Long, lastRedir As Long
+'    r = Wow64DisableWow64FsRedirection(lastRedir)
+'    firstHandle = IIf(r <> 0, lastRedir, 0)
+'    DisableRedir = firstHandle
+'
+'End Function
+'
+'Function RevertRedir(old As Long) As Boolean  'really only reverts firstHandle when called...
+'
+'    If Not RedirCapable Then Exit Function
+'    If old = 0 Then Exit Function
+'    If old <> firstHandle Then Exit Function
+'
+'    Dim r As Long
+'    r = Wow64RevertWow64FsRedirection(old)
+'    If r <> 0 Then RevertRedir = True
+'    firstHandle = 0
+'
+'End Function
 
 Property Get HelperEnabled() As Boolean
     If FileExists(helperPath) Then HelperEnabled = True
@@ -78,11 +145,43 @@ Property Get isSeDebugEnabled() As Boolean
     isSeDebugEnabled = m_SeDebugEnabled
 End Property
 
+Private Function GetParentFolder(path) As String
+    Dim tmp() As String
+    Dim ub As String
+    tmp = Split(path, "\")
+    ub = tmp(UBound(tmp))
+    GetParentFolder = Replace(Join(tmp, "\"), "\" & ub, "")
+End Function
+
+Private Function FindHelper() As String
+    Dim f As String, e As String
+    On Error Resume Next
+    
+    e = "\x64Helper.exe"
+    f = App.path
+    
+    For i = 1 To 4
+        If FileExists(f & e) Then
+            FindHelper = f & e
+            Exit Function
+        End If
+        f = GetParentFolder(f)
+    Next
+    
+End Function
+
 Private Sub Class_Initialize()
     m_SeDebugEnabled = GetSeDebug()   'some x64 bit processes require this access to check..
     m_WindowsIs64Bit = Is64BitProcessor()
-    helperPath = App.path & IIf(isIde(), "/../../", "/") & "x64Helper.exe"
+    helperPath = FindHelper()
     If FileExists(helperPath) Then helperPath = GetShortName(helperPath)
+    
+    If GetProcAddress(GetModuleHandle("kernel32.dll"), "Wow64DisableWow64FsRedirection") = 0 Then
+        RedirCapable = False
+    Else
+        RedirCapable = True
+    End If
+    
 End Sub
 
 Private Function Is64BitProcessor() As Boolean
@@ -157,8 +256,11 @@ Function isExe_x64(fpath As String) As results
     Const I386 = &H14C
     Const IA64 = &H200
     
+    DisableRedir
     h = FreeFile
     Open fpath For Binary Access Read As h
+    RevertRedir
+    
     Get h, , b
     Get h, , b2
     
@@ -281,10 +383,16 @@ End Function
 Private Function FileExists(path) As Boolean
   On Error Resume Next
   If Len(path) = 0 Then Exit Function
+  
+  DisableRedir
   If Dir(path, vbHidden Or vbNormal Or vbReadOnly Or vbSystem) <> "" Then
-     If Err.Number <> 0 Then Exit Function
+     If Err.Number <> 0 Then GoTo cleanup
      FileExists = True
   End If
+  
+cleanup:
+    RevertRedir
+    
 End Function
 
 Private Function GetShortName(sFile As String) As String
@@ -295,8 +403,10 @@ Private Function GetShortName(sFile As String) As String
     If Not FileExists(sFile) Then writeFile sFile, " "
     
     'Make a call to the GetShortPathName API
+    DisableRedir
     lResult = GetShortPathName(sFile, sShortFile, Len(sShortFile))
-
+    RevertRedir
+    
     'Trim out unused characters from the string.
     GetShortName = Left$(sShortFile, lResult)
     
@@ -324,11 +434,13 @@ Private Function GetSeDebug() As Boolean
 
 End Function
 
-Function ReadFile(filename) As String 'this one should be binary safe...
+Function ReadFile(fileName) As String 'this one should be binary safe...
   On Error GoTo hell
   f = FreeFile
   Dim b() As Byte
-  Open filename For Binary As #f
+  DisableRedir
+  Open fileName For Binary As #f
+  RevertRedir
   ReDim b(LOF(f) - 1)
   Get f, , b()
   Close #f
