@@ -21,21 +21,6 @@ Source: ./\source\proc_watch\Project1.vbw; DestDir: {app}\source\proc_watch
 Source: ./\source\proc_watch\Form2.frx; DestDir: {app}\source\proc_watch
 Source: ./\source\proc_watch\Form2.frm; DestDir: {app}\source\proc_watch
 Source: ./\source\proc_watch\Project1.vbp; DestDir: {app}\source\proc_watch
-Source: ./\source\apilog_dll\injector\Project1.vbw; DestDir: {app}\source\apilog_dll\injector
-Source: ./\source\apilog_dll\injector\hook.ico; DestDir: {app}\source\apilog_dll\injector
-Source: ./\source\apilog_dll\injector\Form2.frx; DestDir: {app}\source\apilog_dll\injector
-Source: ./\source\apilog_dll\injector\Form2.frm; DestDir: {app}\source\apilog_dll\injector
-Source: ./\source\apilog_dll\injector\Project1.vbp; DestDir: {app}\source\apilog_dll\injector
-Source: ./\source\apilog_dll\dll.dsw; DestDir: {app}\source\apilog_dll
-Source: ./\source\apilog_dll\dll.ncb; DestDir: {app}\source\apilog_dll
-Source: ./\source\apilog_dll\hooker.h; DestDir: {app}\source\apilog_dll
-Source: ./\source\apilog_dll\hooker.lib; DestDir: {app}\source\apilog_dll
-Source: ./\source\apilog_dll\main.cpp; DestDir: {app}\source\apilog_dll
-Source: ./\source\apilog_dll\ReadMe.txt; DestDir: {app}\source\apilog_dll
-Source: ./\source\apilog_dll\main.h; DestDir: {app}\source\apilog_dll
-Source: ./\source\apilog_dll\dll.cpp; DestDir: {app}\source\apilog_dll
-Source: ./\source\apilog_dll\dll.opt; DestDir: {app}\source\apilog_dll
-Source: ./\source\apilog_dll\dll.dsp; DestDir: {app}\source\apilog_dll
 Source: ./\source\dirwatch_dll\dir_watch_dll.cpp; DestDir: {app}\source\dirwatch_dll
 Source: ./\source\dirwatch_dll\dir_watch_dll.def; DestDir: {app}\source\dirwatch_dll
 Source: ./\source\dirwatch_dll\dir_watch_dll.dsp; DestDir: {app}\source\dirwatch_dll
@@ -79,6 +64,7 @@ Source: ./\source\apilog_dll\parse_h\Form1.frm; DestDir: {app}\source\apilog_dll
 Source: ./\source\apilog_dll\parse_h\parse_h.exe; DestDir: {app}\source\apilog_dll\parse_h
 Source: ./\source\apilog_dll\parse_h\Project1.vbw; DestDir: {app}\source\apilog_dll\parse_h
 Source: ./\api_log.dll; DestDir: {app}; Flags: ignoreversion
+Source: ./\api_log.x64.dll; DestDir: {app}; Flags: ignoreversion
 Source: ./\api_logger.exe; DestDir: {app}; Flags: ignoreversion
 Source: ./\dir_watch.dll; DestDir: {app}; Flags: ignoreversion
 Source: ./\exploit_sigs.txt; DestDir: {app}
@@ -106,7 +92,6 @@ Source: loadlib.exe; DestDir: {app}
 Source: source\sysanalyzer\frmMemoryMap.frm; DestDir: {app}\source\sysanalyzer
 Source: source\sysanalyzer\frmInjectionScan.frm; DestDir: {app}\source\sysanalyzer
 Source: source\sysanalyzer\CMemory.cls; DestDir: {app}\source\sysanalyzer
-Source: source\apilog_dll\injector\frmListProcess.frm; DestDir: {app}\source\apilog_dll\injector
 Source: ShellExt.exe; DestDir: {app}
 Source: source\sysanalyzer\CApiHandle.cls; DestDir: {app}\source\sysanalyzer
 Source: source\sysanalyzer\CApiDataManager.cls; DestDir: {app}\source\sysanalyzer
@@ -122,17 +107,57 @@ Source: source\sysanalyzer\CmdOutput.bas; DestDir: {app}\source\sysanalyzer\
 Source: source\sysanalyzer\frmDlls.frm; DestDir: {app}\source\sysanalyzer\
 Source: source\sysanalyzer\Cx64.cls; DestDir: {app}\source\sysanalyzer\
 Source: x64Helper.exe; DestDir: {app}
+Source: source\apilog_dll\diStorm3.3\config.h; DestDir: {app}\source\apilog_dll\diStorm3.3
+Source: source\apilog_dll\diStorm3.3\decoder.c; DestDir: {app}\source\apilog_dll\diStorm3.3
+Source: source\apilog_dll\diStorm3.3\decoder.h; DestDir: {app}\source\apilog_dll\diStorm3.3
+Source: source\apilog_dll\diStorm3.3\distorm.c; DestDir: {app}\source\apilog_dll\diStorm3.3
+Source: source\apilog_dll\diStorm3.3\distorm.h; DestDir: {app}\source\apilog_dll\diStorm3.3
+Source: source\apilog_dll\diStorm3.3\instructions.c; DestDir: {app}\source\apilog_dll\diStorm3.3
+Source: source\apilog_dll\diStorm3.3\instructions.h; DestDir: {app}\source\apilog_dll\diStorm3.3
+Source: source\apilog_dll\diStorm3.3\insts.c; DestDir: {app}\source\apilog_dll\diStorm3.3
+Source: source\apilog_dll\diStorm3.3\insts.h; DestDir: {app}\source\apilog_dll\diStorm3.3
+Source: source\apilog_dll\diStorm3.3\mnemonics.c; DestDir: {app}\source\apilog_dll\diStorm3.3
+Source: source\apilog_dll\diStorm3.3\mnemonics.h; DestDir: {app}\source\apilog_dll\diStorm3.3
+Source: source\apilog_dll\diStorm3.3\operands.c; DestDir: {app}\source\apilog_dll\diStorm3.3
+Source: source\apilog_dll\diStorm3.3\operands.h; DestDir: {app}\source\apilog_dll\diStorm3.3
+Source: source\apilog_dll\diStorm3.3\prefix.c; DestDir: {app}\source\apilog_dll\diStorm3.3
+Source: source\apilog_dll\diStorm3.3\prefix.h; DestDir: {app}\source\apilog_dll\diStorm3.3
+Source: source\apilog_dll\diStorm3.3\textdefs.c; DestDir: {app}\source\apilog_dll\diStorm3.3
+Source: source\apilog_dll\diStorm3.3\textdefs.h; DestDir: {app}\source\apilog_dll\diStorm3.3
+Source: source\apilog_dll\diStorm3.3\wstring.c; DestDir: {app}\source\apilog_dll\diStorm3.3
+Source: source\apilog_dll\diStorm3.3\wstring.h; DestDir: {app}\source\apilog_dll\diStorm3.3
+Source: source\apilog_dll\diStorm3.3\x86defs.h; DestDir: {app}\source\apilog_dll\diStorm3.3
+Source: source\apilog_dll\NtHookEngine_Test\NtHookEngine_Test.cpp; DestDir: {app}\source\apilog_dll\NtHookEngine_Test
+Source: source\apilog_dll\NtHookEngine_Test\test.sln; DestDir: {app}\source\apilog_dll\NtHookEngine_Test
+Source: source\apilog_dll\NtHookEngine_Test\test.vcproj; DestDir: {app}\source\apilog_dll\NtHookEngine_Test
+Source: source\apilog_dll\dll.cpp; DestDir: {app}\source\apilog_dll\
+Source: source\apilog_dll\dll.opt; DestDir: {app}\source\apilog_dll\
+Source: source\apilog_dll\dll.sln; DestDir: {app}\source\apilog_dll\
+Source: source\apilog_dll\dll.suo; DestDir: {app}\source\apilog_dll\; Attribs: hidden
+Source: source\apilog_dll\dll.vcproj; DestDir: {app}\source\apilog_dll\
+Source: source\apilog_dll\main.h; DestDir: {app}\source\apilog_dll\
+Source: source\apilog_dll\NtHookEngine.cpp; DestDir: {app}\source\apilog_dll\
+Source: source\apilog_dll\NtHookEngine.h; DestDir: {app}\source\apilog_dll\
+Source: source\apilog_dll\ReadMe.txt; DestDir: {app}\source\apilog_dll\
+Source: source\injector\Form2.frm; DestDir: {app}\source\injector\
+Source: source\injector\Form2.frx; DestDir: {app}\source\injector\
+Source: source\injector\frmListProcess.frm; DestDir: {app}\source\injector\
+Source: source\injector\frmLogParser.frm; DestDir: {app}\source\injector\
+Source: source\injector\hook.ico; DestDir: {app}\source\injector\
+Source: source\injector\Project1.vbp; DestDir: {app}\source\injector\
+Source: source\injector\Project1.vbw; DestDir: {app}\source\injector\
 
 [Dirs]
 Name: {app}\source
 Name: {app}\source\apilog_dll
-Name: {app}\source\apilog_dll\parse_h
-Name: {app}\source\apilog_dll\injector
 Name: {app}\source\dirwatch_dll
 Name: {app}\source\proc_analyzer
 Name: {app}\source\sysanalyzer
 Name: {app}\source\dirwatch_ui
 Name: {app}\source\x64Helper
+Name: {app}\source\apilog_dll\diStorm3.3
+Name: {app}\source\apilog_dll\NtHookEngine_Test
+Name: {app}\source\injector
 
 [Icons]
 Name: {group}\SysAnalyzer; Filename: {app}\sysAnalyzer.exe
@@ -141,7 +166,7 @@ Name: {group}\Source\SysAnalyzer.vbp; Filename: {app}\source\sysanalyzer\Project
 Name: {group}\Source\Api_Log.dsw; Filename: {app}\source\apilog_dll\dll.dsw
 Name: {group}\Source\DirWatch.dsw; Filename: {app}\source\dirwatch_dll\dir_watch_dll.dsw
 Name: {group}\Source\ProcAnalyzer.vbp; Filename: {app}\source\proc_analyzer\Project1.vbp
-Name: {group}\Source\ApiLogger.vbp; Filename: {app}\source\apilog_dll\injector\Project1.vbp
+Name: {group}\Source\ApiLogger.vbp; Filename: {app}\source\injector\Project1.vbp
 Name: {group}\Source\DirWatchUI.vbp; Filename: {app}\source\dirwatch_ui\Project1.vbp
 Name: {group}\ApiLogger; Filename: {app}\api_logger.exe
 Name: {group}\Sniff_Hit; Filename: {app}\sniff_hit.exe
