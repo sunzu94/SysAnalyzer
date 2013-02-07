@@ -75,6 +75,8 @@ Private Sub DoSnap(Optional isSnap1 As Boolean = True)
         Dim i As Long, j As Long
         Dim c As Collection
         
+        On Error Resume Next
+        
         If isSnap1 Then
             Set Snap1 = New Collection
             Set c = Snap1

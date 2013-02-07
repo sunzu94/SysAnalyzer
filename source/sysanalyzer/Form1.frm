@@ -72,15 +72,16 @@ Begin VB.Form frmMain
       TabOrientation  =   1
       Style           =   1
       Tabs            =   7
-      Tab             =   6
       TabsPerRow      =   10
       TabHeight       =   520
       ShowFocusRect   =   0   'False
       TabCaption(0)   =   "Running Processes"
       TabPicture(0)   =   "Form1.frx":0442
-      Tab(0).ControlEnabled=   0   'False
-      Tab(0).Control(0)=   "fraProc"
-      Tab(0).Control(1)=   "lvProcesses"
+      Tab(0).ControlEnabled=   -1  'True
+      Tab(0).Control(0)=   "lvProcesses"
+      Tab(0).Control(0).Enabled=   0   'False
+      Tab(0).Control(1)=   "fraProc"
+      Tab(0).Control(1).Enabled=   0   'False
       Tab(0).ControlCount=   2
       TabCaption(1)   =   "Open Ports"
       TabPicture(1)   =   "Form1.frx":045E
@@ -119,16 +120,14 @@ Begin VB.Form frmMain
       Tab(5).ControlCount=   7
       TabCaption(6)   =   "Directory Watch Data"
       TabPicture(6)   =   "Form1.frx":04EA
-      Tab(6).ControlEnabled=   -1  'True
-      Tab(6).Control(0)=   "lvDirWatch"
-      Tab(6).Control(0).Enabled=   0   'False
-      Tab(6).Control(1)=   "fraDirWatch"
-      Tab(6).Control(1).Enabled=   0   'False
+      Tab(6).ControlEnabled=   0   'False
+      Tab(6).Control(0)=   "fraDirWatch"
+      Tab(6).Control(1)=   "lvDirWatch"
       Tab(6).ControlCount=   2
       Begin VB.Frame fraDirWatch 
          BorderStyle     =   0  'None
          Height          =   795
-         Left            =   60
+         Left            =   -74940
          TabIndex        =   32
          Top             =   4080
          Width           =   10215
@@ -231,7 +230,7 @@ Begin VB.Form frmMain
       Begin VB.Frame fraProc 
          BorderStyle     =   0  'None
          Height          =   375
-         Left            =   -74880
+         Left            =   120
          TabIndex        =   21
          Top             =   4560
          Width           =   10035
@@ -354,7 +353,7 @@ Begin VB.Form frmMain
       End
       Begin MSComctlLib.ListView lvProcesses 
          Height          =   4455
-         Left            =   -74940
+         Left            =   60
          TabIndex        =   1
          Top             =   60
          Width           =   10155
@@ -580,7 +579,7 @@ Begin VB.Form frmMain
       End
       Begin MSComctlLib.ListView lvDirWatch 
          Height          =   4035
-         Left            =   60
+         Left            =   -74940
          TabIndex        =   15
          Top             =   0
          Width           =   10155
@@ -936,6 +935,9 @@ Private Sub Form_Load()
         alv.MultiSelect = True
         alv.HideSelection = False
     Next
+    
+    On Error Resume Next
+    SSTab1.TabIndex = 1
     
 End Sub
 
@@ -1354,7 +1356,7 @@ End Sub
 Sub cmdAnalyze_Click()
     Dim p As String
     
-    If IsIde() Then
+    If isIde() Then
         p = """" & App.path & "\..\..\proc_analyzer.exe"" " & txtProcess
     Else
         p = """" & App.path & "\proc_analyzer.exe"" " & txtProcess

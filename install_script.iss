@@ -59,10 +59,6 @@ Source: ./\source\sysanalyzer\CKnownFile.cls; DestDir: {app}\source\sysanalyzer
 Source: ./\source\sysanalyzer\frmMarkKnown.frm; DestDir: {app}\source\sysanalyzer
 Source: ./\source\sysanalyzer\frmKnownFiles.frm; DestDir: {app}\source\sysanalyzer
 Source: ./\source\sysanalyzer\frmKnownFiles.frx; DestDir: {app}\source\sysanalyzer
-Source: ./\source\apilog_dll\parse_h\Project1.vbp; DestDir: {app}\source\apilog_dll\parse_h
-Source: ./\source\apilog_dll\parse_h\Form1.frm; DestDir: {app}\source\apilog_dll\parse_h
-Source: ./\source\apilog_dll\parse_h\parse_h.exe; DestDir: {app}\source\apilog_dll\parse_h
-Source: ./\source\apilog_dll\parse_h\Project1.vbw; DestDir: {app}\source\apilog_dll\parse_h
 Source: ./\api_log.dll; DestDir: {app}; Flags: ignoreversion
 Source: ./\api_log.x64.dll; DestDir: {app}; Flags: ignoreversion
 Source: ./\api_logger.exe; DestDir: {app}; Flags: ignoreversion

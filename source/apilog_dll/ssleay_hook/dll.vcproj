@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="dll"
+	Name="ssleay_hook_dll"
 	ProjectGUID="{1461E901-4125-4CC8-ADBC-8ED146DCF048}"
 	RootNamespace="dll"
 	TargetFrameworkVersion="0"
@@ -78,7 +78,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbc32.lib odbccp32.lib urlmon.lib ws2_32.lib wininet.lib"
-				OutputFile="./../../api_log.dll"
+				OutputFile="./../../../ssleay_hook.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
@@ -172,7 +172,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbc32.lib odbccp32.lib urlmon.lib ws2_32.lib"
-				OutputFile="./../../api_log.dll"
+				OutputFile="./../../../ssleay_hook.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				ProgramDatabaseFile=".\Release/api_log.pdb"
@@ -397,87 +397,86 @@
 	</References>
 	<Files>
 		<Filter
-			Name="diStorm3.3"
-			Filter="h;hpp;hxx;hm;inl"
+			Name="distorm3.3"
 			>
 			<File
-				RelativePath=".\diStorm3.3\config.h"
+				RelativePath="..\diStorm3.3\config.h"
 				>
 			</File>
 			<File
-				RelativePath=".\diStorm3.3\decoder.c"
+				RelativePath="..\diStorm3.3\decoder.c"
 				>
 			</File>
 			<File
-				RelativePath=".\diStorm3.3\decoder.h"
+				RelativePath="..\diStorm3.3\decoder.h"
 				>
 			</File>
 			<File
-				RelativePath=".\diStorm3.3\distorm.c"
+				RelativePath="..\diStorm3.3\distorm.c"
 				>
 			</File>
 			<File
-				RelativePath=".\diStorm3.3\distorm.h"
+				RelativePath="..\diStorm3.3\distorm.h"
 				>
 			</File>
 			<File
-				RelativePath=".\diStorm3.3\instructions.c"
+				RelativePath="..\diStorm3.3\instructions.c"
 				>
 			</File>
 			<File
-				RelativePath=".\diStorm3.3\instructions.h"
+				RelativePath="..\diStorm3.3\instructions.h"
 				>
 			</File>
 			<File
-				RelativePath=".\diStorm3.3\insts.c"
+				RelativePath="..\diStorm3.3\insts.c"
 				>
 			</File>
 			<File
-				RelativePath=".\diStorm3.3\insts.h"
+				RelativePath="..\diStorm3.3\insts.h"
 				>
 			</File>
 			<File
-				RelativePath=".\diStorm3.3\mnemonics.c"
+				RelativePath="..\diStorm3.3\mnemonics.c"
 				>
 			</File>
 			<File
-				RelativePath=".\diStorm3.3\mnemonics.h"
+				RelativePath="..\diStorm3.3\mnemonics.h"
 				>
 			</File>
 			<File
-				RelativePath=".\diStorm3.3\operands.c"
+				RelativePath="..\diStorm3.3\operands.c"
 				>
 			</File>
 			<File
-				RelativePath=".\diStorm3.3\operands.h"
+				RelativePath="..\diStorm3.3\operands.h"
 				>
 			</File>
 			<File
-				RelativePath=".\diStorm3.3\prefix.c"
+				RelativePath="..\diStorm3.3\prefix.c"
 				>
 			</File>
 			<File
-				RelativePath=".\diStorm3.3\prefix.h"
+				RelativePath="..\diStorm3.3\prefix.h"
 				>
 			</File>
 			<File
-				RelativePath=".\diStorm3.3\textdefs.c"
+				RelativePath="..\diStorm3.3\textdefs.c"
 				>
 			</File>
 			<File
-				RelativePath=".\diStorm3.3\textdefs.h"
+				RelativePath="..\diStorm3.3\textdefs.h"
 				>
 			</File>
 			<File
-				RelativePath=".\diStorm3.3\wstring.c"
+				RelativePath="..\diStorm3.3\wstring.c"
 				>
 			</File>
 			<File
-				RelativePath=".\diStorm3.3\wstring.h"
+				RelativePath="..\diStorm3.3\wstring.h"
 				>
 			</File>
 			<File
-				RelativePath=".\diStorm3.3\x86defs.h"
+				RelativePath="..\diStorm3.3\x86defs.h"
 				>
 			</File>
 		</Filter>
@@ -526,11 +525,11 @@
 			>
 		</File>
 		<File
-			RelativePath=".\NtHookEngine.cpp"
+			RelativePath="..\NtHookEngine.cpp"
 			>
 		</File>
 		<File
-			RelativePath=".\NtHookEngine.h"
+			RelativePath="..\NtHookEngine.h"
 			>
 		</File>
 	</Files>

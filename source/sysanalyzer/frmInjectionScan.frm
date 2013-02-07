@@ -2,60 +2,76 @@ VERSION 5.00
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
 Begin VB.Form frmInjectionScan 
    Caption         =   "32bit process Injection Scan"
-   ClientHeight    =   3585
+   ClientHeight    =   3720
    ClientLeft      =   60
    ClientTop       =   345
    ClientWidth     =   11970
    LinkTopic       =   "Form1"
-   ScaleHeight     =   3585
+   ScaleHeight     =   3720
    ScaleWidth      =   11970
    StartUpPosition =   3  'Windows Default
-   Begin VB.CommandButton Command1 
-      Caption         =   "Remove if entropy <"
-      Height          =   405
-      Left            =   5910
-      TabIndex        =   8
+   Begin VB.Frame Frame1 
+      BorderStyle     =   0  'None
+      Height          =   495
+      Left            =   60
+      TabIndex        =   2
       Top             =   3060
-      Width           =   1785
-   End
-   Begin VB.TextBox txtMinEntropy 
-      Height          =   345
-      Left            =   7740
-      TabIndex        =   7
-      Text            =   "50"
-      Top             =   3060
-      Width           =   465
-   End
-   Begin VB.CommandButton cmdNextProc 
-      Caption         =   "Next Proc"
-      Height          =   405
-      Left            =   8520
-      TabIndex        =   6
-      Top             =   3030
-      Width           =   1185
-   End
-   Begin VB.CommandButton cmdRescan 
-      Caption         =   "Rescan"
-      Height          =   405
-      Left            =   10890
-      TabIndex        =   5
-      Top             =   3030
-      Width           =   1035
-   End
-   Begin VB.CommandButton cmdAbort 
-      Caption         =   "Abort"
-      Height          =   405
-      Left            =   9810
-      TabIndex        =   4
-      Top             =   3030
-      Width           =   1005
-   End
-   Begin VB.TextBox Text1 
-      Height          =   345
-      Left            =   840
-      TabIndex        =   3
-      Top             =   3060
-      Width           =   4995
+      Width           =   11835
+      Begin VB.TextBox Text1 
+         Height          =   345
+         Left            =   750
+         TabIndex        =   8
+         Top             =   30
+         Width           =   4995
+      End
+      Begin VB.CommandButton cmdAbort 
+         Caption         =   "Abort"
+         Height          =   405
+         Left            =   9720
+         TabIndex        =   7
+         Top             =   0
+         Width           =   1005
+      End
+      Begin VB.CommandButton cmdRescan 
+         Caption         =   "Rescan"
+         Height          =   405
+         Left            =   10800
+         TabIndex        =   6
+         Top             =   0
+         Width           =   1035
+      End
+      Begin VB.CommandButton cmdNextProc 
+         Caption         =   "Next Proc"
+         Height          =   405
+         Left            =   8430
+         TabIndex        =   5
+         Top             =   0
+         Width           =   1185
+      End
+      Begin VB.TextBox txtMinEntropy 
+         Height          =   345
+         Left            =   7650
+         TabIndex        =   4
+         Text            =   "50"
+         Top             =   30
+         Width           =   465
+      End
+      Begin VB.CommandButton Command1 
+         Caption         =   "Remove if entropy <"
+         Height          =   405
+         Left            =   5820
+         TabIndex        =   3
+         Top             =   30
+         Width           =   1785
+      End
+      Begin VB.Label Label1 
+         Caption         =   "Process:"
+         Height          =   255
+         Left            =   0
+         TabIndex        =   9
+         Top             =   60
+         Width           =   705
+      End
    End
    Begin MSComctlLib.ProgressBar pb 
       Height          =   255
@@ -122,14 +138,6 @@ Begin VB.Form frmInjectionScan
          Text            =   "Entropy"
          Object.Width           =   2540
       EndProperty
-   End
-   Begin VB.Label Label1 
-      Caption         =   "Process:"
-      Height          =   255
-      Left            =   90
-      TabIndex        =   2
-      Top             =   3090
-      Width           =   705
    End
    Begin VB.Menu mnuPopup 
       Caption         =   "mnuPopup"
@@ -257,7 +265,7 @@ Sub FindStealthInjections(pid As Long, pName As String)
         If cMem.Protection = PAGE_EXECUTE_READWRITE And cMem.MemType <> MEM_IMAGE Then
             
             totalRWEFound = totalRWEFound + 1
-            s = pi.ReadMemory(cMem.pid, cMem.Base, cMem.size) 'doesnt add that much time
+            s = pi.ReadMemory(cMem.pid, cMem.Base, cMem.Size) 'doesnt add that much time
             entropy = CalculateEntropy(s)
             s = Empty
              
@@ -267,7 +275,7 @@ Sub FindStealthInjections(pid As Long, pName As String)
             
             Set li = lv.ListItems.Add(, , pid)
             li.SubItems(1) = Hex(cMem.Base)
-            li.SubItems(2) = Hex(cMem.size)
+            li.SubItems(2) = Hex(cMem.Size)
             li.SubItems(3) = cMem.MemTypeAsString()
             li.SubItems(4) = cMem.ProtectionAsString()
             li.SubItems(5) = pName
@@ -313,10 +321,18 @@ Private Sub Form_Load()
 
      lv.ColumnHeaders(6).Width = lv.Width - lv.ColumnHeaders(6).Left - 350 - lv.ColumnHeaders(7).Width
      
-     If IsIde() Then
+     If isIde() Then
         LoadLibrary "zlib.dll"
      End If
      
+End Sub
+
+Private Sub Form_Resize()
+    On Error Resume Next
+    Frame1.top = Me.Height - 400 - Frame1.Height
+    lv.Height = Frame1.top - 600
+    lv.Width = Me.Width - lv.Left - 200
+    pb.Width = lv.Width
 End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
@@ -374,7 +390,7 @@ Private Sub mnuSearchMem_Click()
         Set cMem = li.Tag
         DoEvents
         lv.Refresh
-        m = pi.ReadMemory(cMem.pid, cMem.Base, cMem.size)
+        m = pi.ReadMemory(cMem.pid, cMem.Base, cMem.Size)
         a = InStr(1, m, s, vbTextCompare)
         b = InStr(1, m, s2, vbTextCompare)
         If a > 0 Then ret = ret & "pid: " & li.Text & " base: " & li.SubItems(1) & " offset: " & Hex(cMem.Base + a) & " ASCII " & li.SubItems(5) & vbCrLf

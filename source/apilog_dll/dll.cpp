@@ -59,6 +59,8 @@ bool Installed =false;
 
 void Closing(void){ msg("***** Injected Process Terminated *****"); exit(0);}
 	
+extern "C" __declspec (dllexport) int NullSub(void){ return 1;}
+
 //Config options..these must all default to 0 because default windProc response = 0 if unhandled by client..
 int noSleep = 0;
 int noRegistry = 0;

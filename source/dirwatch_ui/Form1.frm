@@ -18,7 +18,7 @@ Begin VB.Form frmMain
       Height          =   285
       Left            =   420
       TabIndex        =   12
-      Top             =   390
+      Top             =   420
       Width           =   2475
    End
    Begin VB.CommandButton Command2 
@@ -376,8 +376,12 @@ Private Sub Form_Load()
     Dim li As ListItem
     On Error Resume Next
     Dim tmp
+    Dim activeDrives
+    Dim drive
     
+    activeDrives = GetSetting(App.EXEName, "settings", "activeDrives", "0,")
     txtLogToFile = GetSetting(App.EXEName, "settings", "logfile", UserDeskTopFolder & "\dirwatchlog.txt")
+    activeDrives = Split(activeDrives, ",")
     
     Me.Visible = True
     Initalize
@@ -386,7 +390,12 @@ Private Sub Form_Load()
         tmp = Split(Drive1.List(i), ":")
         Set li = lv.ListItems.Add(, , Drive1.List(i))
         li.Tag = tmp(0) & ":\"
-        If VBA.Left(LCase(lv.ListItems(i + 1).Text), 2) = "c:" Then lv.ListItems(i + 1).Checked = True
+        'If VBA.Left(LCase(lv.ListItems(i + 1).Text), 2) = "c:" Then lv.ListItems(i + 1).Checked = True
+        For Each drive In activeDrives
+            If Len(drive) > 0 Then
+                If CInt(drive) = i Then li.Checked = True
+            End If
+        Next
     Next
     
     Set cApiData = New Collection
@@ -453,6 +462,13 @@ End Sub
 Private Sub Form_Unload(Cancel As Integer)
     On Error Resume Next
     
+    Dim activeDrives As String, i As Long
+    
+    For i = 1 To lv.ListItems.Count
+        If lv.ListItems(i).Checked Then activeDrives = activeDrives & (i - 1) & ","
+    Next
+    
+    SaveSetting App.EXEName, "settings", "activeDrives", activeDrives
     SaveSetting App.EXEName, "settings", "logfile", txtLogToFile
     
     DirWatchCtl False
@@ -634,20 +650,23 @@ Private Sub subclass_MessageReceived(hwnd As Long, wMsg As Long, wParam As Long,
     Dim msg As String
     Dim li As ListItem
     Dim tmp
+    Dim size
     
     If wMsg = WM_COPYDATA Then
         If RecieveTextMessage(lParam, msg) Then
                 
                 msg = Replace(msg, "\\", "\")
                 
-                If InStr(msg, "NTUSER.DAT") > 0 Then Exit Sub
-                If InStr(msg, "\Prefetch\") > 0 Then Exit Sub
+                If InStr(msg, "git_shell_ext_debug.txt") > 0 Then Exit Sub
+                If InStr(1, msg, "NTUSER.DAT", vbTextCompare) > 0 Then Exit Sub
+                If InStr(1, msg, "\Prefetch\", vbTextCompare) > 0 Then Exit Sub
+                If InStr(1, msg, "\Config\SYSTEM.LOG", vbTextCompare) > 0 Then Exit Sub
                 If Right(msg, 4) = ".lnk" Then Exit Sub
                 If AnyOfTheseInstr(msg, txtIgnore) Then Exit Sub
                 
                 'If InStr(msg, "analysis") > 0 Then Stop
                 
-                If chkAutoSave.value = 1 And InStr(1, msg, UserDeskTopFolder, vbTextCompare) > 0 Then Exit Sub
+                If chkAutoSave.value = 1 And InStr(1, msg, "\Desktop\analysis\", vbTextCompare) > 0 Then Exit Sub
                 
                 On Error Resume Next
                  
@@ -656,14 +675,16 @@ Private Sub subclass_MessageReceived(hwnd As Long, wMsg As Long, wParam As Long,
                     tmp(0) = VBA.Left(tmp(0), 3) & " - " & Format(Now, "h:m:s")
                     tmp(1) = Replace(Replace(Trim(tmp(1)), "\\", "\"), Chr(0), Empty)
                     
-                    If chkAutoSave.value = 1 And fso.FileExists(li.SubItems(1)) Then
+                    If fso.FileExists(CStr(tmp(1))) Then size = FileLen(CStr(tmp(1))) Else size = ""
+                    
+                    If chkAutoSave.value = 1 And fso.FileExists(CStr(tmp(1))) Then
                         If InStr(1, tmp(0), "mod", vbTextCompare) > 0 Then SafeFileCopy CStr(tmp(1))
                     End If
                     
                     If KeyExistsInCollection(cLogData, msg) Then Exit Sub
                     cLogData.Add msg, msg
                     
-                    Set li = lvDirWatch.ListItems.Add(, , tmp(0))
+                    Set li = lvDirWatch.ListItems.Add(, , tmp(0) & IIf(Len(size) > 0, " (" & size & ")", ""))
                     li.SubItems(1) = tmp(1)
                     LogMessage li.Text & vbTab & li.SubItems(1)
                     li.EnsureVisible
