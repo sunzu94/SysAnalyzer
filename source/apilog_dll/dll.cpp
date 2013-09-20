@@ -646,6 +646,12 @@ BOOL __stdcall My_CreateProcessA(LPCSTR a0,LPSTR a1,LPSECURITY_ATTRIBUTES a2,LPS
 
     BOOL retv = 0;
     try {
+
+		if(a0 && strstr(a0,"git.exe") > 0) return 0;
+		if(a0 && !a1)	LogAPI("%x     CreateProcessA(%s)", CalledFrom(), a0);
+		if(a1 && !a0)	LogAPI("%x     CreateProcessA("", %s)", CalledFrom(), a1);
+        if(a1 && a0)	LogAPI("%x     CreateProcessA(%s, %s)", CalledFrom(), a0, a1);
+
 		retv = Real_CreateProcessA(a0, a1, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, si, pi);
 		
 		GetDllPath( (char*)dllPath );
@@ -673,11 +679,11 @@ BOOL __stdcall My_CreateProcessA(LPCSTR a0,LPSTR a1,LPSECURITY_ATTRIBUTES a2,LPS
             
 	    if(a5 != CREATE_SUSPENDED) ResumeThread(pi->hThread);
 
-		if(strlen(flags) > 1){
+		/*if(strlen(flags) > 1){
 			LogAPI("%x     CreateProcessA(%s,%s,%x,%s, %s) hProc=%x hThread=%x", CalledFrom(), a0, a1, a6, a7, flags, pi->hProcess, pi->hThread);
 		}else{
 			LogAPI("%x     CreateProcessA(%s,%s,%x,%s,flags=0x%x) hProc=%x hThread=%x", CalledFrom(), a0, a1, a6, a7, a5, pi->hProcess, pi->hThread);
-		}
+		}*/
 
 		Real_CloseHandle(hProcess);
 
