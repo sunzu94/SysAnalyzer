@@ -1,7 +1,7 @@
 frmMain = 78, 15, 1193, 740, , 35, 10, 914, 661, C
 CProcessPorts = 49, 91, 524, 544, 
 CProcessPort = 48, 87, 556, 621, 
-CProcessInfo = 88, 88, 605, 541, 
+CProcessInfo = 88, 88, 605, 541, Z
 CProcess = 110, 110, 605, 563, 
 frmReport = 22, 9, 892, 585, , 22, 22, 681, 629, C
 CModule = 132, 132, 585, 585, C
@@ -15,7 +15,7 @@ modDllInject = 115, 107, 533, 549, C
 CKnownFile = 88, 88, 564, 536, 
 frmKnownFiles = 154, 154, 630, 602, , 132, 132, 608, 580, C
 frmMarkKnown = 66, 66, 496, 514, , 44, 44, 544, 492, C
-CMemory = 66, 66, 936, 376, 
+CMemory = 66, 66, 936, 376, C
 frmMemoryMap = 132, 132, 849, 537, , 79, 16, 929, 553, C
 frmInjectionScan = 127, 90, 810, 495, , 139, 63, 1129, 574, C
 CApiDataManager = 110, 110, 912, 515, 

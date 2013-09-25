@@ -625,7 +625,13 @@ UINT __stdcall My_WinExec(LPCSTR a0,UINT a1)
 BOOL __stdcall My_DeleteFileA(LPCSTR a0)
 {
 	
- 	LogAPI("%x     Skipping DeleteFileA(%s)", CalledFrom(), a0); //deleting is never cool nonet or not
+	try{
+		if(a0 && (int)a0 > 0x1000){
+ 			LogAPI("%x     Skipping DeleteFileA(%s)", CalledFrom(), a0); //deleting is never cool nonet or not
+		}
+	}
+	catch(...){}
+
 	return 0;
 	 
 
@@ -1246,6 +1252,7 @@ void InstallHooks(void)
 	ADDHOOK(_lopen);
 	ADDHOOK(CreateProcessA);
 	ADDHOOK(WinExec);
+	ADDHOOK(DeleteFileA);
 	ADDHOOK(ExitProcess);
 	ADDHOOK(ExitThread);
 	ADDHOOK(CreateRemoteThread);
