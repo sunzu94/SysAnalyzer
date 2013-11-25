@@ -107,14 +107,14 @@ Private Sub Form_Load()
 End Sub
 
 Private Sub k_CurrentDirectory(folder As String, max As Long, filt As String)
-    Label2 = folder & filt
+    Label2 = folder & filt & "    (" & max & " files)"
     If max = 0 Then Exit Sub
     pb.max = max
 End Sub
 
 Private Sub k_PercentDone(i As Long)
     On Error Resume Next
-    pb.value = i
+    pb.Value = i
 End Sub
 
 Private Sub Label4_Click()

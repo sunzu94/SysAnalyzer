@@ -42,6 +42,7 @@ Global hash As New CWinHash
 
 Public Const x64Error = "This feature is only currently available for 32 bit processes."
 
+Global ProcessesToRWEScan As String
 Global tcpdump As String
 Global networkAnalyzer As String
 Global watchIDs() As Long
@@ -63,7 +64,7 @@ Private Declare Sub MoveMemory Lib "kernel32" Alias "RtlMoveMemory" (Dest As Any
 Private Declare Function lstrcpy Lib "kernel32" Alias "lstrcpyA" (ByVal lpString1 As String, ByVal lpString2 As Long) As Long
 Public Declare Function FindWindow Lib "user32" Alias "FindWindowA" (ByVal lpClassName As String, ByVal lpWindowName As String) As Long
 Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (hpvDest As Any, hpvSource As Any, ByVal cbCopy As Long)
-Public Declare Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteA" (ByVal hWnd As Long, ByVal lpOperation As String, ByVal lpFile As String, ByVal lpParameters As String, ByVal lpDirectory As String, ByVal nShowCmd As Long) As Long
+Public Declare Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteA" (ByVal hwnd As Long, ByVal lpOperation As String, ByVal lpFile As String, ByVal lpParameters As String, ByVal lpDirectory As String, ByVal nShowCmd As Long) As Long
 
 
 Public Type FILEPROPERTIE
@@ -156,6 +157,29 @@ Private Declare Function closesocket Lib "ws2_32.dll" (ByVal s As Long) As Long
 Private Declare Function WSAIoctl Lib "ws2_32.dll" (ByVal s As Long, ByVal dwIoControlCode As Long, lpvInBuffer As Any, ByVal cbInBuffer As Long, lpvOutBuffer As Any, ByVal cbOutBuffer As Long, lpcbBytesReturned As Long, lpOverlapped As Long, lpCompletionRoutine As Long) As Long
 Private Declare Sub CopyMemory2 Lib "kernel32" Alias "RtlMoveMemory" (pDst As Any, ByVal pSrc As Long, ByVal ByteLen As Long)
 Private Declare Function WSAStartup Lib "ws2_32.dll" (ByVal wVR As Long, lpWSAD As WSAData) As Long
+Private Declare Function GetShortPathName Lib "kernel32" Alias "GetShortPathNameA" (ByVal lpszLongPath As String, ByVal lpszShortPath As String, ByVal cchBuffer As Long) As Long
+
+Public Function GetShortName(sFile As String) As String
+    Dim sShortFile As String * 67
+    Dim lResult As Long
+    
+    'the path must actually exist to get the short path name !!
+    If Not fso.FileExists(sFile) Then 'fso.WriteFile sFile, ""
+        GetShortName = sFile
+        Exit Function
+    End If
+        
+    'Make a call to the GetShortPathName API
+    lResult = GetShortPathName(sFile, sShortFile, _
+    Len(sShortFile))
+
+    'Trim out unused characters from the string.
+    GetShortName = Left$(sShortFile, lResult)
+    
+    If Len(GetShortName) = 0 Then GetShortName = sFile
+
+End Function
+
 
 Public Sub LV_ColumnSort(ListViewControl As ListView, Column As ColumnHeader)
      On Error Resume Next
@@ -174,6 +198,27 @@ Public Sub LV_ColumnSort(ListViewControl As ListView, Column As ColumnHeader)
     End With
 End Sub
 
+Function pHex(x)
+    y = Hex(x)
+    While Len(y) < 8
+        y = "0" & y
+    Wend
+    pHex = y
+End Function
+
+'todo: try zlib compressibility as another entropy check...
+Function CalculateEntropy(ByVal s As String) As Integer 'very basic...
+    On Error Resume Next
+    If Len(s) = 0 Then Exit Function
+    Dim a As Long, b As Long
+    a = Len(s)
+    's = Replace(s, Chr(0), Empty)
+    s = SimpleCompress(s)
+    b = Len(s)
+    CalculateEntropy = ((b / a) * 100)
+End Function
+
+
 Function LaunchStrings(data As String, Optional isPath As Boolean = False)
 
     Dim b() As Byte
@@ -183,7 +228,7 @@ Function LaunchStrings(data As String, Optional isPath As Boolean = False)
     
     On Error Resume Next
     
-    exe = App.path & IIf(IsIde(), "\..\..", "") & "\shellext.exe"
+    exe = App.path & IIf(isIde(), "\..\..", "") & "\shellext.exe"
     If Not fso.FileExists(exe) Then
         MsgBox "Could not launch strings shellext not found", vbInformation
         Exit Function
@@ -218,6 +263,7 @@ Function GetMySetting(key, def)
 End Function
 
 Sub SaveFormSizeAnPosition(f As Form)
+    On Error Resume Next
     Dim s As String
     If f.WindowState <> 0 Then Exit Sub 'vbnormal
     s = f.Left & "," & f.top & "," & f.Width & "," & f.Height
@@ -233,6 +279,7 @@ Function occuranceCount(haystack, match) As Long
 End Function
 
 Sub RestoreFormSizeAnPosition(f As Form)
+
     On Error GoTo hell
     Dim s
     
@@ -347,7 +394,7 @@ Sub DirWatchCtl(enable As Boolean)
         Erase watchIDs
         For Each d In watchDirs
             If Len(d) > 0 Then
-                If IsIde Then
+                If isIde Then
                     push watchIDs(), IDEStartWatch(d)
                 Else
                     push watchIDs(), StartWatch(d)
@@ -359,7 +406,7 @@ Sub DirWatchCtl(enable As Boolean)
     Else
         If Not AryIsEmpty(watchIDs) Then
             For i = 0 To UBound(watchIDs)
-                If IsIde() Then
+                If isIde() Then
                     IDECloseWatch watchIDs(i)
                 Else
                     CloseWatch watchIDs(i)
@@ -575,18 +622,20 @@ Function GetAllElements(lv As ListView) As String
 
 End Function
 
-Function GetAllText(lv As ListView, Optional subItemRow As Long = 0) As String
+Function GetAllText(lv As ListView, Optional subItemRow As Long = 0, Optional selectedOnly As Boolean = False) As String
     Dim i As Long
     Dim tmp As String, x As String
     
     For i = 1 To lv.ListItems.count
         If subItemRow = 0 Then
             x = lv.ListItems(i).Text
+            If selectedOnly And Not lv.ListItems(i).Selected Then x = Empty
             If Len(x) > 0 Then
                 tmp = tmp & x & vbCrLf
             End If
         Else
             x = lv.ListItems(i).SubItems(subItemRow)
+            If selectedOnly And Not lv.ListItems(i).Selected Then x = Empty
             If Len(x) > 0 Then
                 tmp = tmp & x & vbCrLf
             End If
@@ -646,11 +695,11 @@ End Function
  
  
 
-Function IsIde() As Boolean
+Function isIde() As Boolean
     On Error GoTo hell
     Debug.Print 1 \ 0
 Exit Function
-hell: IsIde = True
+hell: isIde = True
 End Function
 
 Public Function MD5File(f As String) As String

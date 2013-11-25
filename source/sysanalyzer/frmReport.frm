@@ -112,18 +112,18 @@ End Function
  
 
 Private Sub Command2_Click()
-    Dim base As String
+    Dim Base As String
     On Error Resume Next
     
     If Len(filesaveName) = 0 Then
-        base = fso.GetBaseName(frmMain.samplePath)
-        base = UserDeskTopFolder & "\" & base & "_report.txt"
+        Base = fso.GetBaseName(frmMain.samplePath)
+        Base = UserDeskTopFolder & "\" & Base & "_" & Format(Now(), "h.nam/pm") & ".txt"
     Else
-        base = UserDeskTopFolder & "\" & filesaveName
+        Base = UserDeskTopFolder & "\" & filesaveName
     End If
     
-    fso.WriteFile base, Text1
-    If Err.Number = 0 Then MsgBox "Saved Successfully as:" & vbCrLf & vbCrLf & base
+    fso.writeFile Base, Text1
+    If Err.Number = 0 Then MsgBox "Saved Successfully as:" & vbCrLf & vbCrLf & Base
     
 End Sub
 

@@ -125,6 +125,28 @@ char* findProcessByPid(int pid){
 
 //___________________________________________________hook implementations _________
 
+LPVOID __stdcall My_VirtualAllocEx( HANDLE a0, LPVOID a1, DWORD a2, DWORD a3, DWORD a4 )
+{
+	/*
+	VirtualAllocEx(
+		HANDLE hProcess,
+		LPVOID lpAddress,
+		DWORD dwSize,
+		DWORD flAllocationType,
+		DWORD flProtect
+    );*/
+
+	LogAPI("%x     VirtualAllocEx(h=%x, addr=%x, sz=%x,type=%x, prot=%x)", CalledFrom(),a0,a1,a2,a3,a4 );
+
+	LPVOID  ret = 0;
+	try{
+		ret = Real_VirtualAllocEx(a0,a1,a2,a3,a4);
+	}
+	catch(...){}
+
+	return ret;
+}
+
 BOOL __stdcall My_CloseHandle(HANDLE a0)
 {
     
@@ -1264,7 +1286,8 @@ void InstallHooks(void)
 	ADDHOOK(connect);
 	ADDHOOK(gethostbyaddr);
 	ADDHOOK(gethostbyname);
-	
+	ADDHOOK(VirtualAllocEx);
+
 	ADDHOOK(listen);
 	ADDHOOK(recv);
 	ADDHOOK(send);

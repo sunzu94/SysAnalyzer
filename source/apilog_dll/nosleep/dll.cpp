@@ -140,7 +140,157 @@ DWORD __stdcall My_SleepEx( DWORD a0, BOOL a1 ){
 	return 0 ;
 }
 
+LPVOID __stdcall My_VirtualAllocEx( HANDLE a0, LPVOID a1, DWORD a2, DWORD a3, DWORD a4 )
+{
+	/*
+	VirtualAllocEx(
+		HANDLE hProcess,
+		LPVOID lpAddress,
+		DWORD dwSize,
+		DWORD flAllocationType,
+		DWORD flProtect
+    );*/
 
+	LPVOID  ret = 0;
+	try{
+		ret = Real_VirtualAllocEx(a0,a1,a2,a3,a4);
+	}
+	catch(...){}
+
+	LogAPI("%x     VirtualAllocEx(addr=%x, sz=%x) = 0x%x", CalledFrom(),a1,a2, ret );
+
+	return ret;
+}
+
+SOCKET __stdcall My_socket(int a0,int a1,int a2)
+{
+
+    SOCKET ret = 0;
+    try {
+        ret = Real_socket(a0, a1, a2);
+    }
+	catch(...){	} 
+
+	LogAPI("%x     socket(family=%x,type=%x,proto=%x) = %x", CalledFrom(), a0, a1, a2, ret);
+
+    return ret;
+}
+
+void __stdcall My_ExitProcess(UINT a0)
+{
+	LogAPI("%x     ExitProcess()", CalledFrom() );
+    Real_ExitProcess(a0);
+}
+
+void __stdcall My_VirtualFree( LPVOID lpAddress, SIZE_T dwSize, DWORD dwFreeType)
+{
+	LogAPI("%x     VirtualFree(0x%x)", CalledFrom(),lpAddress );
+}
+
+/*
+DWORD WINAPI CreateProcessInternal(
+  __in         DWORD unknown1,                              // always (?) NULL
+  __in_opt     LPCTSTR lpApplicationName,
+  __inout_opt  LPTSTR lpCommandLine,
+  __in_opt     LPSECURITY_ATTRIBUTES lpProcessAttributes,
+  __in_opt     LPSECURITY_ATTRIBUTES lpThreadAttributes,
+  __in         BOOL bInheritHandles,
+  __in         DWORD dwCreationFlags,
+  __in_opt     LPVOID lpEnvironment,
+  __in_opt     LPCTSTR lpCurrentDirectory,
+  __in         LPSTARTUPINFO lpStartupInfo,
+  __out        LPPROCESS_INFORMATION lpProcessInformation,
+  __in         DWORD unknown2                               // always (?) NULL
+);
+*/
+
+char* toAscii(char* u){
+	
+	if( (int) u == 0 ) return 0;
+
+	int sz = 0, j=0, i=0;
+
+	for(i=0; i < 500; i++){
+		if( u[i]==0 && u[i+i]==0) break;
+		sz++;
+	}
+
+	if(i==0) return 0;
+
+	char* tmp = (char*)malloc(sz);
+	memset(tmp, 0, sz);
+
+	for(int i=0; i < sz; i++){
+		if( u[i]==0 && u[i+i]==0) break;
+		if( u[i]!=0 ) tmp[j++] = u[i];
+	}
+
+	return tmp;
+
+}
+BOOL __stdcall My_CreateProcessInternalW(DWORD unk1, LPCSTR w0,LPSTR w1,LPSECURITY_ATTRIBUTES a2,LPSECURITY_ATTRIBUTES a3,BOOL a4,DWORD a5,LPVOID a6,LPCSTR a7,struct _STARTUPINFOA* si,LPPROCESS_INFORMATION pi, DWORD unk2)
+{
+
+	char* flags = a5 == CREATE_SUSPENDED ? "CREATE_SUSPENDED" : "";
+
+	int buflen, ret, lpfnLoadLib ; 
+	unsigned long writeLen, hThread;
+	HANDLE hProcess, lpdllPath;
+ 
+    BOOL retv = 0;
+    try {
+		
+		char* a0 = toAscii((char*)w0);
+		char* a1 = toAscii((char*)w1);
+
+		if(a0 && strstr(a0,"git.exe") > 0) return 0;
+		if(a0 && !a1)	LogAPI("%x     CreateProcessInternalW(%s)", CalledFrom(), a0);
+		if(a1 && !a0)	LogAPI("%x     CreateProcessInternalW("", %s)", CalledFrom(), a1);
+        if(a1 && a0)	LogAPI("%x     CreateProcessInternalW(%s, %s)", CalledFrom(), a0, a1);
+
+		retv = Real_CreateProcessInternalW(unk1, w0, w1, a2, a3, a4, a5, a6, a7, si, pi, unk2);
+		
+		if(a0) free(a0);
+		if(a1) free(a1);
+
+	}
+	catch(...){
+		LogAPI("%x     Error in CreateProcessInternalW()", CalledFrom() );
+	} 
+
+    return retv;
+
+
+
+}
+
+BOOL __stdcall My_CreateProcessA(LPCSTR a0,LPSTR a1,LPSECURITY_ATTRIBUTES a2,LPSECURITY_ATTRIBUTES a3,BOOL a4,DWORD a5,LPVOID a6,LPCSTR a7,struct _STARTUPINFOA* si,LPPROCESS_INFORMATION pi)
+{
+
+	char* flags = a5 == CREATE_SUSPENDED ? "CREATE_SUSPENDED" : "";
+
+	int buflen, ret, lpfnLoadLib ; 
+	unsigned long writeLen, hThread;
+	HANDLE hProcess, lpdllPath;
+ 
+    BOOL retv = 0;
+    try {
+
+		if(a0 && strstr(a0,"git.exe") > 0) return 0;
+		if(a0 && !a1)	LogAPI("%x     CreateProcessA(%s)", CalledFrom(), a0);
+		if(a1 && !a0)	LogAPI("%x     CreateProcessA("", %s)", CalledFrom(), a1);
+        if(a1 && a0)	LogAPI("%x     CreateProcessA(%s, %s)", CalledFrom(), a0, a1);
+
+		retv = Real_CreateProcessA(a0, a1, a2, a3, a4, a5, a6, a7, si, pi);
+
+	}
+	catch(...){	} 
+
+    return retv;
+
+
+
+}
 
 //_______________________________________________ install hooks fx 
 
@@ -199,6 +349,17 @@ void InstallHooks(void)
 
 	ADDHOOK(Sleep)
 	ADDHOOK(SleepEx)
+	ADDHOOK(socket)
+	ADDHOOK(ExitProcess)
+	ADDHOOK(VirtualAllocEx)
+	ADDHOOK(VirtualFree)
+	
+	void* real = GetProcAddress( hKernelBase==0 ? GetModuleHandleA("kernel32.dll") : hKernelBase , "CreateProcessInternalW");
+	if (real==0 || !InstallHook( real, My_CreateProcessInternalW, (int*)&Real_CreateProcessInternalW,"CreateProcessInternalW", ht_jmp ) ){ 
+		msg("Install hook CreateProcessInternalW failed...Error: \r\n");
+	}
+
+	 
 	
 	
 }

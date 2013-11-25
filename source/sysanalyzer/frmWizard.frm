@@ -3,14 +3,14 @@ Begin VB.Form frmWizard
    BackColor       =   &H005A5963&
    BorderStyle     =   3  'Fixed Dialog
    Caption         =   "SysAnalyzer Configuration Wizard"
-   ClientHeight    =   4305
+   ClientHeight    =   4755
    ClientLeft      =   45
    ClientTop       =   435
    ClientWidth     =   9000
    LinkTopic       =   "Form2"
    MaxButton       =   0   'False
    MinButton       =   0   'False
-   ScaleHeight     =   4305
+   ScaleHeight     =   4755
    ScaleWidth      =   9000
    ShowInTaskbar   =   0   'False
    StartUpPosition =   2  'CenterScreen
@@ -36,11 +36,19 @@ Begin VB.Form frmWizard
       BackColor       =   &H005A5963&
       Caption         =   " Options "
       ForeColor       =   &H00E0E0E0&
-      Height          =   2325
+      Height          =   2865
       Left            =   3840
       TabIndex        =   8
       Top             =   1290
       Width           =   5025
+      Begin VB.TextBox txtRWEScan 
+         Height          =   315
+         Left            =   1440
+         TabIndex        =   22
+         Text            =   "explorer.exe,iexplore.exe"
+         Top             =   2400
+         Width           =   3435
+      End
       Begin VB.ComboBox cboIp 
          Height          =   315
          Left            =   1140
@@ -95,6 +103,16 @@ Begin VB.Form frmWizard
          TabIndex        =   9
          Top             =   960
          Width           =   2835
+      End
+      Begin VB.Label Label3 
+         BackColor       =   &H005A5963&
+         Caption         =   "RWE Scan:"
+         ForeColor       =   &H00E0E0E0&
+         Height          =   195
+         Left            =   420
+         TabIndex        =   21
+         Top             =   2460
+         Width           =   915
       End
       Begin VB.Label lblip 
          BackColor       =   &H005A5963&
@@ -164,17 +182,17 @@ Begin VB.Form frmWizard
    Begin VB.CommandButton cmdReadme 
       Caption         =   "Help"
       Height          =   375
-      Left            =   3870
+      Left            =   3840
       TabIndex        =   4
-      Top             =   3810
+      Top             =   4320
       Width           =   1155
    End
    Begin VB.CommandButton cmdStart 
       Caption         =   "Start"
       Height          =   375
-      Left            =   7710
+      Left            =   7740
       TabIndex        =   3
-      Top             =   3810
+      Top             =   4320
       Width           =   1155
    End
    Begin VB.CommandButton cmdBrowse 
@@ -202,13 +220,53 @@ Begin VB.Form frmWizard
       Top             =   180
       Width           =   4005
    End
+   Begin VB.Label lblKnown 
+      BackColor       =   &H005A5963&
+      Caption         =   "lblKnown"
+      ForeColor       =   &H00E0E0E0&
+      Height          =   195
+      Left            =   6360
+      TabIndex        =   25
+      Top             =   1020
+      Width           =   975
+   End
+   Begin VB.Label lblBuildKnownFileDB 
+      BackColor       =   &H005A5963&
+      Caption         =   "build now"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   400
+         Underline       =   -1  'True
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00E0E0E0&
+      Height          =   255
+      Left            =   7680
+      TabIndex        =   24
+      Top             =   1020
+      Width           =   675
+   End
+   Begin VB.Label Label1 
+      BackColor       =   &H005A5963&
+      Caption         =   "Known file DB :"
+      ForeColor       =   &H00E0E0E0&
+      Height          =   255
+      Index           =   1
+      Left            =   5160
+      TabIndex        =   23
+      Top             =   1020
+      Width           =   1155
+   End
    Begin VB.Label Label1 
       BackColor       =   &H005A5963&
       Caption         =   "Arguments"
       ForeColor       =   &H00E0E0E0&
       Height          =   255
       Index           =   2
-      Left            =   3390
+      Left            =   3360
       TabIndex        =   18
       Top             =   630
       Width           =   915
@@ -227,9 +285,9 @@ Begin VB.Form frmWizard
       EndProperty
       ForeColor       =   &H00E0E0E0&
       Height          =   255
-      Left            =   6150
+      Left            =   6240
       TabIndex        =   7
-      Top             =   3870
+      Top             =   4440
       Width           =   435
    End
    Begin VB.Image Image1 
@@ -304,6 +362,7 @@ Private going_toMainUI As Boolean
 
 Private Sub Form_Unload(Cancel As Integer)
     SaveConfig
+    If Len(txtRWEScan) > 0 Then SaveMySetting "txtRWEScan", txtRWEScan.Text
     Dim f As Form
     If Not going_toMainUI Then
         For Each f In Forms
@@ -312,10 +371,23 @@ Private Sub Form_Unload(Cancel As Integer)
     End If
 End Sub
 
+Private Sub lblBuildKnownFileDB_Click()
+    
+    On Error Resume Next
+    
+    If Not known.Ready Then
+        MsgBox "Known file database not found?", vbInformation
+        Exit Sub
+    End If
+    
+    frmKnownFiles.Show 1, Me
+    
+End Sub
+
 Private Sub lblInterfaces_Click(Index As Integer)
     On Error Resume Next
     Dim f As String
-    If IsIde() Then
+    If isIde() Then
         f = App.path & "\..\..\windump.exe"
     Else
         f = App.path & "\windump.exe"
@@ -331,24 +403,23 @@ End Sub
 
 Private Sub lblSkip_Click()
     
-    With frmMain
-        .Initalize
-        .SSTab1.TabVisible(6) = True 'False
-        .cmdDirWatch_Click
-        .SSTab1.TabVisible(5) = False
-        .lblTimer.Visible = False
-        .mnuToolItem_Click 4 'take base snapshot..
-        .lblDisplay = "Displaying Base Snapshot"
-        .Visible = True
-    End With
+   
+    frmMain.Initalize
+    frmMain.SSTab1.TabVisible(6) = True 'False
+    frmMain.cmdDirWatch_Click
+    frmMain.SSTab1.TabVisible(5) = False
+    frmMain.lblTimer.Visible = False
+    frmMain.Visible = True
+    Me.Visible = False
+    frmMain.mnuToolItem_Click 4 'take base snapshot..
+    frmMain.lblDisplay = "Displaying Base Snapshot"
     
     going_toMainUI = True
-    
     Unload Me
     
 End Sub
 
-Private Sub txtBinary_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub txtBinary_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, y As Single)
     On Error Resume Next
     txtBinary = data.files(1)
 End Sub
@@ -434,10 +505,10 @@ End Sub
 
  
 Private Sub cmdBrowse_Click()
-    Dim x
-    x = dlg.OpenDialog(exeFiles, , "Open file for analysis")
-    If Len(x) = 0 Then Exit Sub
-    txtBinary = x
+    Dim X
+    X = dlg.OpenDialog(exeFiles, , "Open file for analysis")
+    If Len(X) = 0 Then Exit Sub
+    txtBinary = X
 End Sub
 
 
@@ -448,15 +519,18 @@ Private Sub Form_Load()
     Dim c As Collection
     Dim ip
     
-    'txtBinary = "D:\work_data\SysAnalyzer_2\examples\safe_test1.exe"
+    If Not known.Ready Then
+        lblKnown.Caption = "Not found"
+    ElseIf known.Loaded Then
+        lblKnown.Caption = "Loaded"
+    Else
+        lblKnown.Caption = "Empty"
+    End If
     
     cfgFile = App.path & "\cfg.dat"
-    networkAnalyzer = App.path & "\sniff_hit.exe"
-    tcpdump = App.path & "\windump.exe"
-    
-    If Not fso.FileExists(tcpdump) Then
-        tcpdump = App.path & "\..\..\windump.exe"
-    End If
+    networkAnalyzer = App.path & IIf(isIde(), "\..\..", Empty) & "\sniff_hit.exe"
+    tcpdump = App.path & IIf(isIde(), "\..\..", Empty) & "\windump.exe"
+    txtRWEScan = GetMySetting("txtRWEScan", "explorer.exe,iexplore.exe,")
     
     Set c = AvailableInterfaces()
     For Each ip In c
@@ -498,6 +572,10 @@ Private Sub Form_Load()
             'TODO auto run exe with settings
         End If
     End If
+    
+    If Len(txtBinary) = 0 And isIde() Then
+        txtBinary = App.path & "\..\..\safe_test1.exe"
+    End If
 
     
     Me.Icon = frmMain.Icon
@@ -510,6 +588,8 @@ End Sub
 Sub cmdStart_Click()
         
     On Error Resume Next
+    
+    ProcessesToRWEScan = txtRWEScan
     
     If chkPacketCapture.Value = 1 Then
         If Not IsNumeric(txtInterface.Text) Or txtInterface.Text = 0 Then
@@ -538,7 +618,7 @@ Sub cmdStart_Click()
     If chkNetworkAnalyzer.Value = 1 Then
         If Not isNetworkAnalyzerRunning() Then
             If fso.FileExists(networkAnalyzer) Then
-                Shell """" & networkAnalyzer & """ /start", vbMinimizedNoFocus
+                Shell """" & networkAnalyzer & """ /start /log """ & UserDeskTopFolder & """", vbMinimizedNoFocus
             Else
                 MsgBox "Missing: " & networkAnalyzer
             End If
@@ -550,8 +630,14 @@ Sub cmdStart_Click()
     going_toMainUI = True
     frmMain.Initalize
     
-    diff.DoSnap1
-    diff.ShowBaseSnap
+    frmMain.lblTimer = txtDelay & " Seconds remaining"
+    frmMain.Visible = True
+    Me.Visible = False
+    
+    diff.DoSnap1 frmMain.pb, frmMain.lblDisplay
+    frmMain.lblDisplay = "Loading base snapshot."
+    diff.ShowBaseSnap frmMain.pb '<--not required and slows down launch of malware..
+    frmMain.lblDisplay = "Preparing to launch malware."
     tmrDelayShell.Enabled = True
     
 Exit Sub
@@ -622,6 +708,8 @@ Private Sub tmrDelayShell_Timer()
         frmMain.SSTab1.TabVisible(6) = False
     End If
     
+    frmMain.lblDisplay = "Launching malware..."
+    
     If chkApiLog.Value = 1 Then
         Dim exe As String
             
@@ -635,7 +723,7 @@ Private Sub tmrDelayShell_Timer()
         
         Dim dll As String
         
-        If IsIde Then
+        If isIde Then
             dll = App.path & "\..\..\api_log.dll"
         Else
             dll = App.path & "\api_log.dll"
@@ -658,6 +746,10 @@ Private Sub tmrDelayShell_Timer()
         End If
     End If
     
+    'test code
+    'If isIde() And InStr(txtBinary, "safe_test") > 0 Then Shell "notepad.exe" 'for multiprocess testing..
+    
+    frmMain.lblDisplay = "Malware launched."
     frmMain.samplePath = txtBinary
     frmMain.StartCountDown CInt(txtDelay)
     Unload Me

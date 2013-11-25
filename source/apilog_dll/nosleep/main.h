@@ -27,8 +27,16 @@
 
 VOID (__stdcall *Real_Sleep)( DWORD a0 ) = NULL;
 DWORD(__stdcall *Real_SleepEx)( DWORD a0, BOOL a1 ) = NULL;
+LPVOID (__stdcall *Real_VirtualAllocEx)( HANDLE a0, LPVOID a1, DWORD a2, DWORD a3, DWORD a4 ) = NULL;
+SOCKET (__stdcall *Real_socket)(int a0,int a1,int a2) = NULL;
+void   (__stdcall *Real_ExitProcess)(UINT a0) = NULL;
+BOOL   (__stdcall *Real_CreateProcessA)(LPCSTR a0,LPSTR a1,LPSECURITY_ATTRIBUTES a2,LPSECURITY_ATTRIBUTES a3,BOOL a4,DWORD a5,LPVOID a6,LPCSTR a7,struct _STARTUPINFOA* a8,LPPROCESS_INFORMATION a9) = NULL;
+BOOL   (__stdcall *Real_CreateProcessInternalW)(DWORD unknown1, LPCSTR a0,LPSTR a1,LPSECURITY_ATTRIBUTES a2,LPSECURITY_ATTRIBUTES a3,BOOL a4,DWORD a5,LPVOID a6,LPCSTR a7,struct _STARTUPINFOA* a8,LPPROCESS_INFORMATION a9, DWORD unknown2) = NULL;
+BOOL  (__stdcall *Real_VirtualFree)( LPVOID lpAddress, SIZE_T dwSize, DWORD dwFreeType) = NULL;
 
  
+
+
 
 void msg(char);
 void LogAPI(const char*, ...);

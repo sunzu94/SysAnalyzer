@@ -265,7 +265,7 @@ Sub FindStealthInjections(pid As Long, pName As String)
         If cMem.Protection = PAGE_EXECUTE_READWRITE And cMem.MemType <> MEM_IMAGE Then
             
             totalRWEFound = totalRWEFound + 1
-            s = pi.ReadMemory(cMem.pid, cMem.Base, cMem.Size) 'doesnt add that much time
+            s = pi.ReadMemory(cMem.pid, cMem.Base, cMem.size) 'doesnt add that much time
             entropy = CalculateEntropy(s)
             s = Empty
              
@@ -275,7 +275,7 @@ Sub FindStealthInjections(pid As Long, pName As String)
             
             Set li = lv.ListItems.Add(, , pid)
             li.SubItems(1) = Hex(cMem.Base)
-            li.SubItems(2) = Hex(cMem.Size)
+            li.SubItems(2) = Hex(cMem.size)
             li.SubItems(3) = cMem.MemTypeAsString()
             li.SubItems(4) = cMem.ProtectionAsString()
             li.SubItems(5) = pName
@@ -288,24 +288,16 @@ Sub FindStealthInjections(pid As Long, pName As String)
             li.SubItems(6) = entropy
         End If
         
-nextOne:
+nextone:
         DoEvents
         Sleep 5
     Next
     
+    pb.Value = 0
+    
 End Sub
 
-'todo: try zlib compressibility as another entropy check...
-Private Function CalculateEntropy(ByVal s As String) As Integer 'very basic...
-    On Error Resume Next
-    If Len(s) = 0 Then Exit Function
-    Dim a As Long, b As Long
-    a = Len(s)
-    's = Replace(s, Chr(0), Empty)
-    s = SimpleCompress(s)
-    b = Len(s)
-    CalculateEntropy = ((b / a) * 100)
-End Function
+
 
 
 Private Sub cmdNextProc_Click()
@@ -390,7 +382,7 @@ Private Sub mnuSearchMem_Click()
         Set cMem = li.Tag
         DoEvents
         lv.Refresh
-        m = pi.ReadMemory(cMem.pid, cMem.Base, cMem.Size)
+        m = pi.ReadMemory(cMem.pid, cMem.Base, cMem.size)
         a = InStr(1, m, s, vbTextCompare)
         b = InStr(1, m, s2, vbTextCompare)
         If a > 0 Then ret = ret & "pid: " & li.Text & " base: " & li.SubItems(1) & " offset: " & Hex(cMem.Base + a) & " ASCII " & li.SubItems(5) & vbCrLf

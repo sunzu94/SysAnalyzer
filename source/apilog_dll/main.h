@@ -92,6 +92,7 @@ DWORD (__stdcall *Real_GetTickCount)( VOID ) = NULL;
 int (__stdcall *Real_ZwQuerySystemInformation)(int SystemInformationClass, int SystemInformation, int SystemInformationLength, int ReturnLength) = NULL;
 int (__stdcall *Real_ZwSystemDebugControl)( int Command, int InputBuffer, int InputBufferLength,int OutputBuffer, int OutputBufferLength, int ReturnLength) = NULL;
 BOOL (__stdcall *Real_CloseHandle)( HANDLE a0 ) = NULL;
+LPVOID (__stdcall *Real_VirtualAllocEx)( HANDLE a0, LPVOID a1, DWORD a2, DWORD a3, DWORD a4 ) = NULL;
 
 void msg(char);
 void LogAPI(const char*, ...);

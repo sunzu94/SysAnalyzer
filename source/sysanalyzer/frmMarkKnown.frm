@@ -69,12 +69,12 @@ Private Sub Command1_Click()
     
     For Each li In lv.ListItems
         If li.Selected Then
-            known.AddKnown li.Text
+            known.Update li.Text
             li.Tag = "Remove"
         End If
     Next
     
-    For i = lv.ListItems.Count To 1 Step -1
+    For i = lv.ListItems.count To 1 Step -1
         If Len(lv.ListItems(i).Tag) > 0 Then
             lv.ListItems.Remove i
             x = x + 1
@@ -100,7 +100,7 @@ Sub loadFiles(ary)
         f = Replace(f, "\\", "\")
         name = fso.FileNameFromPath(CStr(f))
         ver = FileInfo(f).FileVersion
-        fhash = hash.HashFile(CStr(f), MD5, HexFormat)
+        fhash = hash.HashFile(CStr(f), md5, HexFormat)
         Set li = lv.ListItems.Add(, , f)
         li.SubItems(1) = ver
         li.SubItems(2) = fhash

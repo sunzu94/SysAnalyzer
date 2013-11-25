@@ -53,9 +53,9 @@ Private Declare Function NtQuerySystemInformation Lib "ntdll.dll" ( _
     dwReserved As Long) As Long
 
 Private Type SYSTEM_MODULE_INFORMATION
-    Reserved(1) As Long                'ULONG reserved[2];
-    Base As Long                       'PVOID Base;
-    Size As Long                       'ULONG Size;
+    reserved(1) As Long                'ULONG reserved[2];
+    base As Long                       'PVOID Base;
+    size As Long                       'ULONG Size;
     flags As Long                      'ULONG Flags;
     Index As Integer                   'USHORT Index;
     unkn As Integer                    'USHORT Unknown;
@@ -132,7 +132,7 @@ Private Type MEMORY_BASIC_INFORMATION
    AllocationBase As Long
    InitialProtect As Long
    RegionSize As Long
-   State As Long
+   state As Long
    Protect As Long
    Type As Long
 End Type
@@ -271,8 +271,8 @@ End Type
 
 Private Declare Function WTSEnumerateProcesses _
    Lib "wtsapi32.dll" Alias "WTSEnumerateProcessesA" _
-   (ByVal hServer As Long, ByVal Reserved As Long, _
-   ByVal Version As Long, ByRef ppProcessInfo As Long, _
+   (ByVal hServer As Long, ByVal reserved As Long, _
+   ByVal version As Long, ByRef ppProcessInfo As Long, _
    ByRef pCount As Long _
    ) As Long
 
@@ -361,7 +361,7 @@ Function GetRunningProcesses() As Collection 'of CProcess classes
     Dim n As Long
     
     Dim RetVal As Long
-    Dim Count As Long
+    Dim count As Long
     Dim i As Integer
     Dim lpBuffer As Long
     Dim p As Long
@@ -369,11 +369,11 @@ Function GetRunningProcesses() As Collection 'of CProcess classes
     Dim itmAdd As ListItem
 
     
-    RetVal = WTSEnumerateProcesses(WTS_CURRENT_SERVER_HANDLE, 0&, 1, lpBuffer, Count)
+    RetVal = WTSEnumerateProcesses(WTS_CURRENT_SERVER_HANDLE, 0&, 1, lpBuffer, count)
    
     If RetVal Then
           p = lpBuffer
-          For i = 1 To Count
+          For i = 1 To count
                 CopyMemory udtProcessInfo, ByVal p, LenB(udtProcessInfo)
                 Set proc = New CProcess
                 With proc
@@ -567,8 +567,8 @@ Function GetProcessModules(pid As Long) As Collection
          
         Set cmod = New CModule
         cmod.path = mfn
-        cmod.Base = lmi.lpBaseOfDll
-        cmod.Size = lmi.SizeOfImage
+        cmod.base = lmi.lpBaseOfDll
+        cmod.size = lmi.SizeOfImage
          
         On Error Resume Next
         mCol.Add cmod, cmod.path
@@ -650,7 +650,7 @@ Function DumpProcess(pid As Long, fpath As String) As Boolean
     Set col = GetProcessModules(pid)
     Set cmod = col(1)
 
-    DumpProcess = DumpProcessMemory(pid, cmod.Base, cmod.Size, fpath)
+    DumpProcess = DumpProcessMemory(pid, cmod.base, cmod.size, fpath)
     
 End Function
 
@@ -858,16 +858,16 @@ Function GetMemoryMap(pid As Long) As Collection 'of CMem
     Do While cur < &H7FFEFFFF
          x = VirtualQueryEx(hProc, cur, meminfo, LenB(meminfo))
          
-         If meminfo.State <> MEM_FREE Then
+         If meminfo.state <> MEM_FREE Then
             Set cMem = New CMemory
             cMem.pid = pid
-            cMem.Size = meminfo.RegionSize
-            cMem.Base = cur
+            cMem.size = meminfo.RegionSize
+            cMem.base = cur
             cMem.AllocBase = meminfo.AllocationBase
             cMem.InitialProtection = meminfo.InitialProtect
             cMem.MemType = meminfo.Type
             cMem.Protection = meminfo.Protect
-            cMem.State = meminfo.State
+            cMem.state = meminfo.state
                        
             If cur > 0 Then
                n = String(256, Chr(0))
@@ -901,21 +901,21 @@ Private Function GetStringFromLP(ByVal StrPtr As Long) As String
    Dim b As Byte
    Dim tempStr As String
    Dim bufferStr As String
-   Dim Done As Boolean
+   Dim done As Boolean
 
-   Done = False
+   done = False
    Do
       ' Get the byte/character that StrPtr is pointing to.
       CopyMemory b, ByVal StrPtr, 1
       If b = 0 Then  ' If you've found a null character, then you're done.
-         Done = True
+         done = True
       Else
          tempStr = Chr$(b)  ' Get the character for the byte's value
          bufferStr = bufferStr & tempStr 'Add it to the string
                 
          StrPtr = StrPtr + 1  ' Increment the pointer to next byte/char
       End If
-   Loop Until Done
+   Loop Until done
    GetStringFromLP = bufferStr
 End Function
 
