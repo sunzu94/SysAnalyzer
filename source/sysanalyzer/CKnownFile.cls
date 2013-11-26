@@ -61,7 +61,7 @@ Function BuildDB()
         Exit Function
     End If
     
-    ado.OpenConnection adUseClient, adModeReadWrite, adLockOptimistic
+    'ado.OpenConnection adUseClient, adModeReadWrite, adLockOptimistic
     
     tmp = fso.GetFolderFiles(win, "*.dll")
     addDir tmp, win, "*.dll"
@@ -109,7 +109,7 @@ Function BuildDB()
     
     
 cleanup:
-    ado.CloseConnection
+    'ado.CloseConnection
     
 End Function
 

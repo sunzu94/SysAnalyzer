@@ -340,7 +340,7 @@ Private Sub cmdSaveChanges_Click()
     If fso.FileExists(fpath) Then
         fso.writeFile fpath, txtFile.Text
     Else
-        fpath = dlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save As", , Me.hwnd)
+        fpath = dlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save As", , Me.hWnd)
         If Len(fpath) > 0 Then
             fso.writeFile fpath, txtFile
         End If
@@ -502,7 +502,8 @@ Private Function GetImageForFile(fpath As String)
     Dim ext As String
     
     ext = fso.GetExtension(fpath)
-    If ext = ".txt" Or ext = ".log" Then
+    
+    If AnyOfTheseInstr(ext, "txt,log,htm,ini") Then
         GetImageForFile = "text"
         Exit Function
     End If
@@ -682,7 +683,7 @@ End Sub
 Private Sub mnuLoadSaved_Click()
     
     Dim f As String
-    f = dlg.FolderDialog(, Me.hwnd)
+    f = dlg.FolderDialog(, Me.hWnd)
     If Len(f) > 0 Then
         OpenAnalysisFolder f
     End If
@@ -809,7 +810,7 @@ Private Sub tv_DblClick()
     Dim fpath As String
     fpath = tv.SelectedItem.Tag
     If InStr(1, fpath, ".pcap", vbTextCompare) > 0 Then
-        ShellExecute Me.hwnd, "open", fpath, "", "", 1
+        ShellExecute Me.hWnd, "open", fpath, "", "", 1
     End If
     
 End Sub

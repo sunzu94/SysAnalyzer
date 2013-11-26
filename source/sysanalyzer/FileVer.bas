@@ -49,6 +49,8 @@ Global watchIDs() As Long
 Global watchDirs As New Collection
 Global cApiData As New Collection
 Global cLogData As New Collection
+Global DebugLogFile As String
+Global START_TIME As Date
 
 Global Const LANG_US = &H409
 
@@ -64,7 +66,7 @@ Private Declare Sub MoveMemory Lib "kernel32" Alias "RtlMoveMemory" (Dest As Any
 Private Declare Function lstrcpy Lib "kernel32" Alias "lstrcpyA" (ByVal lpString1 As String, ByVal lpString2 As Long) As Long
 Public Declare Function FindWindow Lib "user32" Alias "FindWindowA" (ByVal lpClassName As String, ByVal lpWindowName As String) As Long
 Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (hpvDest As Any, hpvSource As Any, ByVal cbCopy As Long)
-Public Declare Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteA" (ByVal hwnd As Long, ByVal lpOperation As String, ByVal lpFile As String, ByVal lpParameters As String, ByVal lpDirectory As String, ByVal nShowCmd As Long) As Long
+Public Declare Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteA" (ByVal hWnd As Long, ByVal lpOperation As String, ByVal lpFile As String, ByVal lpParameters As String, ByVal lpDirectory As String, ByVal nShowCmd As Long) As Long
 
 
 Public Type FILEPROPERTIE
@@ -159,6 +161,14 @@ Private Declare Sub CopyMemory2 Lib "kernel32" Alias "RtlMoveMemory" (pDst As An
 Private Declare Function WSAStartup Lib "ws2_32.dll" (ByVal wVR As Long, lpWSAD As WSAData) As Long
 Private Declare Function GetShortPathName Lib "kernel32" Alias "GetShortPathNameA" (ByVal lpszLongPath As String, ByVal lpszShortPath As String, ByVal cchBuffer As Long) As Long
 
+Public Sub debugLog(ByVal msg)
+    On Error Resume Next
+    Dim timestamp As String
+    timestamp = Format(DateDiff("s", START_TIME, Now), "0###s > ")
+    If InStr(msg, vbCrLf) > 0 Then msg = Replace(msg, vbCrLf, vbCrLf & vbTab) & vbCrLf
+    fso.AppendFile DebugLogFile, timestamp & msg
+End Sub
+
 Public Function GetShortName(sFile As String) As String
     Dim sShortFile As String * 67
     Dim lResult As Long
@@ -198,8 +208,8 @@ Public Sub LV_ColumnSort(ListViewControl As ListView, Column As ColumnHeader)
     End With
 End Sub
 
-Function pHex(x)
-    y = Hex(x)
+Function pHex(X)
+    y = Hex(X)
     While Len(y) < 8
         y = "0" & y
     Wend
@@ -311,9 +321,9 @@ Function HexDump(ByVal str, Optional hexOnly = 0, Optional offset As Long = 0) A
         tt = Hex(ary(i))
         If Len(tt) = 1 Then tt = "0" & tt
         tmp = tmp & tt & " "
-        x = ary(i)
+        X = ary(i)
         'chars = chars & IIf((x > 32 And x < 127) Or x > 191, Chr(x), ".") 'x > 191 causes \x0 problems on non us systems... asc(chr(x)) = 0
-        chars = chars & IIf((x > 32 And x < 127), Chr(x), ".")
+        chars = chars & IIf((X > 32 And X < 127), Chr(X), ".")
         If i > 1 And i Mod 16 = 0 Then
             h = Hex(offset)
             While Len(h) < 6: h = "0" & h: Wend
@@ -552,8 +562,8 @@ End Function
 
 Sub push(ary, Value) 'this modifies parent ary object
     On Error GoTo init
-    Dim x As Integer
-    x = UBound(ary) '<-throws Error If Not initalized
+    Dim X As Integer
+    X = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
     ary(UBound(ary)) = Value
     Exit Sub
@@ -624,20 +634,20 @@ End Function
 
 Function GetAllText(lv As ListView, Optional subItemRow As Long = 0, Optional selectedOnly As Boolean = False) As String
     Dim i As Long
-    Dim tmp As String, x As String
+    Dim tmp As String, X As String
     
     For i = 1 To lv.ListItems.count
         If subItemRow = 0 Then
-            x = lv.ListItems(i).Text
-            If selectedOnly And Not lv.ListItems(i).Selected Then x = Empty
-            If Len(x) > 0 Then
-                tmp = tmp & x & vbCrLf
+            X = lv.ListItems(i).Text
+            If selectedOnly And Not lv.ListItems(i).Selected Then X = Empty
+            If Len(X) > 0 Then
+                tmp = tmp & X & vbCrLf
             End If
         Else
-            x = lv.ListItems(i).SubItems(subItemRow)
-            If selectedOnly And Not lv.ListItems(i).Selected Then x = Empty
-            If Len(x) > 0 Then
-                tmp = tmp & x & vbCrLf
+            X = lv.ListItems(i).SubItems(subItemRow)
+            If selectedOnly And Not lv.ListItems(i).Selected Then X = Empty
+            If Len(X) > 0 Then
+                tmp = tmp & X & vbCrLf
             End If
         End If
     Next

@@ -54,7 +54,6 @@ Private Sub Form_Load()
             "License:   GPL" & vbCrLf & _
             "Copyright: 2005 iDefense a Verisign Company" & vbCrLf & _
             "Site:      http://labs.idefense.com" & vbCrLf & _
-            "" & vbCrLf & _
             "Author:    David Zimmer <dzzie@yahoo.com>" & vbCrLf & _
             "" & vbCrLf & _
             "SysAnalyzer is an automated malware analysis solution originally released" & vbCrLf & _
@@ -66,9 +65,10 @@ Private Sub Form_Load()
             "so I have picked the project back up again and continue to do maintenance" & vbCrLf & _
             "and updates on it in my spare time." & vbCrLf & _
             " " & vbCrLf & _
-            "As time permits I keep tinkering with it, and am slowly working to bring in" & vbCrLf & _
-            "updated support for Win7 and x64 systems. It has been primarily developed" & vbCrLf & _
-            "and tested on Win2k and WinXP machines. " & vbCrLf
+            "As time permits I am slowly working to bring in updated support" & vbCrLf & _
+            "for Win7 and x64 systems. It has been primarily developed on WinXP machines" & vbCrLf & _
+            " " & vbCrLf & _
+            "Source download: https://github.com/dzzie/SysAnalyzer"
             
             
 End Sub

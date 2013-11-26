@@ -111,7 +111,7 @@ Public Function AnalyzeKnownProcessesforRWE(csvProcessList As String)
     
 End Function
 
-Public Function SaveReport(baseDir As String, Optional logName As String)
+Public Function GetReport() As String
 
     Dim report As String
     Dim al() As String
@@ -120,10 +120,8 @@ Public Function SaveReport(baseDir As String, Optional logName As String)
         push al(), List1.list(i)
     Next
         
-    If Len(logName) = 0 Then logName = "process_analysis.log"
-    report = baseDir & "\" & logName
-    fso.writeFile report, Join(al, vbCrLf)
-    
+    GetReport = Join(al, vbCrLf)
+     
 End Function
 
 Private Function AddLine(msg As String)
@@ -153,6 +151,8 @@ Public Function AnalyzeProcess(pid As Long) ', Optional memoryMapOnly As Boolean
     Base = fso.GetBaseName(f)
     samplePath = Base
     
+    debugLog "AnalyzeProcess pid:" & pid & " " & f
+    
     pFolder = UserDeskTopFolder & "\" & Base
     If Not fso.FolderExists(pFolder) Then MkDir pFolder
     
@@ -166,7 +166,7 @@ Public Function AnalyzeProcess(pid As Long) ', Optional memoryMapOnly As Boolean
     push rep, "Size: " & FileLen(f) & " Bytes"
     push rep, "MD5: " & hash.HashFile(f)
     'push rep, "Packer: " & GetPacker(f) & vbCrLf 'peid databases are to old now..
-    push rep, "File Properties: " & QuickInfo(f) & vbCrLf
+    'push rep, "File Properties: " & QuickInfo(f) & vbCrLf
     
         
     pb.Value = pb.Value + 1
@@ -175,7 +175,7 @@ Public Function AnalyzeProcess(pid As Long) ', Optional memoryMapOnly As Boolean
     Set col = proc.GetProcessModules(pid)
     
     If known.Loaded And known.Ready Then
-        ado.OpenConnection
+        'ado.OpenConnection
         push rep, "Unknown Loaded Modules: (using known database)" & vbCrLf & String(75, "-")
     Else
         push rep, "All Loaded Modules: " & vbCrLf & String(75, "-")
@@ -189,17 +189,18 @@ Public Function AnalyzeProcess(pid As Long) ', Optional memoryMapOnly As Boolean
             If known.isFileKnown(cmod.path) <> exact_match Then
                 push rep, "Dumping: " & pHex(cmod.Base) & vbTab & cmod.path
                 dllName = fso.FileNameFromPath(cmod.path)
-                If Len(dllName) = 0 Then dllName = pHex(cmod.Base) & ".dll.dmp"
-                dllName = pFolder & "\" & dllName
+                If Len(dllName) = 0 Then dllName = pHex(cmod.Base) & ".dll"
+                dllName = pFolder & "\" & dllName & ".dmp"
                 proc.DumpProcessMemory pid, cmod.Base, cmod.size, dllName
+                qdf.QuickDumpFix dllName
             End If
         Else
-            push rep, Hex(cmod.Base) & vbTab & cmod.path
+            'push rep, Hex(cmod.Base) & vbTab & cmod.path
         End If
         
     Next
     
-    If known.Loaded And known.Ready Then ado.CloseConnection
+    'If known.Loaded And known.Ready Then ado.CloseConnection
     
     pb.Value = pb.Value + 1
     
@@ -226,11 +227,14 @@ Public Function AnalyzeProcess(pid As Long) ', Optional memoryMapOnly As Boolean
     ScanForRWE pid
 
     pb.Value = 0
-    report = pFolder & "\" & Base & "_report.txt"
-    AddLine "Process Analysis Complete saving report as: " & Replace(report, UserDeskTopFolder, Empty)
-    fso.writeFile report, Join(rep, vbCrLf)
+    'report = pFolder & "\" & Base & "_report.txt"
+    'fso.writeFile report, Join(rep, vbCrLf)
+    'AddLine  "Process Analysis Complete saving report as: " & Replace(report, UserDeskTopFolder, Empty)
+    'AddLine String(75, "-")
     
-    AddLine String(75, "-")
+    AddLine "Process Analysis Complete"
+    debugLog "Process Analysis Log:" & vbCrLf & Join(rep, vbCrLf) & GetReport()
+    List1.Clear
     
 End Function
 

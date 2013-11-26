@@ -33,12 +33,12 @@ Private strConn As String
 
 Function ListTables() As String()
     Dim rs As Recordset, ret() As String
-    Dim iOpened As Boolean
+    'Dim iOpened As Boolean
     
-    If objCon Is Nothing Then
-        OpenConnection
-        iOpened = True
-    End If
+'    If objCon Is Nothing Then
+'        OpenConnection
+'        iOpened = True
+'    End If
     
     Set rs = objCon.OpenSchema(adSchemaTables)
     
@@ -51,7 +51,7 @@ Function ListTables() As String()
     
     ListTables = ret()
     
-    If iOpened Then CloseConnection
+    'If iOpened Then CloseConnection
     
 End Function
 
@@ -63,8 +63,12 @@ Property Get ConnectionString() As String
    ConnectionString = strConn
 End Property
 
-Sub BuildConnectionString(dbServer As dbServers, dbName As String, Optional server As String, Optional Port = 3306, Optional user As String, Optional pass As String)
-    Dim dbPath As String, baseString As String, blnInlineAuth As Boolean
+Sub BuildConnectionString(dbServer As dbServers, dbName As String, Optional server As String, _
+                          Optional Port = 3306, Optional user As String, Optional pass As String)
+    
+    Dim dbPath As String
+    Dim baseString As String
+    Dim blnInlineAuth As Boolean
     
     Select Case dbServer
         Case Access
@@ -127,13 +131,13 @@ End Function
 'disconnected recordset
 Function ReturnRecordSet(strSql As String) As Recordset
 Attribute ReturnRecordSet.VB_UserMemId = 0
-    Dim iOpened As Boolean
+    'Dim iOpened As Boolean
     Dim rs As Recordset
     
-    If objCon Is Nothing Then
-        OpenConnection adUseClient, adModeReadWrite, adLockBatchOptimistic
-        iOpened = True
-    End If
+'    If objCon Is Nothing Then
+'        OpenConnection adUseClient, adModeReadWrite, adLockBatchOptimistic
+'        iOpened = True
+'    End If
     
     Set rs = New Recordset
     rs.Open strSql, objCon, adOpenDynamic, adLockBatchOptimistic
@@ -142,7 +146,7 @@ Attribute ReturnRecordSet.VB_UserMemId = 0
     Set ReturnRecordSet = rs
     
     Set rs = Nothing
-    If iOpened Then CloseConnection
+    'If iOpened Then CloseConnection
    
 End Function
 
@@ -234,23 +238,25 @@ End Function
 
 Sub Execute(strSql As String)
  On Error GoTo oops
-    Dim iOpened As Boolean
+    'Dim iOpened As Boolean
     
-    If objCon Is Nothing Then
-        OpenConnection adUseClient, adModeReadWrite, adLockOptimistic
-        iOpened = True
-    End If
+'    If objCon Is Nothing Then
+'        OpenConnection adUseClient, adModeReadWrite, adLockOptimistic
+'        iOpened = True
+'    End If
     
     objCon.Execute strSql
     
-    If iOpened Then CloseConnection
+    'If iOpened Then CloseConnection
     
  Exit Sub
 oops: MsgBox Err.Description, vbCritical, "Err in clsado.Execute"
 End Sub
 
 Sub Insert(tblName, fields, ParamArray params())
-    Dim sSql As String, sTmp As String, iOpened As Boolean, i As Integer, X
+
+    Dim sSql As String, sTmp As String, i As Integer, X
+    'dim iOpened As Boolean
     Dim values()
     
     values() = params() 'force byval
@@ -264,21 +270,23 @@ Sub Insert(tblName, fields, ParamArray params())
         End If
     Next
     
-    If objCon Is Nothing Then
-        OpenConnection adUseServer, adModeReadWrite, adLockOptimistic
-        iOpened = True
-    End If
+'    If objCon Is Nothing Then
+'        OpenConnection adUseServer, adModeReadWrite, adLockOptimistic
+'        iOpened = True
+'    End If
     
     sTmp = Join(values, ",")
     sSql = Replace(sSql, "____", sTmp)
     objCon.Execute sSql
     
-    If iOpened Then CloseConnection
+    'If iOpened Then CloseConnection
     
 End Sub
 
 Sub Update(tblName, criteria, fields, ParamArray params())
-    Dim sSql As String, sTmp As String, iOpened As Boolean, i As Integer
+
+    Dim sSql As String, sTmp As String, i As Integer
+    'dim iOpened As Boolean
     Dim values()
     
     values() = params() 'force byval
@@ -292,10 +300,10 @@ Sub Update(tblName, criteria, fields, ParamArray params())
         End If
     Next
     
-    If objCon Is Nothing Then
-        OpenConnection adUseServer, adModeReadWrite, adLockOptimistic
-        iOpened = True
-    End If
+'    If objCon Is Nothing Then
+'        OpenConnection adUseServer, adModeReadWrite, adLockOptimistic
+'        iOpened = True
+'    End If
     
     Dim tmp() As String
     tmp() = Split(fields, ",")
@@ -310,7 +318,7 @@ Sub Update(tblName, criteria, fields, ParamArray params())
     sSql = Replace(sSql, "____", sTmp)
     objCon.Execute sSql
     
-    If iOpened Then CloseConnection
+    'If iOpened Then CloseConnection
     
 End Sub
 
@@ -326,17 +334,17 @@ End Sub
 
 
 
-
-Private Function RandomNum()
-    Dim tmp
-    Randomize
-    tmp = Round(Timer * Now * Rnd(), 0)
-    RandomNum = Right(tmp, 8)
-End Function
+'update this function this one has sporatic overflow bug..
+'Private Function RandomNum()
+'    Dim tmp
+'    Randomize
+'    tmp = Round(Timer * Now * Rnd(), 0)
+'    RandomNum = Right(tmp, 8)
+'End Function
 
 'Function CloneTableUnderRandomName(sTableToClone As String) As String
 '    Dim rs As Recordset, tmpName As String
-'    Dim iOpened As Boolean
+'    'Dim iOpened As Boolean
 '
 '    If objCon Is Nothing Then
 '        OpenConnection , adModeReadWrite, adLockOptimistic

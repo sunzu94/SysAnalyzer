@@ -14,21 +14,28 @@ Begin VB.Form frmWizard
    ScaleWidth      =   9000
    ShowInTaskbar   =   0   'False
    StartUpPosition =   2  'CenterScreen
-   Begin VB.CheckBox chkShowWizardOnStartup 
-      BackColor       =   &H005A5963&
-      Caption         =   "Show Wizard Form on startup"
-      ForeColor       =   &H00E0E0E0&
-      Height          =   315
-      Left            =   120
-      TabIndex        =   20
-      Top             =   3930
-      Visible         =   0   'False
-      Width           =   2445
+   Begin VB.CommandButton cmdBrowse 
+      Caption         =   "..."
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   12
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      Height          =   255
+      Index           =   1
+      Left            =   8460
+      TabIndex        =   24
+      Top             =   600
+      Width           =   375
    End
    Begin VB.TextBox txtArgs 
       Height          =   285
       Left            =   4350
-      TabIndex        =   19
+      TabIndex        =   18
       Top             =   570
       Width           =   3975
    End
@@ -38,13 +45,13 @@ Begin VB.Form frmWizard
       ForeColor       =   &H00E0E0E0&
       Height          =   2865
       Left            =   3840
-      TabIndex        =   8
+      TabIndex        =   7
       Top             =   1290
       Width           =   5025
       Begin VB.TextBox txtRWEScan 
          Height          =   315
          Left            =   1440
-         TabIndex        =   22
+         TabIndex        =   20
          Text            =   "explorer.exe,iexplore.exe"
          Top             =   2400
          Width           =   3435
@@ -52,14 +59,14 @@ Begin VB.Form frmWizard
       Begin VB.ComboBox cboIp 
          Height          =   315
          Left            =   1140
-         TabIndex        =   17
+         TabIndex        =   16
          Top             =   1890
          Width           =   2475
       End
       Begin VB.TextBox txtInterface 
          Height          =   285
          Left            =   2610
-         TabIndex        =   14
+         TabIndex        =   13
          Text            =   "1"
          Top             =   1590
          Width           =   405
@@ -70,7 +77,7 @@ Begin VB.Form frmWizard
          ForeColor       =   &H00E0E0E0&
          Height          =   255
          Left            =   480
-         TabIndex        =   12
+         TabIndex        =   11
          Top             =   1320
          Width           =   1755
       End
@@ -80,7 +87,7 @@ Begin VB.Form frmWizard
          ForeColor       =   &H00E0E0E0&
          Height          =   315
          Left            =   480
-         TabIndex        =   11
+         TabIndex        =   10
          Top             =   240
          Width           =   2775
       End
@@ -90,7 +97,7 @@ Begin VB.Form frmWizard
          ForeColor       =   &H00E0E0E0&
          Height          =   315
          Left            =   480
-         TabIndex        =   10
+         TabIndex        =   9
          Top             =   570
          Width           =   1455
       End
@@ -100,7 +107,7 @@ Begin VB.Form frmWizard
          ForeColor       =   &H00E0E0E0&
          Height          =   255
          Left            =   480
-         TabIndex        =   9
+         TabIndex        =   8
          Top             =   960
          Width           =   2835
       End
@@ -110,7 +117,7 @@ Begin VB.Form frmWizard
          ForeColor       =   &H00E0E0E0&
          Height          =   195
          Left            =   420
-         TabIndex        =   21
+         TabIndex        =   19
          Top             =   2460
          Width           =   915
       End
@@ -120,7 +127,7 @@ Begin VB.Form frmWizard
          ForeColor       =   &H00E0E0E0&
          Height          =   255
          Left            =   840
-         TabIndex        =   16
+         TabIndex        =   15
          Top             =   1950
          Width           =   285
       End
@@ -139,7 +146,8 @@ Begin VB.Form frmWizard
          ForeColor       =   &H00E0E0E0&
          Height          =   255
          Left            =   2820
-         TabIndex        =   15
+         MousePointer    =   14  'Arrow and Question
+         TabIndex        =   14
          Top             =   1320
          Width           =   915
       End
@@ -159,7 +167,8 @@ Begin VB.Form frmWizard
          Height          =   255
          Index           =   1
          Left            =   1380
-         TabIndex        =   13
+         MousePointer    =   14  'Arrow and Question
+         TabIndex        =   12
          Top             =   1620
          Width           =   1245
       End
@@ -168,7 +177,7 @@ Begin VB.Form frmWizard
       Alignment       =   1  'Right Justify
       Height          =   285
       Left            =   4320
-      TabIndex        =   6
+      TabIndex        =   5
       Text            =   "3"
       Top             =   930
       Width           =   555
@@ -176,16 +185,8 @@ Begin VB.Form frmWizard
    Begin VB.Timer tmrDelayShell 
       Enabled         =   0   'False
       Interval        =   1500
-      Left            =   90
-      Top             =   3000
-   End
-   Begin VB.CommandButton cmdReadme 
-      Caption         =   "Help"
-      Height          =   375
-      Left            =   3840
-      TabIndex        =   4
-      Top             =   4320
-      Width           =   1155
+      Left            =   2820
+      Top             =   2580
    End
    Begin VB.CommandButton cmdStart 
       Caption         =   "Start"
@@ -207,7 +208,8 @@ Begin VB.Form frmWizard
          Strikethrough   =   0   'False
       EndProperty
       Height          =   255
-      Left            =   8430
+      Index           =   0
+      Left            =   8460
       TabIndex        =   2
       Top             =   210
       Width           =   375
@@ -220,13 +222,53 @@ Begin VB.Form frmWizard
       Top             =   180
       Width           =   4005
    End
+   Begin VB.Label cmdAbout 
+      BackColor       =   &H005A5963&
+      Caption         =   "About"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   400
+         Underline       =   -1  'True
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00E0E0E0&
+      Height          =   255
+      Left            =   120
+      MousePointer    =   14  'Arrow and Question
+      TabIndex        =   26
+      Top             =   3300
+      Width           =   675
+   End
+   Begin VB.Label cmdReadme 
+      BackColor       =   &H005A5963&
+      Caption         =   "Help file"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   400
+         Underline       =   -1  'True
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00E0E0E0&
+      Height          =   255
+      Left            =   120
+      MousePointer    =   14  'Arrow and Question
+      TabIndex        =   25
+      Top             =   3660
+      Width           =   675
+   End
    Begin VB.Label lblKnown 
       BackColor       =   &H005A5963&
       Caption         =   "lblKnown"
       ForeColor       =   &H00E0E0E0&
       Height          =   195
       Left            =   6360
-      TabIndex        =   25
+      TabIndex        =   23
       Top             =   1020
       Width           =   975
    End
@@ -245,7 +287,8 @@ Begin VB.Form frmWizard
       ForeColor       =   &H00E0E0E0&
       Height          =   255
       Left            =   7680
-      TabIndex        =   24
+      MousePointer    =   14  'Arrow and Question
+      TabIndex        =   22
       Top             =   1020
       Width           =   675
    End
@@ -256,7 +299,7 @@ Begin VB.Form frmWizard
       Height          =   255
       Index           =   1
       Left            =   5160
-      TabIndex        =   23
+      TabIndex        =   21
       Top             =   1020
       Width           =   1155
    End
@@ -267,7 +310,7 @@ Begin VB.Form frmWizard
       Height          =   255
       Index           =   2
       Left            =   3360
-      TabIndex        =   18
+      TabIndex        =   17
       Top             =   630
       Width           =   915
    End
@@ -285,9 +328,10 @@ Begin VB.Form frmWizard
       EndProperty
       ForeColor       =   &H00E0E0E0&
       Height          =   255
-      Left            =   6240
-      TabIndex        =   7
-      Top             =   4440
+      Left            =   6180
+      MousePointer    =   14  'Arrow and Question
+      TabIndex        =   6
+      Top             =   4380
       Width           =   435
    End
    Begin VB.Image Image1 
@@ -303,7 +347,7 @@ Begin VB.Form frmWizard
       ForeColor       =   &H00E0E0E0&
       Height          =   195
       Left            =   3360
-      TabIndex        =   5
+      TabIndex        =   4
       Top             =   990
       Width           =   975
    End
@@ -359,6 +403,10 @@ Private cfg As config
 Private cfgFile As String
 
 Private going_toMainUI As Boolean
+
+Private Sub cmdAbout_Click()
+    frmAbout.Show 1, Me
+End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
     SaveConfig
@@ -419,7 +467,7 @@ Private Sub lblSkip_Click()
     
 End Sub
 
-Private Sub txtBinary_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, y As Single)
+Private Sub txtBinary_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, y As Single)
     On Error Resume Next
     txtBinary = data.files(1)
 End Sub
@@ -504,11 +552,15 @@ Private Sub cmdReadme_Click()
 End Sub
 
  
-Private Sub cmdBrowse_Click()
-    Dim X
-    X = dlg.OpenDialog(exeFiles, , "Open file for analysis")
-    If Len(X) = 0 Then Exit Sub
-    txtBinary = X
+Private Sub cmdBrowse_Click(Index As Integer)
+    Dim x
+    x = dlg.OpenDialog(exeFiles, , "Open file for analysis")
+    If Len(x) = 0 Then Exit Sub
+    If Index = 0 Then
+        txtBinary = x
+    Else
+        txtArgs = x
+    End If
 End Sub
 
 
@@ -518,6 +570,11 @@ Private Sub Form_Load()
     
     Dim c As Collection
     Dim ip
+    
+    START_TIME = Now
+    DebugLogFile = UserDeskTopFolder & "\debug.log"
+    If fso.FileExists(DebugLogFile) Then fso.DeleteFile DebugLogFile
+    fso.writeFile DebugLogFile, "Starting " & START_TIME
     
     If Not known.Ready Then
         lblKnown.Caption = "Not found"
@@ -569,7 +626,7 @@ Private Sub Form_Load()
         cmd = Trim(Replace(Command, """", Empty))
         If fso.FileExists(cmd) Then
             txtBinary = cmd
-            'TODO auto run exe with settings
+            'TODO auto run exe with settings if /launch
         End If
     End If
     
@@ -634,10 +691,10 @@ Sub cmdStart_Click()
     frmMain.Visible = True
     Me.Visible = False
     
-    diff.DoSnap1 frmMain.pb, frmMain.lblDisplay
-    frmMain.lblDisplay = "Loading base snapshot."
-    diff.ShowBaseSnap frmMain.pb '<--not required and slows down launch of malware..
-    frmMain.lblDisplay = "Preparing to launch malware."
+    diff.DoSnap1
+    frmMain.Display = "Loading base snapshot."
+    diff.ShowBaseSnap True   'only loads 2 tabs no known db lookup to eliminate delays..
+    frmMain.Display = "Preparing to launch malware."
     tmrDelayShell.Enabled = True
     
 Exit Sub
@@ -699,6 +756,7 @@ Private Function launchtcpdump()
 End Function
 
 Private Sub tmrDelayShell_Timer()
+
     tmrDelayShell.Enabled = False
     On Error GoTo hell
     
@@ -708,7 +766,7 @@ Private Sub tmrDelayShell_Timer()
         frmMain.SSTab1.TabVisible(6) = False
     End If
     
-    frmMain.lblDisplay = "Launching malware..."
+    frmMain.Display = "Launching malware..."
     
     If chkApiLog.Value = 1 Then
         Dim exe As String
@@ -736,12 +794,15 @@ Private Sub tmrDelayShell_Timer()
         
         Dim tmp() As String
         
+        debugLog "Starting process with api_log dll"
         StartProcessWithDLL exe & " " & txtArgs, dll, tmp()
     Else
         frmMain.SSTab1.TabVisible(5) = False
         If LCase(VBA.Right(txtBinary, 4)) = ".dll" Then
+            debugLog "Starting dll with loadlib.exe"
             Shell App.path & "\loadlib.exe """ & txtBinary & """"
         Else
+            debugLog "Starting malware directly"
             Shell txtBinary & " " & txtArgs
         End If
     End If
@@ -749,7 +810,7 @@ Private Sub tmrDelayShell_Timer()
     'test code
     'If isIde() And InStr(txtBinary, "safe_test") > 0 Then Shell "notepad.exe" 'for multiprocess testing..
     
-    frmMain.lblDisplay = "Malware launched."
+    frmMain.Display = "Malware launched."
     frmMain.samplePath = txtBinary
     frmMain.StartCountDown CInt(txtDelay)
     Unload Me

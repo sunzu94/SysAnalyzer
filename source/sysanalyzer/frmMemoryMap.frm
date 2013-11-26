@@ -151,7 +151,7 @@ Public Sub ShowDlls(pid As Long) 'x64 ok.
     Me.Visible = True
     
     On Error Resume Next
-    If known.Loaded And known.Ready Then ado.OpenConnection
+    'If known.Loaded And known.Ready Then ado.OpenConnection
     
     Set c = pi.GetProcessModules(pid)
     
@@ -168,7 +168,7 @@ Public Sub ShowDlls(pid As Long) 'x64 ok.
         DoEvents
     Next
     
-    If known.Loaded And known.Ready Then ado.CloseConnection
+    'If known.Loaded And known.Ready Then ado.CloseConnection
     'Me.Show
     
 End Sub
@@ -184,7 +184,7 @@ Public Sub ShowMemoryMap(pid As Long) 'not x64 compatiabled...
     Dim knownModules As Long
     
     On Error Resume Next
-    If known.Loaded And known.Ready Then ado.OpenConnection
+    'If known.Loaded And known.Ready Then ado.OpenConnection
     active_pid = pid
     
     Me.Visible = True
@@ -238,7 +238,7 @@ Public Sub ShowMemoryMap(pid As Long) 'not x64 compatiabled...
     
     If known.Loaded And known.Ready Then
         List1.AddItem knownModules & " known modules found"
-        ado.CloseConnection
+        'ado.CloseConnection
     End If
     
     
@@ -263,7 +263,7 @@ Private Sub lv_ItemClick(ByVal Item As MSComctlLib.ListItem)
     Set selli = Item
 End Sub
 
-Private Sub lv_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub lv_MouseUp(Button As Integer, Shift As Integer, X As Single, y As Single)
     If Button = 2 Then PopupMenu mnuPopup
 End Sub
 
@@ -275,7 +275,7 @@ Private Sub lv2_ItemClick(ByVal Item As MSComctlLib.ListItem)
     Set selli = Item
 End Sub
 
-Private Sub lv2_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub lv2_MouseUp(Button As Integer, Shift As Integer, X As Single, y As Single)
     If Button = 2 Then PopupMenu mnuPopup2
 End Sub
 

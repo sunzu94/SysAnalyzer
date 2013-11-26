@@ -12,7 +12,7 @@ OutputDir=./
 Source: ./dependancy\spSubclass2.dll; DestDir: {sys}; Flags: uninsneveruninstall regserver
 Source: ./dependancy\TABCTL32.OCX; DestDir: {sys}; Flags: uninsneveruninstall regserver
 Source: ./dependancy\vbDevKit.dll; DestDir: {sys}; Flags: uninsneveruninstall regserver
-Source: ./dependancy\adoKit.dll; DestDir: {sys}; Flags: uninsneveruninstall regserver
+;Source: ./dependancy\adoKit.dll; DestDir: {sys}; Flags: uninsneveruninstall regserver
 Source: ./dependancy\mscomctl.ocx; DestDir: {sys}; Flags: uninsneveruninstall regserver
 Source: ./dependancy\MSWINSCK.OCX; DestDir: {sys}; Flags: uninsneveruninstall regserver
 Source: ./dependancy\hexed.ocx; DestDir: {sys}; Flags: uninsneveruninstall regserver

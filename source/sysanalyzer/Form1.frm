@@ -875,12 +875,14 @@ Option Explicit
 'todo (11/2013):
 '      make sure CreateProcess Apilogger hook is crash free..should switch over to CreateProcessInternalW, have it somewhere..
 '      TEST WITH WIN7 AND WIN7X64
-'      remove or build in clsAdoKit --> remove annoying msgbox if fail, and screen pointer change
 '      ability to runas another user? (explorer injection, screen lockers etc)
 '      make sure IE process running at start of test?
 '      Cstrings - be able to set min match leng
-'      --> create a verbose runlog with debug info in case of crash...
 
+'X      show known db status on wizard, allow to build from there.
+'X      speed up delay in ShowBaseSnapshot before malware launch if known db active
+'X      remove or build in clsAdoKit --> remove annoying msgbox if fail, and screen pointer change
+'X      create a verbose runlog with debug info in case of crash...
 'X      analyze multiple processes if found
 'X      apparent bug in some known files lookups? - was windows update patches being detected.
 'X      integrate virustotal results with report viewer? - tricky because of junk files and delay required, plus all the network traffic..nevermind
@@ -919,6 +921,14 @@ Private user_desktop As String
 
 Dim lastViewMode As Integer
 
+Property Let Display(msg)
+    On Error Resume Next
+    lblDisplay.Caption = msg
+    lblDisplay.Refresh
+    DoEvents
+    debugLog msg
+End Property
+
 Sub Initalize()
     
     user_desktop = UserDeskTopFolder()
@@ -946,6 +956,7 @@ Sub Initalize()
     txtApiIgnore = GetSetting(App.exename, "Settings", "txtApiIgnore", "GetProcAddress, GetModuleHandle, ")
 
     lastViewMode = -1
+    debugLog "frmMain.Initilized"
     
 End Sub
 
@@ -953,9 +964,10 @@ Sub StartCountDown(xSecs As Integer)
     
     seconds = xSecs
     lblTimer = seconds & " Seconds remaining"
+    debugLog lblTimer.Caption
+    
     Me.Visible = True
     tmrCountDown.Enabled = True
-    'Unload frmWizard
     lastViewMode = 0
     
 End Sub
@@ -1024,6 +1036,7 @@ Private Sub Form_Load()
     
     On Error Resume Next
     SSTab1.TabIndex = 1
+    debugLog "frmMain_Load"
     
 End Sub
 
@@ -1279,7 +1292,7 @@ Private Sub mnuScanForUnknownMods_Click()
         Exit Sub
     End If
     
-    ado.OpenConnection
+    'ado.OpenConnection
     lblDisplay.Caption = "Starting scan..."
     
     i = 0
@@ -1309,7 +1322,7 @@ Private Sub mnuScanForUnknownMods_Click()
     Next
     
     lblDisplay.Caption = ""
-    ado.CloseConnection
+    'ado.CloseConnection
     
     Const header = "This list may also include files were locked at the time the database was created and could not be hashed for that reason."
     
@@ -1472,8 +1485,8 @@ Private Sub tmrCountDown_Timer()
         lblTimer.Visible = False
         tmrCountDown.Enabled = False
     
-        diff.DoSnap2 pb, lblDisplay
-        diff.ShowDiffReport pb
+        diff.DoSnap2
+        diff.ShowDiffReport
         lastViewMode = 2
         
         frmMain.lblDisplay = "Displaying Snapshot Diff report."
@@ -1485,8 +1498,8 @@ Private Sub tmrCountDown_Timer()
             frmAnalyzeProcess.AnalyzeProcess CLng(li.Text)
         Next
         
+        debugLog "AnalyzeKnownProcessesforRWE(" & ProcessesToRWEScan & ")"
         frmAnalyzeProcess.AnalyzeKnownProcessesforRWE ProcessesToRWEScan '"explorer.exe,iexplore.exe,"
-        frmAnalyzeProcess.SaveReport UserDeskTopFolder
         Unload frmAnalyzeProcess
         
         ret() = GetSystemDataReport()
@@ -1737,11 +1750,11 @@ Public Sub mnuToolItem_Click(Index As Integer)
     
     With diff
         Select Case Index
-            Case 0: .ShowBaseSnap pb
-            Case 1: .ShowSnap2 pb
-            Case 2: .ShowDiffReport pb
-            Case 4: .DoSnap1 pb, lblDisplay: .ShowBaseSnap pb
-            Case 5: .DoSnap2 pb, lblDisplay: .ShowSnap2 pb
+            Case 0: .ShowBaseSnap
+            Case 1: .ShowSnap2
+            Case 2: .ShowDiffReport
+            Case 4: .DoSnap1: .ShowBaseSnap
+            Case 5: .DoSnap2: .ShowSnap2
             Case 7:
                     
                     If MsgBox("All current data will be lost continue?", vbExclamation + vbYesNo) = vbNo Then
