@@ -293,7 +293,7 @@ nextone:
         Sleep 5
     Next
     
-    pb.Value = 0
+    If multiscanMode = False Then pb.Value = 0
     
 End Sub
 

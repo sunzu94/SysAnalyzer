@@ -61,7 +61,7 @@ int	  (__stdcall *Real_send)(SOCKET a0,char* a1,int a2,int a3) = NULL;
 int	  (__stdcall *Real_shutdown)(SOCKET a0,int a1) = NULL;
 SOCKET   (__stdcall *Real_socket)(int a0,int a1,int a2) = NULL;
 int	  (__stdcall *Real_URLDownloadToFileA)(int a0,char* a1, char* a2, DWORD a3, int a4) = NULL;
-int	  (__stdcall *Real_URLDownloadToCacheFile)(int a0,char* a1, char* a2, DWORD a3, DWORD a4, int a5) = NULL;
+int	  (__stdcall *Real_URLDownloadToCacheFileA)(int a0,char* a1, char* a2, DWORD a3, DWORD a4, int a5) = NULL;
 LPSTR    (__stdcall *Real_GetCommandLineA)( VOID ) = NULL;
 BOOL     (__stdcall *Real_IsDebuggerPresent)(VOID) = NULL;
 BOOL     (__stdcall *Real_GetVersionExA)( LPOSVERSIONINFOA a0 ) = NULL;
@@ -70,10 +70,10 @@ DWORD    (__stdcall *Real_GetCurrentProcessId)( VOID ) = NULL;
 BOOL     (__stdcall *Real_DebugActiveProcess)( DWORD a0 ) = NULL;
 BOOL     (__stdcall *Real_ReadFile)( HANDLE a0, LPVOID a1, DWORD a2, LPDWORD a3, LPOVERLAPPED a4 ) = NULL;
 VOID     (__stdcall *Real_GetSystemTime)( LPSYSTEMTIME a0 ) = NULL;
-HANDLE   (__stdcall *Real_CreateMutex)(int a0, int a1, int a2) = NULL;
+HANDLE   (__stdcall *Real_CreateMutexA)(int a0, int a1, int a2) = NULL;
 BOOL     (__stdcall *Real_ReadProcessMemory)( HANDLE a0, PVOID64 a1, PVOID64 a2, DWORD a3, LPDWORD a4 ) = NULL;
 DWORD    (__stdcall *Real_GetVersion)(void) = NULL;
-BOOL     (__stdcall *Real_CopyFile)(char* lpExistingFile, char* lpNewFile, BOOL bFailIfExists) = NULL;
+BOOL     (__stdcall *Real_CopyFileA)(char* lpExistingFile, char* lpNewFile, BOOL bFailIfExists) = NULL;
 BOOL	  (__stdcall *Real_InternetGetConnectedState)( LPDWORD a0, DWORD a1 ) = NULL;
 int (__stdcall *Real_RegCreateKeyA )( HKEY a0, LPCSTR a1, PHKEY a2 ) = NULL;
 int (__stdcall *Real_RegDeleteKeyA )( HKEY a0, LPCSTR a1 ) = NULL;
@@ -93,6 +93,12 @@ int (__stdcall *Real_ZwQuerySystemInformation)(int SystemInformationClass, int S
 int (__stdcall *Real_ZwSystemDebugControl)( int Command, int InputBuffer, int InputBufferLength,int OutputBuffer, int OutputBufferLength, int ReturnLength) = NULL;
 BOOL (__stdcall *Real_CloseHandle)( HANDLE a0 ) = NULL;
 LPVOID (__stdcall *Real_VirtualAllocEx)( HANDLE a0, LPVOID a1, DWORD a2, DWORD a3, DWORD a4 ) = NULL;
+HANDLE (__stdcall *Real_CreateToolhelp32Snapshot)(DWORD dwFlags,DWORD th32ProcessID) = NULL;  //11.26.13
+BOOL   (__stdcall *Real_Process32First)(HANDLE hSnapshot, LPPROCESSENTRY32 lppe) = NULL;     // 
+BOOL   (__stdcall *Real_Process32Next)(HANDLE hSnapshot, LPPROCESSENTRY32 lppe) = NULL;     // 
+BOOL   (__stdcall *Real_Module32First)(HANDLE hSnapshot, LPMODULEENTRY32 lpme) = NULL;     // 
+BOOL   (__stdcall *Real_Module32Next)(HANDLE hSnapshot, LPMODULEENTRY32 lpme) = NULL;     // 
+
 
 void msg(char);
 void LogAPI(const char*, ...);

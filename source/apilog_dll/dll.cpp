@@ -527,18 +527,18 @@ int My_URLDownloadToFileA(int a0,char* a1, char* a2, DWORD a3, int a4)
 }
 
 //untested
-int My_URLDownloadToCacheFile(int a0,char* a1, char* a2, DWORD a3, DWORD a4, int a5)
+int My_URLDownloadToCacheFileA(int a0,char* a1, char* a2, DWORD a3, DWORD a4, int a5)
 {
 	
     SOCKET ret = 0;
     try {
-        ret = Real_URLDownloadToCacheFile(a0, a1, a2, a3, a4, a5);
+        ret = Real_URLDownloadToCacheFileA(a0, a1, a2, a3, a4, a5);
     }
 	catch(...){	} 
 
 	char* sret = (ret == S_OK) ? "OK" : "FAILED";
 
-	LogAPI("%x     URLDownloadToCacheFile(%s, %s)", CalledFrom(), a1, a2, sret);
+	LogAPI("%x     URLDownloadToCacheFileA(%s, %s)", CalledFrom(), a1, a2, sret);
 
     return ret;
 }
@@ -931,16 +931,16 @@ VOID __stdcall My_GetSystemTime( LPSYSTEMTIME a0 )
 
 }
 
-HANDLE __stdcall My_CreateMutex(int a0, int a1, int a2){
+HANDLE __stdcall My_CreateMutexA(int a0, int a1, int a2){
 
 
 	HANDLE ret = 0;
 	try{
-		ret = Real_CreateMutex(a0,a1,a2);
+		ret = Real_CreateMutexA(a0,a1,a2);
 	}
 	catch(...){}
 	
-	LogAPI("%x     CreateMutex(%s) = 0x%x", CalledFrom(), a2, ret );
+	LogAPI("%x     CreateMutexA(%s) = 0x%x", CalledFrom(), a2, ret );
 
 	return ret;
 
@@ -975,13 +975,13 @@ DWORD __stdcall My_GetVersion(void)
 }
 
 
-BOOL My_CopyFile(char* a0, char* a1, BOOL a2){
+BOOL My_CopyFileA(char* a0, char* a1, BOOL a2){
 
-	LogAPI("%x     Copy(%s->%s)", CalledFrom(), a0, a1 );
+	LogAPI("%x     CopyFileA(%s->%s)", CalledFrom(), a0, a1 );
 
 	BOOL  ret = 0;
 	try{
-		ret = Real_CopyFile(a0,a1,a2);
+		ret = Real_CopyFileA(a0,a1,a2);
 	}
 	catch(...){}
 
@@ -1188,6 +1188,106 @@ int __stdcall My_RegSetValueExA ( HKEY a0, LPCSTR a1, DWORD a2, DWORD a3, CONST 
 }
 
 //--------------------------------------------------------------
+//ToolHelp api
+
+HANDLE __stdcall My_CreateToolhelp32Snapshot(DWORD dwFlags, DWORD th32ProcessID){
+	
+	LogAPI("%x     CreateToolhelp32Snapshot(flags:%x, pid:%x)", CalledFrom(), dwFlags, th32ProcessID );
+
+	HANDLE ret = 0;
+	try{
+		ret = Real_CreateToolhelp32Snapshot(dwFlags,th32ProcessID);
+	}
+	catch(...){}
+
+	return ret;
+}
+
+int ShouldHideProcess(char* exe){
+	
+	int found = 0;
+	if(exe==0) return 0;
+	char* tmp = strdup(exe);
+	if(tmp==0) return 0;
+
+	strlower(tmp);
+
+	char* hide[] = {"sniff_hit","sysanalyzer","windump","olly","api_log","vmware","vmnat","vmount","vmnet",
+					"procmon", "filemon","regmon","procexp","rootkitrevealer","windbg",	"wireshark","vmtool",
+					"win_dump",	"tcpdump",	
+					NULL};
+	
+	int i = 0;
+	while(hide[i] != 0){
+		if(strstr(tmp, hide[i]) > 0){
+			found = 1; 
+			break; 
+		}
+		i++;
+	}
+
+	free(tmp);
+	return found;
+
+}
+
+BOOL __stdcall My_Process32Next(HANDLE hSnapshot, LPPROCESSENTRY32 lppe){
+
+	BOOL ret = Real_Process32Next(hSnapshot, lppe);
+
+	if(ret && ShouldHideProcess(lppe->szExeFile)){
+		LogAPI("%x     Process32Next() HIDING %s", CalledFrom(), lppe->szExeFile );
+		return My_Process32Next(hSnapshot,lppe);
+	}
+
+	LogAPI("%x     Process32Next()", CalledFrom());
+	return ret;
+
+}
+
+BOOL __stdcall My_Process32First(HANDLE hSnapshot, LPPROCESSENTRY32 lppe){
+
+	BOOL ret = Real_Process32First(hSnapshot, lppe);
+
+	if(ret && ShouldHideProcess(lppe->szExeFile)){
+			LogAPI("%x     Process32First() HIDING %s", CalledFrom(), lppe->szExeFile );
+			return My_Process32Next(hSnapshot,lppe);
+	}
+
+	LogAPI("%x     Process32First()", CalledFrom());
+	return ret;
+
+}
+
+BOOL __stdcall My_Module32Next(HANDLE hSnapshot, LPMODULEENTRY32 lpme){
+
+	BOOL ret = Real_Module32Next(hSnapshot, lpme);
+
+	if(ret && ShouldHideProcess(lpme->szModule)){
+		LogAPI("%x     Module32Next() HIDING %s", CalledFrom(), lpme->szModule );
+		return My_Module32Next(hSnapshot,lpme);
+	}
+
+	LogAPI("%x     Module32Next()", CalledFrom());
+	return ret;
+
+}
+
+BOOL __stdcall My_Module32First(HANDLE hSnapshot, LPMODULEENTRY32 lpme){
+
+	BOOL ret = Real_Module32First(hSnapshot, lpme);
+
+	if(ret && ShouldHideProcess(lpme->szModule)){
+			LogAPI("%x     Module32First() HIDING %s", CalledFrom(), lpme->szModule );
+			return My_Module32Next(hSnapshot,lpme);
+	}
+
+	LogAPI("%x     Module32First()", CalledFrom());
+	return ret;
+
+}
+
+
 
 
 //_______________________________________________ install hooks fx 
@@ -1200,21 +1300,51 @@ bool InstallHook( void* real, void* hook, int* thunk, char* name, enum hookType 
 	return false;
 }
 
+//before it was depending on getting the real address from import table, now its explicitly retreived from specified dll
 HMODULE hKernelBase = 0;
+char* curDLL = NULL; 
+char* hooked_dlls[] = {"kernel32.dll","ws2_32.dll","urlmon.dll","wininet.dll","advapi32.dll"}; //global so reference always good..
 
-void DoHook(void* real, void* hook, int* thunk, char* name){
+void DoHook(void* hook, int* thunk, char* name){
 
 	void *lpReal = 0;
-	
-	if(hKernelBase != 0){//its Vista+, see if the export exists there if its in both, 
-		if(Real_GetProcAddress == NULL){
-			lpReal = (void*)GetProcAddress(hKernelBase, name); //k32 is just a forwarder which we cant hook...
-		}else{
-			lpReal = (void*)Real_GetProcAddress(hKernelBase, name); 
+	HMODULE dllBase = 0;
+
+	if(curDLL==NULL){
+		LogAPI("Install %s hook failed...curDll is null..\r\n", name);
+		return;
+	}
+
+	if(strstr(curDLL, "kernel") > 0){
+		if(hKernelBase != 0){//its Vista+, see if the export exists there. if its in both we want kernelBase version instead..
+			if(Real_GetProcAddress == NULL){
+					lpReal = (void*)GetProcAddress(hKernelBase, name); //k32 is just a forwarder which we cant hook...
+			}else{
+					lpReal = (void*)Real_GetProcAddress(hKernelBase, name); 
+			} 
 		}
 	}
 	
-	if(lpReal == 0) lpReal = real;
+	if(lpReal==0){ //it wasnt kernelxx, or not vista+ or not in kernelbase.dll
+		dllBase = GetModuleHandle(curDLL);
+		if(dllBase==0) dllBase = LoadLibrary(curDLL);
+		
+		if(dllBase==0){
+			LogAPI("Install %s hook failed...%s could not be loaded..\r\n", name, curDLL);
+			return;
+		}
+
+		if(Real_GetProcAddress == NULL){
+				lpReal = (void*)GetProcAddress(dllBase, name); //k32 is just a forwarder which we cant hook...
+		}else{
+				lpReal = (void*)Real_GetProcAddress(dllBase, name); 
+		} 
+	}
+
+	if(lpReal==0){ 
+		LogAPI("Install %s hook failed...could not find address in %s..\r\n", name, curDLL);
+		return;
+	}
 
 	if(!InstallHook( lpReal, hook, thunk, name, ht_auto ) ){
 		LogAPI("Install %s hook failed...\r\nError: %s\r\n", name, GetHookError());
@@ -1225,8 +1355,9 @@ void DoHook(void* real, void* hook, int* thunk, char* name){
 
 
 
+
 //Macro wrapper to build DoHook() call
-#define ADDHOOK(name) DoHook( name, My_##name, (int*)&Real_##name, #name );
+#define ADDHOOK(name) DoHook( My_##name, (int*)&Real_##name, #name );
 	
 int ConfigHandlerThreadProc(int x){
 	
@@ -1269,6 +1400,7 @@ void InstallHooks(void)
 	//DO NOT HOOK GetProcAddress or GetModuleHandle we use them below (not in hook engine)..
 	hKernelBase = GetModuleHandle("kernelbase.dll");
 
+	curDLL = hooked_dlls[0];//kernel32.dll = 0
 	ADDHOOK(CreateFileA);
 	ADDHOOK(_lcreat);
 	ADDHOOK(_lopen);
@@ -1280,52 +1412,67 @@ void InstallHooks(void)
 	ADDHOOK(CreateRemoteThread);
 	ADDHOOK(OpenProcess);
 	ADDHOOK(WriteProcessMemory);
+	ADDHOOK(VirtualAllocEx);
+	ADDHOOK(IsDebuggerPresent);
+	//ADDHOOK(GetVersionExA);
+	//ADDHOOK(GlobalAlloc)
+	ADDHOOK(DebugActiveProcess)
+	ADDHOOK(GetSystemTime)
+	ADDHOOK(CreateMutexA)
+	ADDHOOK(ReadProcessMemory)
+	ADDHOOK(CopyFileA)
+	//ADDHOOK(GetCommandLineA);   //useful for finding end of packer
+	ADDHOOK(Sleep)
+	ADDHOOK(GetTickCount)
+	ADDHOOK(CloseHandle)
+	ADDHOOK(CreateToolhelp32Snapshot)
+	ADDHOOK(Process32First) 
+	ADDHOOK(Process32Next) 
+	ADDHOOK(Module32First) 
+	ADDHOOK(Module32Next) 
+
+	curDLL = hooked_dlls[1]; //ws2_32.dll = 1
 	ADDHOOK(accept);
 	ADDHOOK(bind);
 	ADDHOOK(closesocket);
 	ADDHOOK(connect);
 	ADDHOOK(gethostbyaddr);
 	ADDHOOK(gethostbyname);
-	ADDHOOK(VirtualAllocEx);
-
 	ADDHOOK(listen);
 	ADDHOOK(recv);
 	ADDHOOK(send);
 	ADDHOOK(shutdown);
 	ADDHOOK(socket);
-	ADDHOOK(URLDownloadToFileA);    //todo: in sclog this had to go manual lookup test me..
-	ADDHOOK(URLDownloadToCacheFile); // ""
-	//ADDHOOK(GetCommandLineA);   //useful for finding end of packer
-	ADDHOOK(IsDebuggerPresent);
 	
-	//ADDHOOK(GetVersionExA);
-	//ADDHOOK(GlobalAlloc)
-	ADDHOOK(DebugActiveProcess)
-	ADDHOOK(GetSystemTime)
-	ADDHOOK(CreateMutex)
-	ADDHOOK(ReadProcessMemory)
-	ADDHOOK(CopyFile)
+	
+	curDLL = hooked_dlls[2];//Urlmon.dll = 2
+	ADDHOOK(URLDownloadToFileA);    //todo: in sclog this had to go manual lookup test me..
+	ADDHOOK(URLDownloadToCacheFileA); // ""
+	
+	
+	curDLL = hooked_dlls[3];//Wininet.dll =3 
 	ADDHOOK(InternetGetConnectedState)
 
+		
 	//these can add allot of noise 
+	curDLL = hooked_dlls[4];//Advapi32.dll =4 
 	if(noRegistry==0){
 		ADDHOOK(RegCreateKeyA) 
 		ADDHOOK(RegDeleteKeyA) 
 		ADDHOOK(RegDeleteValueA) 
-		ADDHOOK(RegEnumKeyA) 
-		ADDHOOK(RegEnumValueA)
+		//ADDHOOK(RegEnumKeyA) 
+		//ADDHOOK(RegEnumValueA)
 		//ADDHOOK(RegQueryValueA) spamy
+		//ADDHOOK(RegQueryValueExA) spamy
 		ADDHOOK(RegSetValueA)
 		ADDHOOK(RegCreateKeyExA)
 		ADDHOOK(RegOpenKeyA)
 		ADDHOOK(RegOpenKeyExA)
-		//ADDHOOK(RegQueryValueExA) spamy
 		ADDHOOK(RegSetValueExA)
 	}
 
-	ADDHOOK(Sleep)
-	ADDHOOK(GetTickCount)
-	ADDHOOK(CloseHandle)
+
+	
 
 
 	void* real = GetProcAddress( GetModuleHandleA("ntdll.dll"), "ZwQuerySystemInformation");

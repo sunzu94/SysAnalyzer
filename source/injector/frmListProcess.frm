@@ -57,6 +57,24 @@ Begin VB.Form frmListProcess
          Object.Width           =   2540
       EndProperty
    End
+   Begin VB.Label lblRefresh 
+      Caption         =   "Refresh"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   400
+         Underline       =   -1  'True
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00FF0000&
+      Height          =   255
+      Left            =   5040
+      TabIndex        =   2
+      Top             =   3360
+      Width           =   555
+   End
    Begin VB.Menu mnuPopup 
       Caption         =   "mnuPopup"
       Visible         =   0   'False
@@ -113,7 +131,7 @@ Private Sub Command1_Click()
     
 End Sub
 
-Function SelectProcess(c As Collection) As CProcess
+Private Function LoadProccesses(c As Collection)
 
     Dim p As CProcess
     Dim li As ListItem
@@ -135,6 +153,12 @@ Function SelectProcess(c As Collection) As CProcess
         li.SubItems(2) = p.fullpath 'can fail on win7?
     Next
     
+End Function
+
+Function SelectProcess(c As Collection) As CProcess
+
+    LoadProccesses c
+    
     On Error Resume Next
     Me.Show 1
     
@@ -144,6 +168,10 @@ Function SelectProcess(c As Collection) As CProcess
     
 End Function
  
+
+Private Sub lblRefresh_Click()
+    LoadProccesses cpi.GetRunningProcesses
+End Sub
 
 Private Sub Form_Load()
     Dim User As String
@@ -175,6 +203,8 @@ Private Sub Form_Unload(Cancel As Integer)
     On Error Resume Next
     Set selli = Nothing
 End Sub
+
+
 
 Private Sub lv_ColumnClick(ByVal ColumnHeader As MSComctlLib.ColumnHeader)
     LV_ColumnSort lv, ColumnHeader

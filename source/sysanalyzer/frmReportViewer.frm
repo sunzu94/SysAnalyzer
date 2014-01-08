@@ -299,29 +299,29 @@ Private Sub cmdFindAll_Click()
     
     'pretty sure all these like operators hold for vb6 as well.. http://msdn.microsoft.com/en-us/library/8t3khw5f.aspx
     
-    Dim tmp, X, ret(), i, f As String
+    Dim tmp, x, ret(), i, f As String
      
     If Len(txtFind) = 0 Then Exit Sub
     tmp = Split(txtFile.Text, vbCrLf)
     
     'pb.Value = 0
-    For Each X In tmp
+    For Each x In tmp
          i = i + 1
         If InStr(txtFind, "*") > 0 Then
-            If X Like Text1 Then
-                push ret, X
+            If x Like Text1 Then
+                push ret, x
             End If
         Else
-            If InStr(1, X, txtFind, vbTextCompare) > 0 Then
-                push ret, X
+            If InStr(1, x, txtFind, vbTextCompare) > 0 Then
+                push ret, x
             End If
         End If
         'If i Mod 5 = 0 Then setpb i, UBound(tmp)
     Next
     'pb.Value = 0
     
-    X = UBound(ret)
-    If X < 0 Then
+    x = UBound(ret)
+    If x < 0 Then
         Me.Caption = "No results found.."
         Exit Sub
     End If
@@ -397,6 +397,8 @@ Sub OpenAnalysisFolder(Optional fpath As String)
     AddFiles pf, pn
     AddFolder pf, pn
     
+    'todo: remove empty folders from treeview
+    
     If tv.Nodes.count = 1 Then
         txtFile = "It doesnt look like you have run an analysis yet"
     Else
@@ -418,6 +420,7 @@ Sub AddFolder(fpath As String, pn As Node)
             AddFolder CStr(f), n
         Next
     End If
+    
 End Sub
 
 Sub HashDir(dPath As String)
@@ -503,7 +506,7 @@ Private Function GetImageForFile(fpath As String)
     
     ext = fso.GetExtension(fpath)
     
-    If AnyOfTheseInstr(ext, "txt,log,htm,ini") Then
+    If AnyOfTheseInstr(ext, "txt,log,htm,ini,bat") Then
         GetImageForFile = "text"
         Exit Function
     End If
@@ -554,8 +557,8 @@ Private Sub Form_Load()
     If fso.FileExists(ext) Then
         ext = fso.ReadFile(ext)
         tmp = Split(ext, vbCrLf)
-        For Each X In tmp
-            AddExternal CStr(X)
+        For Each x In tmp
+            AddExternal CStr(x)
         Next
     End If
     
@@ -602,7 +605,7 @@ Private Sub Form_Unload(Cancel As Integer)
     SaveFormSizeAnPosition Me
 End Sub
 
-Private Sub lv_MouseUp(Button As Integer, Shift As Integer, X As Single, y As Single)
+Private Sub lv_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     If Button = 2 Then PopupMenu mnuLVPopup
 End Sub
 
@@ -815,7 +818,7 @@ Private Sub tv_DblClick()
     
 End Sub
 
-Private Sub tv_MouseUp(Button As Integer, Shift As Integer, X As Single, y As Single)
+Private Sub tv_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     If Button = 2 Then
         PopupMenu mnuPopup
     End If

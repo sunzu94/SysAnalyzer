@@ -91,12 +91,12 @@ Begin VB.Form frmMain
       TabCaption(2)   =   "Process Dlls"
       TabPicture(2)   =   "Form1.frx":5C4A
       Tab(2).ControlEnabled=   0   'False
-      Tab(2).Control(0)=   "lblIEDlls"
-      Tab(2).Control(1)=   "Label1(0)"
-      Tab(2).Control(2)=   "lvIE"
-      Tab(2).Control(3)=   "lvExplorer"
-      Tab(2).Control(4)=   "fraDlls"
-      Tab(2).Control(5)=   "splitterDlls"
+      Tab(2).Control(0)=   "splitterDlls"
+      Tab(2).Control(1)=   "fraDlls"
+      Tab(2).Control(2)=   "lvExplorer"
+      Tab(2).Control(3)=   "lvIE"
+      Tab(2).Control(4)=   "Label1(0)"
+      Tab(2).Control(5)=   "lblIEDlls"
       Tab(2).ControlCount=   6
       TabCaption(3)   =   "Loaded Drivers"
       TabPicture(3)   =   "Form1.frx":5C66
@@ -111,14 +111,18 @@ Begin VB.Form frmMain
       TabCaption(5)   =   "Api Log"
       TabPicture(5)   =   "Form1.frx":5C9E
       Tab(5).ControlEnabled=   0   'False
-      Tab(5).Control(0)=   "fraAPILog"
-      Tab(5).Control(1)=   "lvAPILog"
+      Tab(5).Control(0)=   "lvAPILog"
+      Tab(5).Control(0).Enabled=   0   'False
+      Tab(5).Control(1)=   "fraAPILog"
+      Tab(5).Control(1).Enabled=   0   'False
       Tab(5).ControlCount=   2
       TabCaption(6)   =   "Directory Watch Data"
       TabPicture(6)   =   "Form1.frx":5CBA
       Tab(6).ControlEnabled=   0   'False
-      Tab(6).Control(0)=   "fraDirWatch"
-      Tab(6).Control(1)=   "lvDirWatch"
+      Tab(6).Control(0)=   "lvDirWatch"
+      Tab(6).Control(0).Enabled=   0   'False
+      Tab(6).Control(1)=   "fraDirWatch"
+      Tab(6).Control(1).Enabled=   0   'False
       Tab(6).ControlCount=   2
       Begin VB.Frame fraAPILog 
          BorderStyle     =   0  'None
@@ -128,12 +132,20 @@ Begin VB.Form frmMain
          TabIndex        =   36
          Top             =   4020
          Width           =   10215
+         Begin VB.CommandButton cmdSaveApiLog 
+            Caption         =   "Save Api Log"
+            Height          =   315
+            Left            =   8280
+            TabIndex        =   43
+            Top             =   420
+            Width           =   1875
+         End
          Begin VB.TextBox txtApiIgnore 
             Height          =   315
-            Left            =   660
+            Left            =   600
             TabIndex        =   40
             Top             =   0
-            Width           =   9555
+            Width           =   7635
          End
          Begin VB.TextBox txtAPIDelete 
             Height          =   315
@@ -155,7 +167,7 @@ Begin VB.Form frmMain
             Height          =   315
             Left            =   8280
             TabIndex        =   37
-            Top             =   420
+            Top             =   0
             Width           =   1935
          End
          Begin VB.Label Label3 
@@ -878,6 +890,10 @@ Option Explicit
 '      ability to runas another user? (explorer injection, screen lockers etc)
 '      make sure IE process running at start of test?
 '      Cstrings - be able to set min match leng
+'      process injection, inject api_log if in use..\
+'      always inject a nodelete.dll ?
+'      add second progress bar to FindStealthInjections dialog, remove global multiscanMode
+'      bug: memory dump of exe happening twice, once explicitly, once from enum loaded modules..
 
 'X      show known db status on wizard, allow to build from there.
 'X      speed up delay in ShowBaseSnapshot before malware launch if known db active
@@ -1002,6 +1018,14 @@ Private Sub cmdIgnoreApi_Click()
     
 End Sub
 
+Private Sub cmdSaveApiLog_Click()
+    On Error Resume Next
+    Dim apilog As String
+    apilog = UserDeskTopFolder & "\api.log"
+    If fso.FileExists(apilog) Then fso.DeleteFile apilog
+    fso.writeFile apilog, GetAllElements(lvAPILog)
+End Sub
+
 Private Sub Form_Load()
     
     On Error Resume Next
@@ -1104,15 +1128,15 @@ Private Sub lvDrivers_ItemClick(ByVal Item As MSComctlLib.ListItem)
     Set liDriver = Item
 End Sub
 
-Private Sub lvDrivers_MouseUp(Button As Integer, Shift As Integer, X As Single, y As Single)
+Private Sub lvDrivers_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     If Button = 2 Then PopupMenu mnuDriversPopup
 End Sub
 
-Private Sub lvExplorer_MouseUp(Button As Integer, Shift As Integer, X As Single, y As Single)
+Private Sub lvExplorer_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     If Button = 2 Then PopupMenu mnuDllsPopup
 End Sub
 
-Private Sub lvIE_MouseUp(Button As Integer, Shift As Integer, X As Single, y As Single)
+Private Sub lvIE_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     If Button = 2 Then PopupMenu mnuDllsPopup
 End Sub
 
@@ -1120,7 +1144,7 @@ Private Sub lvRegKeys_ItemClick(ByVal Item As MSComctlLib.ListItem)
     Set liRegMon = Item
 End Sub
 
-Private Sub lvRegKeys_MouseUp(Button As Integer, Shift As Integer, X As Single, y As Single)
+Private Sub lvRegKeys_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     If Button = 2 Then PopupMenu mnuRegMonitor
 End Sub
 
@@ -1502,6 +1526,8 @@ Private Sub tmrCountDown_Timer()
         frmAnalyzeProcess.AnalyzeKnownProcessesforRWE ProcessesToRWEScan '"explorer.exe,iexplore.exe,"
         Unload frmAnalyzeProcess
         
+        If SSTab1.TabVisible(5) Then cmdSaveApiLog_Click
+    
         ret() = GetSystemDataReport()
         
         If lvProcesses.ListItems.count < 1 Then
@@ -1655,10 +1681,10 @@ Function GetSystemDataReport(Optional appendClipboard As Boolean = False) As Str
     push ret, vbCrLf & "Monitored RegKeys"
     push ret, GetAllElements(lvRegKeys)
      
-    If SSTab1.TabVisible(5) Then
-        push ret, vbCrLf & "Kernel31 Api Log"
-        push ret, GetAllElements(lvAPILog)
-    End If
+    'If SSTab1.TabVisible(5) Then 'these can be to long..
+    '    push ret, vbCrLf & "Kernel31 Api Log"
+    '    push ret, GetAllElements(lvAPILog)
+    'End If
     
     If SSTab1.TabVisible(6) Then
         push ret, vbCrLf & "DirwatchData"
@@ -1704,6 +1730,7 @@ Private Sub Form_Unload(Cancel As Integer)
         If Not isIde() Then
             subclass.DetatchMessage frmApiLogger.hWnd, WM_COPYDATA
         End If
+        If lvAPILog.ListItems.count > 0 Then cmdSaveApiLog_Click
     End If
     
     Set subclass = Nothing
@@ -1722,7 +1749,7 @@ Private Sub Form_Unload(Cancel As Integer)
     Set ado = Nothing
     Set apiDataManager = Nothing
     
-    Unload Me
+    'Unload Me
     End
     
 End Sub
@@ -1874,10 +1901,12 @@ Private Sub subclass_MessageReceived(hWnd As Long, wMsg As Long, wParam As Long,
 End Sub
 
 Function SafeFileCopy(org As String, subfolder As String) As Boolean
+    
     On Error Resume Next
     Dim p As String, i As Long, f As String
     Dim tmp
     Dim size As Long
+    Dim ext As String
     
     i = 1
     p = UserDeskTopFolder & "\" & subfolder & "\"
@@ -1887,10 +1916,13 @@ Function SafeFileCopy(org As String, subfolder As String) As Boolean
     If size = 0 Then Exit Function
     
     f = fso.FileNameFromPath(org)
+    ext = fso.GetExtension(org)
+    
+    If AnyOfTheseInstr(ext, "exe,scr,cpl,bat,com,pdf,doc") Then f = f & "_"
     
     tmp = f
     While fso.FileExists(p & "\" & tmp)
-        tmp = f & "_" & i
+        tmp = f & IIf(VBA.Right(f, 1) = "_", "", "_") & i
         i = i + 1
     Wend
     
@@ -1935,7 +1967,7 @@ End Function
 
 
 
-Private Sub lvProcesses_MouseUp(Button As Integer, Shift As Integer, X As Single, y As Single)
+Private Sub lvProcesses_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     If Button = 2 Then PopupMenu mnuProcessesPopup
 End Sub
 
@@ -2054,7 +2086,7 @@ End Sub
 
 'splitter code
 '------------------------------------------------
-Private Sub splitterDlls_MouseMove(Button As Integer, Shift As Integer, X As Single, y As Single)
+Private Sub splitterDlls_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
     Dim a1&
 
     If Button = 1 Then 'The mouse is down
@@ -2072,7 +2104,7 @@ Private Sub splitterDlls_MouseMove(Button As Integer, Shift As Integer, X As Sin
     End If
 End Sub
 
-Private Sub splitterDlls_MouseUp(Button As Integer, Shift As Integer, X As Single, y As Single)
+Private Sub splitterDlls_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     If Capturing Then
         ReleaseCapture
         Capturing = False

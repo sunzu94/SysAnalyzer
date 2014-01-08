@@ -14,6 +14,15 @@ Begin VB.Form Form2
    Begin VB.CommandButton cmdBrowse 
       Caption         =   "..."
       Height          =   315
+      Index           =   2
+      Left            =   6240
+      TabIndex        =   39
+      Top             =   360
+      Width           =   615
+   End
+   Begin VB.CommandButton cmdBrowse 
+      Caption         =   "..."
+      Height          =   315
       Index           =   1
       Left            =   6240
       TabIndex        =   36
@@ -579,8 +588,10 @@ Private Sub cmdBrowse_Click(Index As Integer)
     If Len(f) = 0 Then Exit Sub
     If Index = 0 Then
         txtPacked = f
-    Else
+    ElseIf Index = 1 Then
         txtDll = f
+    Else
+        txtArgs = f
     End If
 End Sub
 
@@ -600,7 +611,7 @@ Private Sub cmdFind_Click()
     On Error Resume Next
     f = InputBox("Enter string to find in log:")
     If Len(f) = 0 Then Exit Sub
-    For i = 1 To lv.ListItems.Count
+    For i = 1 To lv.ListItems.count
         If InStr(1, lv.ListItems(i).SubItems(1), f, vbTextCompare) > 0 Then
             t = t & "pid: " & lv.ListItems(i).Text & " - " & lv.ListItems(i).SubItems(1) & vbCrLf
         End If
@@ -750,7 +761,7 @@ Private Sub Command4_Click()
     If Len(txtIgnore) > 0 Then
         ignored = Split(txtIgnore, ",")
     End If
-    For i = lv.ListItems.Count To 1 Step -1
+    For i = lv.ListItems.count To 1 Step -1
         If ignoreit(lv.ListItems(i).SubItems(1)) Then
             lv.ListItems.Remove i
         End If
@@ -983,6 +994,7 @@ Private Sub RecieveTextMessage(lParam As Long)
         CopyMemory Buffer(1), ByVal CopyData.lpData, CopyData.cbSize
         temp = StrConv(Buffer, vbUnicode)
         temp = Left$(temp, InStr(1, temp, Chr$(0)) - 1)
+        temp = Trim(temp)
         
         comma = InStr(temp, ",")
         If comma > 0 Then
@@ -1018,7 +1030,7 @@ Private Sub RecieveTextMessage(lParam As Long)
         'dm.HandleApiMessage temp
         
         If InStr(temp, "CloseHandle") > 0 Then Exit Sub 'to much spam
-  
+
   
         'heres where we work with the intercepted message
         If Not noLog Then
@@ -1052,7 +1064,7 @@ Private Sub IncrementLastCount()
     Dim i As Long
     Dim v As Long
     On Error Resume Next
-    i = lv.ListItems.Count
+    i = lv.ListItems.count
     v = CLng(lv.ListItems(i).SubItems(2))
     lv.ListItems(i).SubItems(2) = v + 1
 End Sub
@@ -1087,11 +1099,10 @@ Private Sub txtDll_OLEDragDrop(data As DataObject, Effect As Long, Button As Int
     txtDll = data.Files(1)
 End Sub
 
-Private Sub txtPacked_OLEDragOver(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, y As Single, State As Integer)
+Private Sub txtPacked_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, y As Single)
     On Error Resume Next
     txtPacked = data.Files(1)
 End Sub
-
 
 
 Function IsHex(it) As Long

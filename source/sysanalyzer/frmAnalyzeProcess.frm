@@ -96,12 +96,14 @@ Public Function AnalyzeKnownProcessesforRWE(csvProcessList As String)
             If Len(pName) > 0 Then
                 If InStr(1, cp.path, pName, vbTextCompare) > 0 Then
                     exeBaseName = fso.GetBaseName(cp.path)
-                    AddLine "Scanning " & cp.path
+                    AddLine "Scanning pid:" & cp.pid & " " & cp.path
                     ScanForRWE cp.pid, exeBaseName & "_"
                 End If
             End If
         Next
     Next
+    
+    debugLog "RWE Memory Scan Report:" & vbCrLf & GetReport()
     
     Dim f() As String
     f() = fso.GetFolderFiles(pFolder)
@@ -182,22 +184,29 @@ Public Function AnalyzeProcess(pid As Long) ', Optional memoryMapOnly As Boolean
     End If
     
     Dim dllName As String
+    Dim i As Long
     
     For Each cmod In col
     
         If known.Loaded And known.Ready Then
-            If known.isFileKnown(cmod.path) <> exact_match Then
-                push rep, "Dumping: " & pHex(cmod.Base) & vbTab & cmod.path
-                dllName = fso.FileNameFromPath(cmod.path)
-                If Len(dllName) = 0 Then dllName = pHex(cmod.Base) & ".dll"
-                dllName = pFolder & "\" & dllName & ".dmp"
-                proc.DumpProcessMemory pid, cmod.Base, cmod.size, dllName
-                qdf.QuickDumpFix dllName
+            If i = 0 And Right(cmod.path, 3) = "exe" Then
+                DoEvents 'we already took a memory dump of the main exe..
+            Else
+                If known.isFileKnown(cmod.path) <> exact_match Then
+                    push rep, "Dumping: " & pHex(cmod.Base) & vbTab & cmod.path
+                    dllName = fso.FileNameFromPath(cmod.path)
+                    If Len(dllName) = 0 Then dllName = pHex(cmod.Base) & ".dll"
+                    dllName = pFolder & "\" & dllName & ".dmp"
+                    proc.DumpProcessMemory pid, cmod.Base, cmod.size, dllName
+                    qdf.QuickDumpFix dllName
+                    doStringDump fso.GetBaseName(dllName), dllName
+                End If
             End If
         Else
             'push rep, Hex(cmod.Base) & vbTab & cmod.path
         End If
         
+        i = i + 1
     Next
     
     'If known.Loaded And known.Ready Then ado.CloseConnection
@@ -239,7 +248,7 @@ Public Function AnalyzeProcess(pid As Long) ', Optional memoryMapOnly As Boolean
 End Function
 
 
-Private Sub doStringDump(baseFileName As String, dmpPath As String)
+Private Sub doStringDump(ByVal baseFileName As String, dmpPath As String)
     
     On Error Resume Next
     
@@ -249,6 +258,8 @@ Private Sub doStringDump(baseFileName As String, dmpPath As String)
     Dim tmp() As String
     Dim buf() As String
     Dim extracts() As String
+    
+    If InStr(baseFileName, ".") > 0 Then baseFileName = fso.GetBaseName(baseFileName)
     
     rawStrings = cst.ExtractStrings(dmpPath)
     buf = Split(rawStrings, vbCrLf)
@@ -270,14 +281,14 @@ Private Sub doStringDump(baseFileName As String, dmpPath As String)
         If UBound(tmp) = 0 Then
             push rep, "bad format for grep criteria"
         Else
-            X = Empty
+            x = Empty
             For i = 1 To UBound(tmp)
-                X = X & cst.LineGrep(buf, tmp(i))
+                x = x & cst.LineGrep(buf, tmp(i))
             Next
-            If Len(X) > 0 Then
+            If Len(x) > 0 Then
                 push extracts, tmp(0)
                 push extracts, String(50, "-")
-                push extracts, X
+                push extracts, x
                 push extracts, Empty
             End If
         End If
@@ -297,6 +308,7 @@ Private Sub ScanForRWE(pid As Long, Optional prefix As String = "") 'not x64 com
     
     Dim c As Collection
     Dim cMem As CMemory
+    Dim dmpPath As String
     
     On Error Resume Next
     
@@ -327,12 +339,19 @@ Private Sub ScanForRWE(pid As Long, Optional prefix As String = "") 'not x64 com
             If VBA.Left(proc.ReadMemory(cMem.pid, cMem.Base, 2), 2) = "MZ" Then
                 AddLine pHex(cMem.Base) & " is RWE but not part of an image (CONFIRMED INJECTION) dumping..."
                 push rep, List1.list(List1.ListCount - 1)
-                DumpMemorySection pid, cMem, prefix
+                dmpPath = DumpMemorySection(pid, cMem, prefix)
+                If fso.FileExists(dmpPath) Then
+                    AddLine "Doing a quick dump fix on " & dmpPath
+                    push rep, List1.list(List1.ListCount - 1)
+                    qdf.QuickDumpFix dmpPath
+                End If
             Else
                 s = proc.ReadMemory(cMem.pid, cMem.Base, cMem.size) 'doesnt add that much time
                 entropy = CalculateEntropy(s)
-                If entropy > 50 Then
-                    AddLine pHex(cMem.Base) & " is RWE but not part of an image..possible injection entropy: " & entropy & "%"
+                If entropy > 40 Then
+                    AddLine pHex(cMem.Base) & " is RWE but not part of an image..possible injection entropy: " & entropy & "%  size:" & Hex(cMem.size)
+                    dmpPath = DumpMemorySection(pid, cMem, "raw_" & prefix)
+                    If fso.FileExists(dmpPath) Then AddLine "Memory dump saved as " & dmpPath
                     push rep, List1.list(List1.ListCount - 1)
                 End If
             End If
@@ -346,7 +365,7 @@ Private Sub ScanForRWE(pid As Long, Optional prefix As String = "") 'not x64 com
 
 End Sub
 
-Private Sub DumpMemorySection(pid As Long, cMem As CMemory, Optional prefix As String = "")
+Private Function DumpMemorySection(pid As Long, cMem As CMemory, Optional prefix As String = "") As String
 
     On Error Resume Next
     Dim dmpPath As String
@@ -357,16 +376,18 @@ Private Sub DumpMemorySection(pid As Long, cMem As CMemory, Optional prefix As S
         AddLine "Memory dump of injection successfully saved"
         AddLine "Doing string dump of memory section.."
         doStringDump Hex(cMem.Base), dmpPath
+        DumpMemorySection = dmpPath
     Else
         AddLine "Error saving memory dump: " & Err.Description
     End If
     
-End Sub
+End Function
 
 Private Sub Form_Load()
     On Error Resume Next
     Me.Icon = frmMain.Icon
     RestoreFormSizeAnPosition Me
+    AlwaysOnTop Me
 End Sub
 
 Private Sub Form_Resize()

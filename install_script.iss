@@ -34,7 +34,7 @@ Source: SysAnalyzer.pdb; DestDir: {app}
 Source: known_files.mdb; DestDir: {app}; Flags: uninsneveruninstall onlyifdoesntexist
 Source: dirwatch_ui.exe; DestDir: {app}; Flags: ignoreversion
 Source: shellext.external.txt; DestDir: {app}; Flags: ignoreversion
-Source: windump.exe; DestDir: {app}
+Source: win_dump.exe; DestDir: {app}
 Source: WinPcap_4_1_2.exe; DestDir: {app}
 Source: loadlib.exe; DestDir: {app}
 Source: ShellExt.exe; DestDir: {app}

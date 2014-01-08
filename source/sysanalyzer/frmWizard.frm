@@ -436,9 +436,9 @@ Private Sub lblInterfaces_Click(Index As Integer)
     On Error Resume Next
     Dim f As String
     If isIde() Then
-        f = App.path & "\..\..\windump.exe"
+        f = App.path & "\..\..\win_dump.exe"
     Else
-        f = App.path & "\windump.exe"
+        f = App.path & "\win_dump.exe"
     End If
     
     Shell "cmd /k echo. && """ & f & """ -D && echo. && echo *** Use the interface index from the above list *** && echo.  ", vbNormalFocus
@@ -539,10 +539,9 @@ End Sub
 Private Sub cmdReadme_Click()
     
     Dim r As String
-    r = App.path & "\SysAnalyzer_help.chm"
+    r = App.path & IIf(isIde(), "\..\..", "") & "\SysAnalyzer_help.chm"
     
     If FileExists(r) Then
-        'frmReport.ShowList ReadFile(r)
         ShellExecute 0, "open", r, "", "", 1
     Else
         MsgBox "Readme not found!" & vbCrLf & vbCrLf & r
@@ -586,7 +585,7 @@ Private Sub Form_Load()
     
     cfgFile = App.path & "\cfg.dat"
     networkAnalyzer = App.path & IIf(isIde(), "\..\..", Empty) & "\sniff_hit.exe"
-    tcpdump = App.path & IIf(isIde(), "\..\..", Empty) & "\windump.exe"
+    tcpdump = App.path & IIf(isIde(), "\..\..", Empty) & "\win_dump.exe"
     txtRWEScan = GetMySetting("txtRWEScan", "explorer.exe,iexplore.exe,")
     
     Set c = AvailableInterfaces()
@@ -653,6 +652,11 @@ Sub cmdStart_Click()
             MsgBox "Interface for tcpdump must be numeric and non-zero", vbInformation
             Exit Sub
         End If
+    End If
+    
+    If Len(txtBinary) = 0 Then
+        MsgBox "You must first set a binary to launch or choose skip to goto the main interface and analyze the system manually.", vbInformation
+        Exit Sub
     End If
     
     If Not FileExists(txtBinary) Then
