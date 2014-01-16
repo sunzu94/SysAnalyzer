@@ -9,7 +9,7 @@ Begin VB.Form frmInjectionScan
    LinkTopic       =   "Form1"
    ScaleHeight     =   3720
    ScaleWidth      =   11970
-   StartUpPosition =   3  'Windows Default
+   StartUpPosition =   2  'CenterScreen
    Begin VB.Frame Frame1 
       BorderStyle     =   0  'None
       Height          =   495
@@ -311,6 +311,7 @@ End Sub
 
 Private Sub Form_Load()
 
+     Me.Icon = frmMain.Icon
      lv.ColumnHeaders(6).Width = lv.Width - lv.ColumnHeaders(6).Left - 350 - lv.ColumnHeaders(7).Width
      
      If isIde() Then

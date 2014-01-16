@@ -54,7 +54,7 @@ Private Declare Function NtQuerySystemInformation Lib "ntdll.dll" ( _
 
 Private Type SYSTEM_MODULE_INFORMATION
     reserved(1) As Long                'ULONG reserved[2];
-    base As Long                       'PVOID Base;
+    Base As Long                       'PVOID Base;
     size As Long                       'ULONG Size;
     flags As Long                      'ULONG Flags;
     Index As Integer                   'USHORT Index;
@@ -352,6 +352,14 @@ End Type
 Public SeDebugEnabled As Boolean
 Public x64 As New Cx64
 
+Function SelectProcess() As CProcess
+    Set SelectProcess = frmListProcess.SelectProcess(GetRunningProcesses())
+End Function
+
+Function ShowDllsFor(pid As Long, Optional owner As Object)
+    frmDlls.ShowDllsFor pid, owner
+End Function
+
 Function GetRunningProcesses() As Collection 'of CProcess classes
     
     Dim m_col As New Collection
@@ -567,7 +575,7 @@ Function GetProcessModules(pid As Long) As Collection
          
         Set cmod = New CModule
         cmod.path = mfn
-        cmod.base = lmi.lpBaseOfDll
+        cmod.Base = lmi.lpBaseOfDll
         cmod.size = lmi.SizeOfImage
          
         On Error Resume Next
@@ -650,7 +658,7 @@ Function DumpProcess(pid As Long, fpath As String) As Boolean
     Set col = GetProcessModules(pid)
     Set cmod = col(1)
 
-    DumpProcess = DumpProcessMemory(pid, cmod.base, cmod.size, fpath)
+    DumpProcess = DumpProcessMemory(pid, cmod.Base, cmod.size, fpath)
     
 End Function
 
@@ -862,7 +870,7 @@ Function GetMemoryMap(pid As Long) As Collection 'of CMem
             Set cMem = New CMemory
             cMem.pid = pid
             cMem.size = meminfo.RegionSize
-            cMem.base = cur
+            cMem.Base = cur
             cMem.AllocBase = meminfo.AllocationBase
             cMem.InitialProtection = meminfo.InitialProtect
             cMem.MemType = meminfo.Type

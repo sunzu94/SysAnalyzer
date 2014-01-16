@@ -358,7 +358,7 @@ Private Sub ShowSnapShot(procs As Collection, ports As Collection, servcs As Col
         Set li = frmMain.lvProcesses.ListItems.Add(, , pad(proc.pid))
         li.Tag = proc.pid
         li.SubItems(1) = pad(proc.ParentPID)
-        li.SubItems(2) = proc.user & IIf(proc.is64Bit, "  *64 ", Empty)
+        li.SubItems(2) = proc.User & IIf(proc.is64Bit, "  *64 ", Empty)
         li.SubItems(3) = proc.fullpath ' CProc.GetProcessPath(proc.pid)
         li.ToolTipText = proc.CmdLine
         If mm = exact_match Then SetLiColor li, my_green
@@ -444,16 +444,18 @@ next_iedll:
         End If
         d = Replace(d, "\SystemRoot\", root)
         d = Replace(d, "\??\", Empty)
-        If VBA.Left(d, 2) = "\W" Then d = "c:" & d
-        If InStr(1, d, "c:\", vbTextCompare) < 1 Then
-            If FileExists(root & d) Then
-                d = root & d
-            ElseIf FileExists(root & "system32\" & d) Then
-                d = root & "system32\" & d
-            ElseIf FileExists(root & "system32\drivers\" & d) Then
-                d = root & "system32\drivers\" & d
-            ElseIf FileExists(root & "system\" & d) Then
-                d = root & "system\" & d
+        If Not FileExists(d) Then
+            If VBA.Left(d, 2) = "\W" Then d = "c:" & d
+            If InStr(1, d, "c:\", vbTextCompare) < 1 Then
+                If FileExists(root & d) Then
+                    d = root & d
+                ElseIf FileExists(root & "system32\" & d) Then
+                    d = root & "system32\" & d
+                ElseIf FileExists(root & "system32\drivers\" & d) Then
+                    d = root & "system32\drivers\" & d
+                ElseIf FileExists(root & "system\" & d) Then
+                    d = root & "system\" & d
+                End If
             End If
         End If
         
@@ -504,10 +506,10 @@ End Sub
 'for listview sorting...
 Private Function pad(v, Optional l As Long = 5)
     On Error GoTo hell
-    Dim X As Long
-    X = Len(v)
-    If X < l Then
-        pad = String(l - X, " ") & v
+    Dim x As Long
+    x = Len(v)
+    If x < l Then
+        pad = String(l - x, " ") & v
     Else
 hell:
         pad = v

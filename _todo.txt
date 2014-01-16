@@ -1,4 +1,14 @@
-RWE memory scan - save known injections automatically
-apilog.dll - test enum process hiding for crashes
-tools on main form rwe mem scan
-rwe mem scan and payse all threads on procwatch
+
+ RWE memory scan - save known injections automatically  ?
+ rwe mem scan and pause all threads on procwatch ?
+ always inject a nodelete.dll ?
+ make sure CreateProcess Apilogger hook is crash free..should switch over to CreateProcessInternalW, have it somewhere..
+ TEST MORE WITH WIN7 AND WIN7X64
+ ability to runas another user? (explorer injection, screen lockers etc)
+ make sure IE process running at start of test?
+ Cstrings - be able to set min match leng
+ add second progress bar to FindStealthInjections dialog, remove global multiscanMode
+ update help file
+
+ if ther eis an error launching malware, it current no countdown give better error message
+ block reboot system api in apilog? or detect it and issue shutdown -a command?

@@ -52,6 +52,7 @@ Global cApiData As New Collection
 Global cLogData As New Collection
 Global DebugLogFile As String
 Global START_TIME As Date
+Global procWatchPID As Long
 
 Global Const LANG_US = &H409
 Private Const HWND_NOTOPMOST = -2
@@ -722,7 +723,129 @@ Public Function UserDeskTopFolder() As String
   
 End Function
  
- 
+Sub ScanProcsForDll(Optional lblDisplay As Label = Nothing)
+    Dim cp As New CProcessInfo
+    Dim c As Collection
+    Dim m As Collection
+    Dim p As CProcess
+    Dim cm As CModule
+    Dim ret As String
+    Dim i As Long
+    Dim hit As Boolean
+    Dim tmp As String
+    Dim tmp2 As String
+    Dim mm As matchModes
+    
+    'On Error Resume Next
+    
+    Dim find As String
+    find = InputBox("Enter string fragment of what to look for in dll name or path.")
+    If Len(find) = 0 Then Exit Sub
+    
+    If Not lblDisplay Is Nothing Then lblDisplay.Caption = "Starting scan..."
+    
+    i = 0
+    
+    Set c = cp.GetRunningProcesses()
+    For Each p In c
+        If p.pid <> 0 And p.pid <> 4 Then
+            If Not lblDisplay Is Nothing Then
+                lblDisplay.Caption = "Scanning " & i & "/" & c.count
+                lblDisplay.Refresh
+            End If
+            DoEvents
+            Set m = cp.GetProcessModules(p.pid)
+            If Not m Is Nothing Then
+                If m.count > 0 Then
+                    tmp = "pid: " & p.pid & " " & p.path
+                    hit = False
+                    tmp2 = Empty
+                    For Each cm In m
+                        If InStr(1, cm.path, find, vbTextCompare) > 0 Then
+                           tmp2 = tmp2 & vbTab & Hex(cm.Base) & vbTab & cm.path & vbCrLf
+                           hit = True
+                        End If
+                    Next
+                    If hit Then ret = ret & tmp & tmp2
+                End If
+            End If
+            i = i + 1
+        End If
+    Next
+    
+    If Not lblDisplay Is Nothing Then lblDisplay.Caption = ""
+    
+    If Len(ret) > 0 Then
+        frmReport.ShowList vbCrLf & Replace(ret, Chr(0), Empty)
+    Else
+        MsgBox "No modules found in any process matching your criteria"
+    End If
+    
+
+End Sub
+
+Sub ScanForUnknownMods(Optional lbl As Label = Nothing)
+    Dim cp As New CProcessInfo
+    Dim c As Collection
+    Dim m As Collection
+    Dim p As CProcess
+    Dim cm As CModule
+    Dim ret As String
+    Dim i As Long
+    Dim hit As Boolean
+    Dim tmp As String
+    Dim tmp2 As String
+    Dim mm As matchModes
+    
+    'On Error Resume Next
+    
+    If Not known.Loaded Then
+        MsgBox "Known database is not loaded..", vbInformation
+        Exit Sub
+    End If
+    
+    'ado.OpenConnection
+    If Not lbl Is Nothing Then lbl.Caption = "Starting scan..."
+    
+    i = 0
+    
+    Set c = cp.GetRunningProcesses()
+    For Each p In c
+        If p.pid <> 0 And p.pid <> 4 Then
+            If Not lbl Is Nothing Then lbl.Caption = "Scanning " & i & "/" & c.count
+            Set m = cp.GetProcessModules(p.pid)
+            If Not m Is Nothing And m.count > 0 Then
+                tmp = "pid: " & p.pid & " " & p.path
+                hit = False
+                tmp2 = Empty
+                For Each cm In m
+                    mm = known.isFileKnown(cm.path)
+                    If mm <> exact_match Then
+                       tmp2 = tmp2 & vbCrLf & vbTab & IIf(mm = not_found, "Unknown Mod: ", "Hash Changed: ") & cm.path
+                       hit = True
+                    End If
+                Next
+                If hit Then ret = ret & tmp & tmp2 & vbCrLf & vbCrLf
+            End If
+            i = i + 1
+            DoEvents
+            If Not lbl Is Nothing Then lbl.Refresh
+        End If
+    Next
+    
+    If Not lbl Is Nothing Then lbl.Caption = ""
+    'ado.CloseConnection
+    
+    Const header = "This list may also include files were locked at the time the database was created and could not be hashed for that reason."
+    
+    If Len(ret) > 0 Then
+        frmReport.ShowList vbCrLf & header & vbCrLf & vbCrLf & Replace(ret, Chr(0), Empty)
+    Else
+        MsgBox "No unknown modules found in any process..."
+    End If
+    
+    
+End Sub
 
 Function isIde() As Boolean
     On Error GoTo hell

@@ -112,17 +112,13 @@ Begin VB.Form frmMain
       TabPicture(5)   =   "Form1.frx":5C9E
       Tab(5).ControlEnabled=   0   'False
       Tab(5).Control(0)=   "lvAPILog"
-      Tab(5).Control(0).Enabled=   0   'False
       Tab(5).Control(1)=   "fraAPILog"
-      Tab(5).Control(1).Enabled=   0   'False
       Tab(5).ControlCount=   2
       TabCaption(6)   =   "Directory Watch Data"
       TabPicture(6)   =   "Form1.frx":5CBA
       Tab(6).ControlEnabled=   0   'False
       Tab(6).Control(0)=   "lvDirWatch"
-      Tab(6).Control(0).Enabled=   0   'False
       Tab(6).Control(1)=   "fraDirWatch"
-      Tab(6).Control(1).Enabled=   0   'False
       Tab(6).ControlCount=   2
       Begin VB.Frame fraAPILog 
          BorderStyle     =   0  'None
@@ -828,7 +824,6 @@ Begin VB.Form frmMain
          Caption         =   "Manual Tools"
          Begin VB.Menu mnuScanForUnknownMods 
             Caption         =   "Scan Procs for Unknown Dlls"
-            Enabled         =   0   'False
          End
          Begin VB.Menu mnuScanProcsForDll 
             Caption         =   "Scan Procs For Dll"
@@ -884,36 +879,6 @@ Option Explicit
 '         this program; if not, write to the Free Software Foundation, Inc., 59 Temple
 '         Place, Suite 330, Boston, MA 02111-1307 USA
 '
-'todo (11/2013):
-'      make sure CreateProcess Apilogger hook is crash free..should switch over to CreateProcessInternalW, have it somewhere..
-'      TEST WITH WIN7 AND WIN7X64
-'      ability to runas another user? (explorer injection, screen lockers etc)
-'      make sure IE process running at start of test?
-'      Cstrings - be able to set min match leng
-'      process injection, inject api_log if in use..\
-'      always inject a nodelete.dll ?
-'      add second progress bar to FindStealthInjections dialog, remove global multiscanMode
-'      bug: memory dump of exe happening twice, once explicitly, once from enum loaded modules..
-
-'X      show known db status on wizard, allow to build from there.
-'X      speed up delay in ShowBaseSnapshot before malware launch if known db active
-'X      remove or build in clsAdoKit --> remove annoying msgbox if fail, and screen pointer change
-'X      create a verbose runlog with debug info in case of crash...
-'X      analyze multiple processes if found
-'X      apparent bug in some known files lookups? - was windows update patches being detected.
-'X      integrate virustotal results with report viewer? - tricky because of junk files and delay required, plus all the network traffic..nevermind
-'X      auto run RWE memory scan on new processes
-'X      break reporting into System level and process level
-'X      have dirwatch auto save files (code already in dirwatch.exe)
-'X      savereport can not overwrite old reports...
-'X      progress bar for snapshots, and show main form while loading..
-'X      build analyzze process into main codebase, each process to seperate sub folders
-'X      pull network data in from sniffhit (fix 127.0.0.1 bug)
-'X      way to add files to unknown db from right click on lvExplorer/lvIEdlls/drivers
-'X      splitter for lvExplorer/lvIEdlls
-'X      import CStrings.filter, append filter results to bottom?
-'X      import ShellExt.More external apps menu capabilities to reportviewer.tv.mnupopup
-'X      resize code for apilog window
 
 Private Capturing As Boolean
 Private Declare Function SetCapture Lib "user32" (ByVal hWnd As Long) As Long
@@ -951,8 +916,6 @@ Sub Initalize()
     
     Set subclass = New CSubclass2
    
-    'subclass.AttachMessage Me.hwnd, WM_COPYDATA            'for process_analyzer
-    
     If Me.SSTab1.TabVisible(6) Then
         If Not isIde() Then 'already debugged
             subclass.AttachMessage frmDirWatch.hWnd, WM_COPYDATA
@@ -1040,6 +1003,8 @@ Private Sub Form_Load()
         mnuAddSelectedDllsToKnown.Enabled = True
         mnuScanForUnknownMods.Enabled = True
         mnuAddSelDrivertoKnownDB.Enabled = True
+    Else
+        mnuScanForUnknownMods.Enabled = False
     End If
     
     If known.HideKnownInDisplays Then
@@ -1297,66 +1262,7 @@ Private Sub mnuSaveToAnalysisFolder_Click()
 End Sub
 
 Private Sub mnuScanForUnknownMods_Click()
-    Dim cp As New CProcessInfo
-    Dim c As Collection
-    Dim m As Collection
-    Dim p As CProcess
-    Dim cm As CModule
-    Dim ret As String
-    Dim i As Long
-    Dim hit As Boolean
-    Dim tmp As String
-    Dim tmp2 As String
-    Dim mm As matchModes
-    
-    'On Error Resume Next
-    
-    If Not known.Loaded Then
-        MsgBox "Known database is not loaded..", vbInformation
-        Exit Sub
-    End If
-    
-    'ado.OpenConnection
-    lblDisplay.Caption = "Starting scan..."
-    
-    i = 0
-    
-    Set c = cp.GetRunningProcesses()
-    For Each p In c
-        If p.pid <> 0 And p.pid <> 4 Then
-            lblDisplay.Caption = "Scanning " & i & "/" & c.count
-            Set m = cp.GetProcessModules(p.pid)
-            If Not m Is Nothing And m.count > 0 Then
-                tmp = "pid: " & p.pid & " " & p.path
-                hit = False
-                tmp2 = Empty
-                For Each cm In m
-                    mm = known.isFileKnown(cm.path)
-                    If mm <> exact_match Then
-                       tmp2 = tmp2 & vbCrLf & vbTab & IIf(mm = not_found, "Unknown Mod: ", "Hash Changed: ") & cm.path
-                       hit = True
-                    End If
-                Next
-                If hit Then ret = ret & tmp & tmp2 & vbCrLf & vbCrLf
-            End If
-            i = i + 1
-            DoEvents
-            lblDisplay.Refresh
-        End If
-    Next
-    
-    lblDisplay.Caption = ""
-    'ado.CloseConnection
-    
-    Const header = "This list may also include files were locked at the time the database was created and could not be hashed for that reason."
-    
-    If Len(ret) > 0 Then
-        frmReport.ShowList vbCrLf & header & vbCrLf & vbCrLf & Replace(ret, Chr(0), Empty)
-    Else
-        MsgBox "No unknown modules found in any process..."
-    End If
-    
-    
+    ScanForUnknownMods lblDisplay
 End Sub
 
 Private Sub mnuScanProcForStealthInjects_Click()
@@ -1371,62 +1277,7 @@ Private Sub mnuScanProcForStealthInjects_Click()
 End Sub
 
 Private Sub mnuScanProcsForDll_Click()
-    Dim cp As New CProcessInfo
-    Dim c As Collection
-    Dim m As Collection
-    Dim p As CProcess
-    Dim cm As CModule
-    Dim ret As String
-    Dim i As Long
-    Dim hit As Boolean
-    Dim tmp As String
-    Dim tmp2 As String
-    Dim mm As matchModes
-    
-    'On Error Resume Next
-    
-    Dim find As String
-    find = InputBox("Enter string fragment of what to look for in dll name or path.")
-    If Len(find) = 0 Then Exit Sub
-    
-    lblDisplay.Caption = "Starting scan..."
-    
-    i = 0
-    
-    Set c = cp.GetRunningProcesses()
-    For Each p In c
-        If p.pid <> 0 And p.pid <> 4 Then
-            lblDisplay.Caption = "Scanning " & i & "/" & c.count
-            lblDisplay.Refresh
-            DoEvents
-            Set m = cp.GetProcessModules(p.pid)
-            If Not m Is Nothing Then
-                If m.count > 0 Then
-                    tmp = "pid: " & p.pid & " " & p.path
-                    hit = False
-                    tmp2 = Empty
-                    For Each cm In m
-                        If InStr(1, cm.path, find, vbTextCompare) > 0 Then
-                           tmp2 = tmp2 & vbTab & Hex(cm.Base) & vbTab & cm.path & vbCrLf
-                           hit = True
-                        End If
-                    Next
-                    If hit Then ret = ret & tmp & tmp2
-                End If
-            End If
-            i = i + 1
-        End If
-    Next
-    
-    lblDisplay.Caption = ""
-    
-    If Len(ret) > 0 Then
-        frmReport.ShowList vbCrLf & Replace(ret, Chr(0), Empty)
-    Else
-        MsgBox "No modules found in any process matching your criteria"
-    End If
-    
-
+    ScanProcsForDll lblDisplay
 End Sub
 
 Private Sub mnuSearch_Click()
@@ -1718,7 +1569,10 @@ Private Sub Form_Unload(Cancel As Integer)
     
     SaveFormSizeAnPosition Me
     tmrCountDown.Enabled = False
-    'subclass.DetatchMessage Me.hwnd, WM_COPYDATA   'for process analyzer
+     
+    If procWatchPID <> 0 Then
+        diff.CProc.TerminateProces procWatchPID
+    End If
      
     If Me.SSTab1.TabVisible(6) Then
         If Not isIde() Then

@@ -1,30 +1,30 @@
 VERSION 5.00
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
-Begin VB.Form Form2 
+Begin VB.Form frmMain 
    Caption         =   "Monitoring for new Processes"
-   ClientHeight    =   4365
+   ClientHeight    =   2925
    ClientLeft      =   165
    ClientTop       =   450
-   ClientWidth     =   6900
+   ClientWidth     =   10950
    Icon            =   "Form2.frx":0000
    LinkTopic       =   "Form2"
-   ScaleHeight     =   4365
-   ScaleWidth      =   6900
+   ScaleHeight     =   2925
+   ScaleWidth      =   10950
    StartUpPosition =   3  'Windows Default
    Begin VB.Timer Timer1 
       Enabled         =   0   'False
       Interval        =   1200
-      Left            =   6360
-      Top             =   3900
+      Left            =   10110
+      Top             =   2310
    End
    Begin MSComctlLib.ListView lvProc 
-      Height          =   4245
+      Height          =   2775
       Left            =   30
       TabIndex        =   0
       Top             =   60
-      Width           =   6795
-      _ExtentX        =   11986
-      _ExtentY        =   7488
+      Width           =   10845
+      _ExtentX        =   19129
+      _ExtentY        =   4895
       View            =   3
       LabelEdit       =   1
       LabelWrap       =   -1  'True
@@ -36,7 +36,7 @@ Begin VB.Form Form2
       BackColor       =   -2147483643
       BorderStyle     =   1
       Appearance      =   1
-      NumItems        =   4
+      NumItems        =   5
       BeginProperty ColumnHeader(1) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
          Text            =   "Start"
          Object.Width           =   2469
@@ -48,11 +48,16 @@ Begin VB.Form Form2
       EndProperty
       BeginProperty ColumnHeader(3) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
          SubItemIndex    =   2
-         Text            =   "pid"
+         Text            =   "PID"
          Object.Width           =   2540
       EndProperty
       BeginProperty ColumnHeader(4) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
          SubItemIndex    =   3
+         Text            =   "CmdLine"
+         Object.Width           =   2540
+      EndProperty
+      BeginProperty ColumnHeader(5) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+         SubItemIndex    =   4
          Text            =   "Path"
          Object.Width           =   2540
       EndProperty
@@ -83,7 +88,7 @@ Begin VB.Form Form2
       End
    End
 End
-Attribute VB_Name = "Form2"
+Attribute VB_Name = "frmMain"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
@@ -101,8 +106,27 @@ Public fso As New CFileSystem2
 Dim cpi As New CProcessInfo
 Dim procs As Collection 'of CProcess
 Dim selli As ListItem
+Dim logFile As String
+Public samplePath As String 'for frmreport
+Public Enum matchModes      'for bs in modfileprops
+    dummy = 0
+End Enum
 
 Private Sub Form_Load()
+    Dim tmp As String, a As Long
+    On Error Resume Next
+    
+    If App.PrevInstance Then End
+    
+    tmp = Command
+    a = InStr(tmp, "/log=")
+    If a > 0 Then
+        tmp = Trim(Mid(tmp, a + 5))
+        tmp = Replace(tmp, """", Empty)
+        Me.Caption = "logging to file: " & tmp
+        logFile = tmp
+    End If
+            
     Set procs = cpi.GetRunningProcesses()
     Timer1.Enabled = True
 End Sub
@@ -112,8 +136,22 @@ Private Sub Form_Resize()
     With lvProc
         .Width = Me.Width - 500
         .Height = Me.Height - 500
-        .ColumnHeaders(.ColumnHeaders.Count).Width = .Width - .ColumnHeaders(.ColumnHeaders.Count).Left - 200
+        .ColumnHeaders(.ColumnHeaders.count).Width = .Width - .ColumnHeaders(.ColumnHeaders.count).Left - 200
     End With
+End Sub
+
+Private Sub lvProc_DblClick()
+    Dim tmp(), i As Long
+    If selli Is Nothing Then Exit Sub
+    'push tmp, "Start: " & selli.Text
+    For i = 1 To lvProc.ColumnHeaders.count
+        If i = 1 Then
+            push tmp, lvProc.ColumnHeaders(i).Text & ": " & selli.Text
+        Else
+            push tmp, lvProc.ColumnHeaders(i).Text & ": " & selli.SubItems(i - 1)
+        End If
+    Next
+    frmReport.ShowList tmp, , "", False
 End Sub
 
 Private Sub lvProc_ItemClick(ByVal Item As MSComctlLib.ListItem)
@@ -190,6 +228,10 @@ Private Sub Timer1_Timer()
                 SetLiColor li, vbRed
                 RemoveProcess p
                 li.Selected = False
+                If Len(logFile) > 0 Then
+                    On Error Resume Next
+                    fso.AppendFile logFile, Time & vbTab & Hex(p.pid) & vbTab & "TERMINATED" & vbTab & p.path
+                End If
             End If
         End If
     Next
@@ -211,7 +253,7 @@ Function RemoveProcess(p As CProcess)
     
     Dim p2 As CProcess
     Dim i As Long
-    For i = 1 To procs.Count
+    For i = 1 To procs.count
         Set p2 = procs(i)
         If p2.pid = p.pid And p2.path = p.path Then
             procs.Remove i
@@ -252,9 +294,15 @@ Function AddPid(p As CProcess)
    
     Set li = lvProc.ListItems.Add(, , Time)
     li.SubItems(2) = Hex(p.pid)
-    li.SubItems(3) = cpi.GetProcessPath(p.pid)
+    li.SubItems(3) = p.CmdLine
+    li.SubItems(4) = cpi.GetProcessPath(p.pid)
     Set li.Tag = p
     procs.Add p
+    
+    If Len(logFile) > 0 Then
+        On Error Resume Next
+        fso.AppendFile logFile, Time & vbTab & Hex(p.pid) & vbTab & li.SubItems(4) & vbTab & p.CmdLine
+    End If
     
 End Function
 
@@ -288,25 +336,25 @@ Function GetMySetting(key, def)
     GetMySetting = GetSetting(App.EXEName, "General", key, def)
 End Function
 
-Sub SaveMySetting(key, value)
-    SaveSetting App.EXEName, "General", key, value
+Sub SaveMySetting(key, Value)
+    SaveSetting App.EXEName, "General", key, Value
 End Sub
 
-Sub push(ary, value) 'this modifies parent ary object
+Sub push(ary, Value) 'this modifies parent ary object
     On Error GoTo init
     Dim x As Integer
     x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
-    ary(UBound(ary)) = value
+    ary(UBound(ary)) = Value
     Exit Sub
-init:     ReDim ary(0): ary(0) = value
+init:     ReDim ary(0): ary(0) = Value
 End Sub
 
 Function GetAllElements(lv As ListView) As String
     Dim ret() As String, i As Integer, tmp As String
     Dim li As ListItem
 
-    For i = 1 To lv.ColumnHeaders.Count
+    For i = 1 To lv.ColumnHeaders.count
         tmp = tmp & lv.ColumnHeaders(i).Text & vbTab
     Next
 
@@ -315,7 +363,7 @@ Function GetAllElements(lv As ListView) As String
 
     For Each li In lv.ListItems
         tmp = li.Text & vbTab
-        For i = 1 To lv.ColumnHeaders.Count - 1
+        For i = 1 To lv.ColumnHeaders.count - 1
             tmp = tmp & li.SubItems(i) & vbTab
         Next
         push ret, tmp

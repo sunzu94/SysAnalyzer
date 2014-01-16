@@ -246,6 +246,7 @@ End Sub
 
 Private Sub Form_Load()
     On Error Resume Next
+    Me.Icon = frmMain.Icon
     lv.ColumnHeaders(5).Width = lv.Width - lv.ColumnHeaders(5).Left - 350
     lv2.Move lv.Left, lv.top, lv.Width, lv.Height
     lv2.ColumnHeaders(3).Width = lv2.Width - lv2.ColumnHeaders(3).Left - 350
@@ -263,7 +264,7 @@ Private Sub lv_ItemClick(ByVal Item As MSComctlLib.ListItem)
     Set selli = Item
 End Sub
 
-Private Sub lv_MouseUp(Button As Integer, Shift As Integer, X As Single, y As Single)
+Private Sub lv_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     If Button = 2 Then PopupMenu mnuPopup
 End Sub
 
@@ -275,7 +276,7 @@ Private Sub lv2_ItemClick(ByVal Item As MSComctlLib.ListItem)
     Set selli = Item
 End Sub
 
-Private Sub lv2_MouseUp(Button As Integer, Shift As Integer, X As Single, y As Single)
+Private Sub lv2_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     If Button = 2 Then PopupMenu mnuPopup2
 End Sub
 

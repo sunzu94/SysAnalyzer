@@ -113,12 +113,12 @@ Private Sub Form_Resize()
     On Error Resume Next
     lv.Width = Me.Width - lv.Left - 200
     lv.ColumnHeaders(3).Width = lv.Width - lv.ColumnHeaders(3).Left - 350
-    lv.Height = Me.Height - lv.Top - 500 - Command1.Height
-    Command1.Top = Me.Height - Command1.Height - 400
+    lv.Height = Me.Height - lv.top - 500 - Command1.Height
+    Command1.top = Me.Height - Command1.Height - 400
     Command1.Left = Me.Width - Command1.Width - 400
 End Sub
 
-Sub ShowDllsFor(pid As Long, owner As Form)
+Sub ShowDllsFor(pid As Long, Optional owner As Object)
     On Error Resume Next
     Dim cm As CModule
     Dim c As Collection
@@ -135,10 +135,8 @@ Sub ShowDllsFor(pid As Long, owner As Form)
         Set li.Tag = cm
     Next
     
-    Unload owner
     Me.Visible = True
-    
-    'Me.Show 1, owner
+    If Not owner Is Nothing Then Me.Show 1, owner
     
 End Sub
 

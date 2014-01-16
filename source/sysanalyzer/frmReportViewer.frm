@@ -154,7 +154,7 @@ Begin VB.Form frmReportViewer
    Begin VB.CommandButton cmdFindAll 
       Caption         =   "All"
       Height          =   315
-      Left            =   9360
+      Left            =   8010
       TabIndex        =   4
       Top             =   120
       Width           =   885
@@ -162,15 +162,15 @@ Begin VB.Form frmReportViewer
    Begin VB.CommandButton cmdSaveChanges 
       Caption         =   "Save Changes"
       Height          =   315
-      Left            =   10800
+      Left            =   12210
       TabIndex        =   5
-      Top             =   120
+      Top             =   150
       Width           =   1275
    End
    Begin VB.CommandButton cmdFind 
       Caption         =   "Find"
       Height          =   315
-      Left            =   8400
+      Left            =   7110
       TabIndex        =   6
       Top             =   120
       Width           =   855
@@ -189,7 +189,31 @@ Begin VB.Form frmReportViewer
       Left            =   4380
       TabIndex        =   7
       Top             =   120
-      Width           =   3915
+      Width           =   2625
+   End
+   Begin VB.TextBox txtReplace 
+      BeginProperty Font 
+         Name            =   "Courier New"
+         Size            =   11.25
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      Height          =   315
+      Left            =   9210
+      TabIndex        =   9
+      Top             =   120
+      Width           =   1665
+   End
+   Begin VB.CommandButton cmdReplace 
+      Caption         =   "Replace"
+      Height          =   315
+      Left            =   10980
+      TabIndex        =   10
+      Top             =   150
+      Width           =   1155
    End
    Begin VB.Label Label1 
       Caption         =   "Find"
@@ -330,6 +354,17 @@ Private Sub cmdFindAll_Click()
     fso.writeFile f, Join(ret, vbCrLf)
     Shell "notepad.exe """ & f & """", vbNormalFocus
     
+    
+End Sub
+
+Private Sub cmdReplace_Click()
+    
+    If Len(txtFind) = 0 Then
+        MsgBox "Nothing to find", vbInformation
+        Exit Sub
+    End If
+    
+    txtFile = Replace(txtFile, txtFind, txtReplace, , , vbTextCompare)
     
 End Sub
 

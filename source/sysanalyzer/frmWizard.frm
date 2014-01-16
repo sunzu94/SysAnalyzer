@@ -5,7 +5,7 @@ Begin VB.Form frmWizard
    Caption         =   "SysAnalyzer Configuration Wizard"
    ClientHeight    =   4755
    ClientLeft      =   45
-   ClientTop       =   435
+   ClientTop       =   720
    ClientWidth     =   9000
    LinkTopic       =   "Form2"
    MaxButton       =   0   'False
@@ -222,6 +222,45 @@ Begin VB.Form frmWizard
       Top             =   180
       Width           =   4005
    End
+   Begin VB.Label lblDisplay 
+      BackColor       =   &H005A5963&
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   400
+         Underline       =   -1  'True
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00E0E0E0&
+      Height          =   255
+      Left            =   1290
+      MousePointer    =   14  'Arrow and Question
+      TabIndex        =   28
+      Top             =   3990
+      Width           =   2295
+   End
+   Begin VB.Label cmdTools 
+      BackColor       =   &H005A5963&
+      Caption         =   "Tools"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   400
+         Underline       =   -1  'True
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00E0E0E0&
+      Height          =   255
+      Left            =   150
+      MousePointer    =   14  'Arrow and Question
+      TabIndex        =   27
+      Top             =   3990
+      Width           =   675
+   End
    Begin VB.Label cmdAbout 
       BackColor       =   &H005A5963&
       Caption         =   "About"
@@ -362,6 +401,55 @@ Begin VB.Form frmWizard
       Top             =   240
       Width           =   915
    End
+   Begin VB.Menu mnuPopup 
+      Caption         =   "mnuPopup"
+      Begin VB.Menu mnuScanForDll 
+         Caption         =   "Scan Processes for DLL"
+      End
+      Begin VB.Menu mnuScanForUnknownMods 
+         Caption         =   "Scan Procs for Unknown Dlls"
+      End
+      Begin VB.Menu mnuSpacer1 
+         Caption         =   "-"
+      End
+      Begin VB.Menu mnuRWEScanAll 
+         Caption         =   "RWE Memory Scan All"
+      End
+      Begin VB.Menu mnuRWEScanSingle 
+         Caption         =   "RWE Memory Scan One"
+      End
+      Begin VB.Menu mnuSpacer2 
+         Caption         =   "-"
+      End
+      Begin VB.Menu mnuReportViewer 
+         Caption         =   "Open Saved Analysis"
+      End
+      Begin VB.Menu mnuKillAllLike 
+         Caption         =   "Kill All Like"
+      End
+      Begin VB.Menu mnuSpacer3 
+         Caption         =   "-"
+      End
+      Begin VB.Menu mnuExternal 
+         Caption         =   "External"
+         Begin VB.Menu mnuExt 
+            Caption         =   "Sniffhit"
+            Index           =   0
+         End
+         Begin VB.Menu mnuExt 
+            Caption         =   "ProcWatch"
+            Index           =   1
+         End
+         Begin VB.Menu mnuExt 
+            Caption         =   "Api Logger"
+            Index           =   2
+         End
+         Begin VB.Menu mnuExt 
+            Caption         =   "DirWatch"
+            Index           =   3
+         End
+      End
+   End
 End
 Attribute VB_Name = "frmWizard"
 Attribute VB_GlobalNameSpace = False
@@ -401,11 +489,16 @@ End Type
  
 Private cfg As config
 Private cfgFile As String
+Private procWatch As String
 
 Private going_toMainUI As Boolean
 
 Private Sub cmdAbout_Click()
     frmAbout.Show 1, Me
+End Sub
+
+Private Sub cmdTools_Click()
+    PopupMenu mnuPopup
 End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
@@ -465,6 +558,85 @@ Private Sub lblSkip_Click()
     going_toMainUI = True
     Unload Me
     
+End Sub
+
+Private Sub mnuExt_Click(Index As Integer)
+    Dim ext(), f As String
+    
+    ext = Array("sniff_hit", "proc_watch", "api_logger", "dirwatch_ui")
+    
+    If isIde() Then
+        f = App.path & "\..\..\" & ext(Index) & ".exe"
+    Else
+        f = App.path & "\" & ext(Index) & ".exe"
+    End If
+    
+    If Not fso.FileExists(f) Then
+        MsgBox "File not found: " & f, vbInformation
+        Exit Sub
+    End If
+    
+    On Error Resume Next
+    Shell f, vbNormalFocus
+    
+End Sub
+
+Private Sub mnuKillAllLike_Click()
+    
+    Dim c As Collection
+    Dim p As CProcess
+    Dim match As String
+    Dim count As Long
+    
+    match = InputBox("Enter parocess name match string to kill off")
+    If Len(match) = 0 Then Exit Sub
+    
+    Set c = diff.CProc.GetRunningProcesses()
+    For Each p In c
+        If InStr(1, p.path, match, vbTextCompare) > 0 Then
+            diff.CProc.TerminateProces p.pid
+            count = count + 1
+        End If
+    Next
+    
+    MsgBox count & " processes terminated", vbInformation
+    
+End Sub
+
+Private Sub mnuReportViewer_Click()
+    Dim f As String
+    f = dlg.FolderDialog(, Me.hWnd)
+    If Len(f) > 0 Then
+        frmReportViewer.OpenAnalysisFolder f
+    End If
+End Sub
+
+Private Sub mnuRWEScanAll_Click()
+    frmInjectionScan.StealthInjectionScan
+End Sub
+
+Private Sub mnuRWEScanSingle_Click()
+    
+    Dim p As CProcess
+    Set p = diff.CProc.SelectProcess()
+    
+    If p Is Nothing Then Exit Sub
+    
+    If diff.CProc.x64.IsProcess_x64(p.pid) <> r_32bit Then
+        MsgBox x64Error, vbInformation
+        Exit Sub
+    End If
+    
+    frmInjectionScan.FindStealthInjections p.pid, p.path
+    
+End Sub
+
+Private Sub mnuScanForDll_Click()
+    ScanProcsForDll lblDisplay
+End Sub
+
+Private Sub mnuScanForUnknownMods_Click()
+    ScanForUnknownMods lblDisplay
 End Sub
 
 Private Sub txtBinary_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, y As Single)
@@ -569,22 +741,28 @@ Private Sub Form_Load()
     
     Dim c As Collection
     Dim ip
+        
+    mnuPopup.Visible = False
     
     START_TIME = Now
     DebugLogFile = UserDeskTopFolder & "\debug.log"
     If fso.FileExists(DebugLogFile) Then fso.DeleteFile DebugLogFile
     fso.writeFile DebugLogFile, "Starting " & START_TIME
     
+    mnuScanForUnknownMods.Enabled = False
+    
     If Not known.Ready Then
         lblKnown.Caption = "Not found"
     ElseIf known.Loaded Then
         lblKnown.Caption = "Loaded"
+        mnuScanForUnknownMods.Enabled = True
     Else
         lblKnown.Caption = "Empty"
     End If
     
     cfgFile = App.path & "\cfg.dat"
     networkAnalyzer = App.path & IIf(isIde(), "\..\..", Empty) & "\sniff_hit.exe"
+    procWatch = App.path & IIf(isIde(), "\..\..", Empty) & "\proc_watch.exe"
     tcpdump = App.path & IIf(isIde(), "\..\..", Empty) & "\win_dump.exe"
     txtRWEScan = GetMySetting("txtRWEScan", "explorer.exe,iexplore.exe,")
     
@@ -685,8 +863,15 @@ Sub cmdStart_Click()
             End If
         End If
     End If
-    
+        
     If chkPacketCapture.Value = 1 Then launchtcpdump
+    
+    'must be last external process to launch as it monitors others...
+    If fso.FileExists(procWatch) Then
+        procWatchPID = Shell(procWatch & " /log=" & UserDeskTopFolder & "\ProcWatch.txt", vbMinimizedNoFocus)
+    End If
+
+    fso.Copy txtBinary, UserDeskTopFolder 'save a copy of the main malware executable for analysis folder..
     
     going_toMainUI = True
     frmMain.Initalize
@@ -807,7 +992,7 @@ Private Sub tmrDelayShell_Timer()
             Shell App.path & "\loadlib.exe """ & txtBinary & """"
         Else
             debugLog "Starting malware directly"
-            Shell txtBinary & " " & txtArgs
+2            Shell txtBinary & " " & txtArgs
         End If
     End If
     
@@ -821,7 +1006,16 @@ Private Sub tmrDelayShell_Timer()
     
 Exit Sub
 hell:
-    MsgBox Err.Description
+    If Erl = 2 Then
+        'I could also fall back on using ShellExecute(open,cmdline) here..I should latter though..
+        MsgBox "There was an error launching the malware directly. This could be due to an unsupported file extension such as doc,pdf, or cpl." & _
+               vbCrLf & vbCrLf & "For files such as these which can not be launched directly, you can use the parent application as the , and the malware as the argument." & _
+               vbCrLf & vbCrLf & "The count down has not been initiated. You can now manually launch the file, and then after a period of time choose Tools->Take Snapshot 2" & _
+               " and then choose Tools->Show Diff Report.", vbInformation
+    Else
+        MsgBox Err.Description
+    End If
+    
 End Sub
 
 
