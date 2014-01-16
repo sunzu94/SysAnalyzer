@@ -47,7 +47,7 @@ DWORD	  (__stdcall *Real_WaitForSingleObject)(HANDLE a0,DWORD a1) = NULL;
 HANDLE	  (__stdcall *Real_CreateRemoteThread)(HANDLE a0,LPSECURITY_ATTRIBUTES a1,DWORD a2,LPTHREAD_START_ROUTINE a3,LPVOID a4,DWORD a5,LPDWORD a6) = NULL;
 HANDLE	  (__stdcall *Real_OpenProcess)(DWORD a0,BOOL a1,DWORD a2) = NULL;
 BOOL	  (__stdcall *Real_WriteProcessMemory)(HANDLE a0,LPVOID a1,LPVOID a2,DWORD a3,LPDWORD a4) = NULL;
-HMODULE  (__stdcall *Real_GetModuleHandleA)(LPCSTR a0) = NULL;
+//HMODULE  (__stdcall *Real_GetModuleHandleA)(LPCSTR a0) = NULL;
 SOCKET	  (__stdcall *Real_accept)(SOCKET a0,sockaddr* a1,int* a2) = NULL;
 int	  (__stdcall *Real_bind)(SOCKET a0,SOCKADDR_IN* a1,int a2) = NULL;
 int	  (__stdcall *Real_closesocket)(SOCKET a0) = NULL;
@@ -106,19 +106,39 @@ void LogAPI(const char*, ...);
 bool Warned=false;
 HWND hServer=0;
 int DumpAt=0;
+char *dllPath = 0;
 
 extern int myPID;
 
-void GetDllPath(char* buf){ //returns full path of dll
+char* GetDllPath(){ //returns full path of dll
 	
+	if(dllPath != 0) return dllPath;
+
 	HMODULE h = GetModuleHandleA("api_log.dll");
 	if( h == NULL ) h = GetModuleHandleA("api_log.x64.dll");
-	if( h == NULL ){ buf[0]=0; return;}
+	if( h == NULL ){ return 0;}
 
-	HANDLE hProc = Real_OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 0 , GetCurrentProcessId() );
-	GetModuleFileNameExA(hProc, h , buf, MAX_PATH);
-	CloseHandle(hProc);
+	HANDLE hSnapshot = Real_CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, GetCurrentProcessId() ); 
+    if (hSnapshot != INVALID_HANDLE_VALUE)
+    {
+      MODULEENTRY32 ModuleEntry32;
+      ModuleEntry32.dwSize = sizeof(MODULEENTRY32);
+      if (Real_Module32First(hSnapshot, &ModuleEntry32))
+      {
+         do
+         {
+            if ( ModuleEntry32.hModule == h)
+            {
+               dllPath = strdup(ModuleEntry32.szExePath); //full path 
+               break;
+            }
+         }
+         while (Real_Module32Next(hSnapshot, &ModuleEntry32));
+      }
+      Real_CloseHandle(hSnapshot); 
+	}
 
+	return dllPath;
 }
 
 /*

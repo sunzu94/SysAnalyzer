@@ -1,0 +1,4 @@
+RWE memory scan - save known injections automatically
+apilog.dll - test enum process hiding for crashes
+tools on main form rwe mem scan
+rwe mem scan and payse all threads on procwatch

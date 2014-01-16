@@ -602,6 +602,7 @@ HANDLE __stdcall My_OpenProcess(DWORD a0,BOOL a1,DWORD a2)
     return ret;
 }
 
+/*
 HMODULE __stdcall My_GetModuleHandleA(char* a0)
 {
 	/* nice idea but vmware hook.dll freaks out or i suck one of the two...
@@ -613,7 +614,7 @@ HMODULE __stdcall My_GetModuleHandleA(char* a0)
 		return 0;
 	}
 	
-	free(my);*/
+	free(my);* /
 
 	LogAPI("%x     GetModuleHandleA(%s)", CalledFrom(), a0);
 
@@ -625,7 +626,7 @@ HMODULE __stdcall My_GetModuleHandleA(char* a0)
 
     return ret;
 }
-
+*/
 
 
 UINT __stdcall My_WinExec(LPCSTR a0,UINT a1)
@@ -659,6 +660,7 @@ BOOL __stdcall My_DeleteFileA(LPCSTR a0)
 
 }
 
+//should switch this over to CreateProcessInternalW hook..
 BOOL __stdcall My_CreateProcessA(LPCSTR a0,LPSTR a1,LPSECURITY_ATTRIBUTES a2,LPSECURITY_ATTRIBUTES a3,BOOL a4,DWORD a5,LPVOID a6,LPCSTR a7,struct _STARTUPINFOA* si,LPPROCESS_INFORMATION pi)
 {
 
@@ -670,7 +672,7 @@ BOOL __stdcall My_CreateProcessA(LPCSTR a0,LPSTR a1,LPSECURITY_ATTRIBUTES a2,LPS
 	unsigned long writeLen, hThread;
 	HANDLE hProcess, lpdllPath;
    
-	char dllPath[MAX_PATH]; // = "api_log.dll\x00";
+	char* dll=0;
 
     BOOL retv = 0;
     try {
@@ -682,36 +684,37 @@ BOOL __stdcall My_CreateProcessA(LPCSTR a0,LPSTR a1,LPSECURITY_ATTRIBUTES a2,LPS
 
 		retv = Real_CreateProcessA(a0, a1, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, si, pi);
 		
-		GetDllPath( (char*)dllPath );
-		buflen = strlen(dllPath);
+		dll = GetDllPath();
+		if(dll){
+			buflen = strlen(dll);
+			
+			if(buflen > 0){
 
-		LogAPI("*****   Injecting %s into new process", dllPath);
+				LogAPI("*****   Injecting %s into new process", dll);
 
-		hProcess = Real_OpenProcess(PROCESS_ALL_ACCESS, 0, pi->dwProcessId);
-		LogAPI("*****   OpenProcess Handle=%x",hProcess);
-              
-		lpdllPath = VirtualAllocEx(hProcess, 0, buflen, MEM_COMMIT, PAGE_READWRITE);
-		LogAPI("*****   Remote Allocation base: %x", lpdllPath);
-        
-		ret = Real_WriteProcessMemory(hProcess, lpdllPath, dllPath, buflen, &writeLen);
-		LogAPI("*****   WriteProcessMemory=%x BufLen=%x  BytesWritten:%x", ret, buflen, writeLen);
-            
-		lpfnLoadLib = (int)Real_GetProcAddress(Real_GetModuleHandleA("kernel32.dll"), "LoadLibraryA");
-		
-		//_asm mov lpfnLoadLib, eax
+				hProcess = Real_OpenProcess(PROCESS_ALL_ACCESS, 0, pi->dwProcessId);
+				LogAPI("*****   OpenProcess Handle=%x",hProcess);
+		              
+				if(hProcess != INVALID_HANDLE_VALUE)
+				{
+					lpdllPath = Real_VirtualAllocEx(hProcess, 0, buflen, MEM_COMMIT, PAGE_READWRITE);
+					LogAPI("*****   Remote Allocation base: %x", lpdllPath);
+			        
+					if(lpdllPath){
+						ret = Real_WriteProcessMemory(hProcess, lpdllPath, dll, buflen, &writeLen);
+						LogAPI("*****   WriteProcessMemory=%x BufLen=%x  BytesWritten:%x", ret, buflen, writeLen);
+				            
+						lpfnLoadLib = (int)GetProcAddress(GetModuleHandleA("kernel32.dll"), "LoadLibraryA");
+						LogAPI("*****   LoadLibraryA=%x",lpfnLoadLib);
+				    
+						ret = (int)Real_CreateRemoteThread(hProcess, 0, 0, (LPTHREAD_START_ROUTINE)lpfnLoadLib, lpdllPath, 0, &hThread);
+						LogAPI("*****   CreateRemoteThread=%x" , ret);
+					}
+				}
+			}
+		}
 
-		LogAPI("*****   LoadLibraryA=%x",lpfnLoadLib);
-    
-		ret = (int)Real_CreateRemoteThread(hProcess, 0, 0, (LPTHREAD_START_ROUTINE)lpfnLoadLib, lpdllPath, 0, &hThread);
-		LogAPI("*****   CreateRemoteThread=%x" , ret);
-            
 	    if(a5 != CREATE_SUSPENDED) ResumeThread(pi->hThread);
-
-		/*if(strlen(flags) > 1){
-			LogAPI("%x     CreateProcessA(%s,%s,%x,%s, %s) hProc=%x hThread=%x", CalledFrom(), a0, a1, a6, a7, flags, pi->hProcess, pi->hThread);
-		}else{
-			LogAPI("%x     CreateProcessA(%s,%s,%x,%s,flags=0x%x) hProc=%x hThread=%x", CalledFrom(), a0, a1, a6, a7, a5, pi->hProcess, pi->hThread);
-		}*/
 
 		Real_CloseHandle(hProcess);
 
@@ -797,7 +800,7 @@ HMODULE __stdcall My_LoadLibraryA(char* a0)
 }
 
 
- 
+ /*
 FARPROC __stdcall My_GetProcAddress(HMODULE a0,LPCSTR a1)
 {
 	
@@ -816,6 +819,7 @@ FARPROC __stdcall My_GetProcAddress(HMODULE a0,LPCSTR a1)
 
     return ret;
 }
+*/
 
 
 //-----------------------------------------------------------------
@@ -1233,11 +1237,16 @@ int ShouldHideProcess(char* exe){
 
 BOOL __stdcall My_Process32Next(HANDLE hSnapshot, LPPROCESSENTRY32 lppe){
 
+	if(!lppe) return FALSE;
+
 	BOOL ret = Real_Process32Next(hSnapshot, lppe);
 
 	if(ret && ShouldHideProcess(lppe->szExeFile)){
 		LogAPI("%x     Process32Next() HIDING %s", CalledFrom(), lppe->szExeFile );
-		return My_Process32Next(hSnapshot,lppe);
+		for(int i=0; i< strlen(lppe->szExeFile); i++){
+			lppe->szExeFile[i] = 'x';
+		}
+		lppe->th32ProcessID = 0xDEADBEEF;
 	}
 
 	LogAPI("%x     Process32Next()", CalledFrom());
@@ -1247,11 +1256,16 @@ BOOL __stdcall My_Process32Next(HANDLE hSnapshot, LPPROCESSENTRY32 lppe){
 
 BOOL __stdcall My_Process32First(HANDLE hSnapshot, LPPROCESSENTRY32 lppe){
 
+	if(!lppe) return FALSE;
+
 	BOOL ret = Real_Process32First(hSnapshot, lppe);
 
 	if(ret && ShouldHideProcess(lppe->szExeFile)){
 			LogAPI("%x     Process32First() HIDING %s", CalledFrom(), lppe->szExeFile );
-			return My_Process32Next(hSnapshot,lppe);
+			for(int i=0; i< strlen(lppe->szExeFile); i++){
+				lppe->szExeFile[i] = 'x';
+			}
+			lppe->th32ProcessID = 0xDEADBEEF;
 	}
 
 	LogAPI("%x     Process32First()", CalledFrom());
@@ -1261,11 +1275,15 @@ BOOL __stdcall My_Process32First(HANDLE hSnapshot, LPPROCESSENTRY32 lppe){
 
 BOOL __stdcall My_Module32Next(HANDLE hSnapshot, LPMODULEENTRY32 lpme){
 
+	if(!lpme) return FALSE;
 	BOOL ret = Real_Module32Next(hSnapshot, lpme);
 
 	if(ret && ShouldHideProcess(lpme->szModule)){
 		LogAPI("%x     Module32Next() HIDING %s", CalledFrom(), lpme->szModule );
-		return My_Module32Next(hSnapshot,lpme);
+		for(int i=0; i< strlen(lpme->szModule); i++){
+				lpme->szModule[i] = 'x';
+		}
+			
 	}
 
 	LogAPI("%x     Module32Next()", CalledFrom());
@@ -1275,11 +1293,14 @@ BOOL __stdcall My_Module32Next(HANDLE hSnapshot, LPMODULEENTRY32 lpme){
 
 BOOL __stdcall My_Module32First(HANDLE hSnapshot, LPMODULEENTRY32 lpme){
 
+	if(!lpme) return FALSE;
 	BOOL ret = Real_Module32First(hSnapshot, lpme);
 
 	if(ret && ShouldHideProcess(lpme->szModule)){
 			LogAPI("%x     Module32First() HIDING %s", CalledFrom(), lpme->szModule );
-			return My_Module32Next(hSnapshot,lpme);
+			for(int i=0; i< strlen(lpme->szModule); i++){
+				lpme->szModule[i] = 'x';
+			}
 	}
 
 	LogAPI("%x     Module32First()", CalledFrom());

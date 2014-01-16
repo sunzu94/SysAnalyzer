@@ -13,10 +13,10 @@ void TakeAPISnapShot(void){
     hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     
     Process32First( hSnap, &pe);
-    printf("process: %s\n", pe.szExeFile);
+    printf("pid: %08X   process: %s\n", pe.th32ProcessID , pe.szExeFile);
 
     while( Process32Next(hSnap, &pe) ){
-		 printf("process: %s\n", pe.szExeFile);
+		 printf("pid: %08X   process: %s\n", pe.th32ProcessID , pe.szExeFile);
 	}
 
 }
