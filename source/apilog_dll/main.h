@@ -22,7 +22,11 @@
 
 #include <intrin.h>
 #include <psapi.h>
+#include <Shlobj.h>
+#include <direct.h>
+
 #pragma comment(lib, "psapi.lib")
+#pragma comment(lib, "Shell32.lib")
 
 
 HMODULE  (__stdcall *Real_LoadLibraryA)(LPCSTR a0) = NULL;
@@ -42,7 +46,7 @@ UINT	  (__stdcall *Real_WinExec)(LPCSTR a0,UINT a1) = NULL;
 BOOL	  (__stdcall *Real_DeleteFileA)(LPCSTR a0) = NULL;
 void	  (__stdcall *Real_ExitProcess)(UINT a0) = NULL;
 void	  (__stdcall *Real_ExitThread)(DWORD a0) = NULL;
-FARPROC  (__stdcall *Real_GetProcAddress)(HMODULE a0,LPCSTR a1) = NULL;
+FARPROC  (__stdcall *Real_GetProcAddress)(HMODULE a0,LPCSTR a1) = NULL; 
 DWORD	  (__stdcall *Real_WaitForSingleObject)(HANDLE a0,DWORD a1) = NULL;
 HANDLE	  (__stdcall *Real_CreateRemoteThread)(HANDLE a0,LPSECURITY_ATTRIBUTES a1,DWORD a2,LPTHREAD_START_ROUTINE a3,LPVOID a4,DWORD a5,LPDWORD a6) = NULL;
 HANDLE	  (__stdcall *Real_OpenProcess)(DWORD a0,BOOL a1,DWORD a2) = NULL;
@@ -71,7 +75,7 @@ BOOL     (__stdcall *Real_DebugActiveProcess)( DWORD a0 ) = NULL;
 BOOL     (__stdcall *Real_ReadFile)( HANDLE a0, LPVOID a1, DWORD a2, LPDWORD a3, LPOVERLAPPED a4 ) = NULL;
 VOID     (__stdcall *Real_GetSystemTime)( LPSYSTEMTIME a0 ) = NULL;
 HANDLE   (__stdcall *Real_CreateMutexA)(int a0, int a1, int a2) = NULL;
-BOOL     (__stdcall *Real_ReadProcessMemory)( HANDLE a0, PVOID64 a1, PVOID64 a2, DWORD a3, LPDWORD a4 ) = NULL;
+BOOL     (__stdcall *Real_ReadProcessMemory)( HANDLE a0, int a1, int a2, int a3, int a4 ) = NULL;
 DWORD    (__stdcall *Real_GetVersion)(void) = NULL;
 BOOL     (__stdcall *Real_CopyFileA)(char* lpExistingFile, char* lpNewFile, BOOL bFailIfExists) = NULL;
 BOOL	  (__stdcall *Real_InternetGetConnectedState)( LPDWORD a0, DWORD a1 ) = NULL;
@@ -106,16 +110,54 @@ void LogAPI(const char*, ...);
 bool Warned=false;
 HWND hServer=0;
 int DumpAt=0;
-char *dllPath = 0;
+char *dllPath = 0; //fullpath to api_log.dll
+char *wpmPath = 0; //WriteProcessMemory Dump path
 
 extern int myPID;
 
-char* GetDllPath(){ //returns full path of dll
+bool FolderExists(char* folder)
+{
+	DWORD rv = GetFileAttributes(folder);
+	if( rv == INVALID_FILE_ATTRIBUTES) return false;
+	if( !(rv & FILE_ATTRIBUTE_DIRECTORY) ) return false;
+	return true;
+}
+
+char* GetWPMDumpPath(){  //WriteProcessMemory Dump path
+
+	if(wpmPath != 0) return wpmPath;
+
+	LPITEMIDLIST pidl;
+	char tmp[600];
+	char* defPath = "c:\\";
+	memset(&tmp,0, 600);
 	
+	if( SHGetSpecialFolderLocation(0, 0, &pidl) != 0 ) return defPath;
+    
+	SHGetPathFromIDListA(pidl, &tmp[0]);
+    CoTaskMemFree(pidl);
+        
+	if( strlen(tmp) == 0 || strlen(tmp) + 30 >= 600) return defPath;
+
+	strcat(tmp,"\\analysis");
+	if( !FolderExists(tmp) ) _mkdir(tmp);
+	if( !FolderExists(tmp) ) return defPath;
+
+	strcat(tmp,"\\WPMDumps");
+	if( !FolderExists(tmp) ) _mkdir(tmp);
+	if( !FolderExists(tmp) ) return defPath;
+
+	wpmPath = strdup(tmp);
+	return wpmPath;
+   
+}
+
+char* GetDllPath(){ //returns full path of dll
+
 	if(dllPath != 0) return dllPath;
 
-	HMODULE h = GetModuleHandleA("api_log.dll");
-	if( h == NULL ) h = GetModuleHandleA("api_log.x64.dll");
+	HMODULE h = GetModuleHandle("api_log.dll");
+	if( h == NULL ) h = GetModuleHandle("api_log.x64.dll");
 	if( h == NULL ){ return 0;}
 
 	HANDLE hSnapshot = Real_CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, GetCurrentProcessId() ); 

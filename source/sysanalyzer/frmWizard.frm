@@ -6,12 +6,12 @@ Begin VB.Form frmWizard
    ClientHeight    =   4755
    ClientLeft      =   45
    ClientTop       =   720
-   ClientWidth     =   9000
+   ClientWidth     =   8955
    LinkTopic       =   "Form2"
    MaxButton       =   0   'False
    MinButton       =   0   'False
    ScaleHeight     =   4755
-   ScaleWidth      =   9000
+   ScaleWidth      =   8955
    ShowInTaskbar   =   0   'False
    StartUpPosition =   2  'CenterScreen
    Begin VB.CommandButton cmdBrowse 
@@ -390,12 +390,20 @@ Begin VB.Form frmWizard
       Top             =   990
       Width           =   975
    End
-   Begin VB.Label Label1 
+   Begin VB.Label lblBinary 
       BackColor       =   &H005A5963&
-      Caption         =   "Executable: "
+      Caption         =   "Executable:"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   400
+         Underline       =   -1  'True
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
       ForeColor       =   &H00E0E0E0&
       Height          =   255
-      Index           =   0
       Left            =   3360
       TabIndex        =   0
       Top             =   240
@@ -447,6 +455,10 @@ Begin VB.Form frmWizard
          Begin VB.Menu mnuExt 
             Caption         =   "DirWatch"
             Index           =   3
+         End
+         Begin VB.Menu mnuExt 
+            Caption         =   "Command Prompt"
+            Index           =   4
          End
       End
    End
@@ -512,6 +524,10 @@ Private Sub Form_Unload(Cancel As Integer)
     End If
 End Sub
 
+Private Sub lblBinary_Click()
+    MsgBox "SysAnalyzer can launch any file type which has a registered shell extension such as doc,pdf,html as well as standard executable extensions such as exe, pif,com, scr etc. Built in support is also included for launching dlls through the use of a helper application. You can also use this textbox to launch the parent application, and use the arguments box to load the specific malicious file", vbInformation
+End Sub
+
 Private Sub lblBuildKnownFileDB_Click()
     
     On Error Resume Next
@@ -561,9 +577,9 @@ Private Sub lblSkip_Click()
 End Sub
 
 Private Sub mnuExt_Click(Index As Integer)
-    Dim ext(), f As String
+    Dim ext(), f As String, ff As String
     
-    ext = Array("sniff_hit", "proc_watch", "api_logger", "dirwatch_ui")
+    ext = Array("sniff_hit", "proc_watch", "api_logger", "dirwatch_ui", "cmd")
     
     If isIde() Then
         f = App.path & "\..\..\" & ext(Index) & ".exe"
@@ -572,8 +588,13 @@ Private Sub mnuExt_Click(Index As Integer)
     End If
     
     If Not fso.FileExists(f) Then
-        MsgBox "File not found: " & f, vbInformation
-        Exit Sub
+        ff = Environ("windir") & "\system32\" & ext(Index) & ".exe"
+        If fso.FileExists(ff) Then
+            f = ff
+        Else
+            MsgBox "File not found: " & f, vbInformation
+            Exit Sub
+        End If
     End If
     
     On Error Resume Next
@@ -725,7 +746,7 @@ End Sub
  
 Private Sub cmdBrowse_Click(Index As Integer)
     Dim x
-    x = dlg.OpenDialog(exeFiles, , "Open file for analysis")
+    x = dlg.OpenDialog(AllFiles, , "Open file for analysis")
     If Len(x) = 0 Then Exit Sub
     If Index = 0 Then
         txtBinary = x
@@ -747,7 +768,7 @@ Private Sub Form_Load()
     START_TIME = Now
     DebugLogFile = UserDeskTopFolder & "\debug.log"
     If fso.FileExists(DebugLogFile) Then fso.DeleteFile DebugLogFile
-    fso.writeFile DebugLogFile, "Starting " & START_TIME
+    fso.writeFile DebugLogFile, "-------[ SysAnalyzer v" & App.Major & "." & App.Minor & "." & App.Revision & "  " & START_TIME & " ]-------" & vbCrLf
     
     mnuScanForUnknownMods.Enabled = False
     
@@ -871,7 +892,12 @@ Sub cmdStart_Click()
         procWatchPID = Shell(procWatch & " /log=" & UserDeskTopFolder & "\ProcWatch.txt", vbMinimizedNoFocus)
     End If
 
-    fso.Copy txtBinary, UserDeskTopFolder 'save a copy of the main malware executable for analysis folder..
+    Dim baseName As String 'save a copy of the main malware executable for analysis folder..
+    Dim saveAs As String
+    
+    baseName = "sample_" & fso.FileNameFromPath(txtBinary)
+    saveAs = UserDeskTopFolder & "\" & baseName & "_"
+    If Not fso.FileExists(saveAs) Then FileCopy txtBinary, saveAs
     
     going_toMainUI = True
     frmMain.Initalize
@@ -992,7 +1018,23 @@ Private Sub tmrDelayShell_Timer()
             Shell App.path & "\loadlib.exe """ & txtBinary & """"
         Else
             debugLog "Starting malware directly"
-2            Shell txtBinary & " " & txtArgs
+            
+            Dim ret As Long
+            Dim args As String
+             
+            args = txtArgs
+            If InStr(args, " ") > 0 Then args = """" & args & """"
+             
+            'this will handle word docs, pdfs, cpls, htms etc, not just exes
+            'as long as a handler is registered for extension and extension is
+            'correct for file type.
+            ret = ShellExecute(0, "open", """" & txtBinary & """", args, fso.GetParentFolder(txtBinary), 1)
+            If ret <= 32 Then
+                debugLog "ShellExecute failed, trying VB Shell command.."
+2               Shell txtBinary & " " & txtArgs, vbNormalFocus
+            End If
+             
+             
         End If
     End If
     
@@ -1008,7 +1050,7 @@ Exit Sub
 hell:
     If Erl = 2 Then
         'I could also fall back on using ShellExecute(open,cmdline) here..I should latter though..
-        MsgBox "There was an error launching the malware directly. This could be due to an unsupported file extension such as doc,pdf, or cpl." & _
+        MsgBox "There was an error launching the malware directly. This could be due to an unknown file extension. ShellExecute did not know how to launch it." & _
                vbCrLf & vbCrLf & "For files such as these which can not be launched directly, you can use the parent application as the , and the malware as the argument." & _
                vbCrLf & vbCrLf & "The count down has not been initiated. You can now manually launch the file, and then after a period of time choose Tools->Take Snapshot 2" & _
                " and then choose Tools->Show Diff Report.", vbInformation

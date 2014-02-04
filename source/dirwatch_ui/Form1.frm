@@ -4,7 +4,7 @@ Begin VB.Form frmMain
    Caption         =   "DirWatchTargetWindow"
    ClientHeight    =   6090
    ClientLeft      =   60
-   ClientTop       =   345
+   ClientTop       =   630
    ClientWidth     =   10170
    Icon            =   "Form1.frx":0000
    LinkMode        =   1  'Source
@@ -216,7 +216,6 @@ Begin VB.Form frmMain
    End
    Begin VB.Menu mnuPopup 
       Caption         =   "mnuPopup"
-      Visible         =   0   'False
       Begin VB.Menu mnuAddFolder 
          Caption         =   "Add Folder"
       End
@@ -229,12 +228,14 @@ Begin VB.Form frmMain
    End
    Begin VB.Menu mnuPopup2 
       Caption         =   "mnuPopup2"
-      Visible         =   0   'False
       Begin VB.Menu mnuSaveListing 
          Caption         =   "Save Log"
       End
       Begin VB.Menu mnuSaveSelected 
          Caption         =   "Save All Selected"
+      End
+      Begin VB.Menu mnuViewDirectory 
+         Caption         =   "Open Directory"
       End
       Begin VB.Menu mnuSaveAll 
          Caption         =   "Save All"
@@ -378,6 +379,9 @@ Private Sub Form_Load()
     Dim tmp
     Dim activeDrives
     Dim drive
+    
+    mnuPopup.Visible = False
+    mnuPopup2.Visible = False
     
     activeDrives = GetSetting(App.EXEName, "settings", "activeDrives", "0,")
     txtLogToFile = GetSetting(App.EXEName, "settings", "logfile", UserDeskTopFolder & "\dirwatchlog.txt")
@@ -645,6 +649,21 @@ Function UniqueFile(ByVal f As String, files() As String) As Boolean
     UniqueFile = True
 End Function
 
+
+Private Sub mnuViewDirectory_Click()
+    On Error Resume Next
+    
+    If liDirWatch Is Nothing Then Exit Sub
+    
+    Dim pth As String, pdir As String
+    pth = liDirWatch.SubItems(1)
+    pdir = fso.GetParentFolder(pth)
+    
+    If fso.FolderExists(pdir) Then
+        Shell "explorer.exe """ & pdir & """", vbNormalFocus
+    End If
+    
+End Sub
 
 Private Sub subclass_MessageReceived(hwnd As Long, wMsg As Long, wParam As Long, lParam As Long, Cancel As Boolean)
     Dim msg As String

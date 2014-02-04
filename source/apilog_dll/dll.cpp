@@ -88,9 +88,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 char *strlower(char *s)		
 {
-  char *cp;
-  if ( !(cp=s) )
-    return NULL;
+  char *cp = s;
+  if ( s == NULL ) return NULL;
 
   while ( *s != 0 ) {
     *s = tolower( *s );
@@ -100,13 +99,13 @@ char *strlower(char *s)
 }
 
 char* findProcessByPid(int pid){
-	
+
 	PROCESSENTRY32 pe;
     HANDLE hSnap;
 	int cnt=0;
     char buf[200];
 
-    pe.dwSize = sizeof(pe);
+    pe.dwSize = sizeof(PROCESSENTRY32);
     hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     
     Process32First( hSnap, &pe);
@@ -570,7 +569,6 @@ HANDLE __stdcall My_OpenProcess(DWORD a0,BOOL a1,DWORD a2)
 {
 
 	HANDLE ret = 0;
-	int i=0;
 	
 	char *target = findProcessByPid(a2);
 
@@ -580,16 +578,19 @@ HANDLE __stdcall My_OpenProcess(DWORD a0,BOOL a1,DWORD a2)
 		return 0;
 	}
 
+	int i=0;
 	char* tools[] = {"api_logger.exe","sysanalyzer.exe","ollydbg.exe","windump.exe","sniff_hit.exe",0};
+	char *t = tools[i]; 
 
-	while(tools[i]){
-		if(strcmp(tools[i],target) == 0){
-			LogAPI("%x     OpenProcess(%s) -  PROTECTED", CalledFrom(), target );
+	do{
+		if(strcmp(t , target) == 0){
+			printf("%x     OpenProcess(%s) -  PROTECTED", CalledFrom() , target );
 			free(target);
-			return 0;
+			return 0; 
 		}
 		i++;
-	}
+		t = tools[i]; 
+	}while(t!=0);
 
     try {
         ret = Real_OpenProcess(a0, a1, a2);
@@ -756,11 +757,11 @@ BOOL __stdcall My_WriteProcessMemory(HANDLE a0,LPVOID a1,LPVOID a2,DWORD a3,LPDW
 		);
 	*/
 
-	char buf[255];
+	char buf[700];
 	DWORD written=0;
 
 	//todo lookup handle and relate back to which process name it was handed out for...
-	sprintf(buf, "c:\\wpm_h_%x_mem_%x.bin", a0, a1);
+	sprintf(buf, "%s\\wpm_h_%x_mem_%x.bin", GetWPMDumpPath(), a0, a1);
 	HANDLE h = Real_CreateFileA(buf, GENERIC_READ|GENERIC_WRITE ,0,0,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,0); 
 	/*Real_*/WriteFile(h,a2,a3,&written,0);
 	Real_CloseHandle(h);
@@ -944,13 +945,16 @@ HANDLE __stdcall My_CreateMutexA(int a0, int a1, int a2){
 	}
 	catch(...){}
 	
-	LogAPI("%x     CreateMutexA(%s) = 0x%x", CalledFrom(), a2, ret );
+	char* m = "NULL";
+	if(a2) m = (char*)a2;
+
+	LogAPI("%x     CreateMutexA(%s) = 0x%x", CalledFrom(), m, ret );
 
 	return ret;
 
 }
 
-BOOL __stdcall My_ReadProcessMemory( HANDLE a0, PVOID64 a1, PVOID64 a2, DWORD a3, LPDWORD a4 )
+BOOL __stdcall My_ReadProcessMemory( HANDLE a0, int a1, int a2, int a3, int a4 )
 {
 
 	LogAPI("%x     ReadProcessMemory(h=%x)", CalledFrom(), a0);
@@ -1208,7 +1212,7 @@ HANDLE __stdcall My_CreateToolhelp32Snapshot(DWORD dwFlags, DWORD th32ProcessID)
 }
 
 int ShouldHideProcess(char* exe){
-	
+
 	int found = 0;
 	if(exe==0) return 0;
 	char* tmp = strdup(exe);
@@ -1431,7 +1435,7 @@ void InstallHooks(void)
 	ADDHOOK(ExitProcess);
 	ADDHOOK(ExitThread);
 	ADDHOOK(CreateRemoteThread);
-	ADDHOOK(OpenProcess);
+	//ADDHOOK(OpenProcess);
 	ADDHOOK(WriteProcessMemory);
 	ADDHOOK(VirtualAllocEx);
 	ADDHOOK(IsDebuggerPresent);
@@ -1440,7 +1444,7 @@ void InstallHooks(void)
 	ADDHOOK(DebugActiveProcess)
 	ADDHOOK(GetSystemTime)
 	ADDHOOK(CreateMutexA)
-	ADDHOOK(ReadProcessMemory)
+	ADDHOOK(ReadProcessMemory) //had a bug in its hook prototype..crappy hard to find shit.
 	ADDHOOK(CopyFileA)
 	//ADDHOOK(GetCommandLineA);   //useful for finding end of packer
 	ADDHOOK(Sleep)

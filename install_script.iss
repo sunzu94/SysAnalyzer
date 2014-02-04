@@ -19,7 +19,7 @@ Source: ./dependancy\zlib.dll; DestDir: {app}
 ;
 Source: virustotal.exe; DestDir: {app}; Flags: ignoreversion
 Source: api_log.dll; DestDir: {app}; Flags: ignoreversion
-Source: api_log.x64.dll; DestDir: {app}; Flags: ignoreversion
+;Source: api_log.x64.dll; DestDir: {app}; Flags: ignoreversion
 Source: api_logger.exe; DestDir: {app}; Flags: ignoreversion
 Source: dir_watch.dll; DestDir: {app}; Flags: ignoreversion
 Source: exploit_sigs.txt; DestDir: {app}
