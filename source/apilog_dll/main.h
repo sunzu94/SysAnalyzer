@@ -123,6 +123,23 @@ bool FolderExists(char* folder)
 	return true;
 }
 
+
+char* FileNameFromPath(char* path){
+	if(path==NULL || strlen(path)==0) return strdup("");
+	unsigned int x = strlen(path);
+	while(x > 0){
+		if( path[x-1] == '\\') break;
+		x--;
+	}
+	int sz = strlen(path) - x;
+	char* tmp = (char*)malloc(sz+2);
+	memset(tmp,0,sz+2);
+	for(int i=0; i < sz; i++){
+		tmp[i] = path[x+i];
+	}
+	return tmp;
+}
+
 char* GetWPMDumpPath(){  //WriteProcessMemory Dump path
 
 	if(wpmPath != 0) return wpmPath;
@@ -160,6 +177,13 @@ char* GetDllPath(){ //returns full path of dll
 	if( h == NULL ) h = GetModuleHandle("api_log.x64.dll");
 	if( h == NULL ){ return 0;}
 
+	/*char buf[400];
+	HANDLE hProc = Real_OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 0 , GetCurrentProcessId() );
+	GetModuleFileNameExA(hProc, h , &buf[0], MAX_PATH);
+	CloseHandle(hProc);
+	if(strlen(buf) > 0) dllPath = strdup(buf);
+	*/
+
 	HANDLE hSnapshot = Real_CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, GetCurrentProcessId() ); 
     if (hSnapshot != INVALID_HANDLE_VALUE)
     {
@@ -178,7 +202,7 @@ char* GetDllPath(){ //returns full path of dll
          while (Real_Module32Next(hSnapshot, &ModuleEntry32));
       }
       Real_CloseHandle(hSnapshot); 
-	}
+	} 
 
 	return dllPath;
 }

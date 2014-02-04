@@ -59,7 +59,7 @@ bool Installed =false;
 
 void Closing(void){ msg("***** Injected Process Terminated *****"); exit(0);}
 	
-extern "C" __declspec (dllexport) int NullSub(void){ return 1;}
+extern "C" __declspec (dllexport) int NullSub(void){ return 1;} //so we have an export to hardcode add to pe table if we want.
 
 //Config options..these must all default to 0 because default windProc response = 0 if unhandled by client..
 int noSleep = 0;
@@ -70,6 +70,58 @@ int queryGetTick = 0;
 int blockDebugControl = 0;
 int ignoreExitProcess = 0;
 int myPID = 0;
+
+//only in use for htProcess right now. 
+//I think socket and file/process handles can conflict if memory serves..
+//CloseSocket vrs CloseHandle different functions
+enum HANDLE_TYPES{ htFile=0, htProcess=1, htSocket=2, htUnknown=3 };
+
+struct OPEN_HANDLE{
+	int index;
+	HANDLE h;
+	char* resource;
+	HANDLE_TYPES hType;
+};
+
+int oHandleCnt=0;
+const int maxOpenHandles = 0x1000;
+OPEN_HANDLE OPEN_HANDLES[maxOpenHandles];
+
+OPEN_HANDLE* findOpenHandle(HANDLE h){
+	for(int i=0; i <= oHandleCnt; i++){
+		if(h == OPEN_HANDLES[i].h){ 
+			return &OPEN_HANDLES[i];
+		}
+	}
+	return NULL;
+}
+
+void freeOpenHandle(HANDLE h){
+	OPEN_HANDLE* oh = findOpenHandle(h);
+	if(oh){
+		if(oh->index == oHandleCnt) oHandleCnt--;
+		if(oh->resource) free(oh->resource);
+		memset(oh,0,sizeof(OPEN_HANDLE));
+	}
+}
+
+bool addOpenHandle(HANDLE h, char* res, HANDLE_TYPES hType){
+
+	for(int i=0; i < maxOpenHandles; i++){
+		OPEN_HANDLE* oh = &OPEN_HANDLES[i];
+		if(oh->h == 0){//empty spot lets use it
+			oh->index = i;
+			oh->h = h;
+			if(res) oh->resource = strdup(res); else oh->resource = NULL;
+			oh->hType = hType;
+			if(i > oHandleCnt) oHandleCnt = i;
+			return true;
+		}
+	}
+
+	return false;
+
+}
 
 BOOL APIENTRY DllMain( HANDLE hModule, 
                        DWORD  ul_reason_for_call, 
@@ -149,6 +201,7 @@ LPVOID __stdcall My_VirtualAllocEx( HANDLE a0, LPVOID a1, DWORD a2, DWORD a3, DW
 BOOL __stdcall My_CloseHandle(HANDLE a0)
 {
     
+	freeOpenHandle(a0);
 	LogAPI("%x     CloseHandle(h=%x)", CalledFrom(), a0);
 
     BOOL ret = 0;
@@ -597,6 +650,7 @@ HANDLE __stdcall My_OpenProcess(DWORD a0,BOOL a1,DWORD a2)
     }
 	catch(...){	} 
 
+	addOpenHandle(ret, target, htProcess);
 	LogAPI("%x     OpenProcess(pid=%ld) = 0x%x  - %s", CalledFrom(), a2, ret, target );
 	free(target);
 
@@ -679,11 +733,24 @@ BOOL __stdcall My_CreateProcessA(LPCSTR a0,LPSTR a1,LPSECURITY_ATTRIBUTES a2,LPS
     try {
 
 		if(a0 && strstr(a0,"git.exe") > 0) return 0;
-		if(a0 && !a1)	LogAPI("%x     CreateProcessA(%s)", CalledFrom(), a0);
-		if(a1 && !a0)	LogAPI("%x     CreateProcessA("", %s)", CalledFrom(), a1);
-        if(a1 && a0)	LogAPI("%x     CreateProcessA(%s, %s)", CalledFrom(), a0, a1);
-
+		
 		retv = Real_CreateProcessA(a0, a1, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, si, pi);
+		
+		if(a0 && !a1){
+			LogAPI("%x     CreateProcessA(%s)", CalledFrom(), a0);
+			addOpenHandle( pi->hProcess, (char*)a0, htProcess);
+		}
+
+		if(a1 && !a0){
+			LogAPI("%x     CreateProcessA("", %s)", CalledFrom(), a1);
+			addOpenHandle( pi->hProcess, (char*)a1, htProcess);
+		}
+
+		if(a1 && a0){	
+			LogAPI("%x     CreateProcessA(%s, %s)", CalledFrom(), a0, a1);
+			addOpenHandle( pi->hProcess, (char*)a0, htProcess);
+
+		}
 		
 		dll = GetDllPath();
 		if(dll){
@@ -717,7 +784,7 @@ BOOL __stdcall My_CreateProcessA(LPCSTR a0,LPSTR a1,LPSECURITY_ATTRIBUTES a2,LPS
 
 	    if(a5 != CREATE_SUSPENDED) ResumeThread(pi->hThread);
 
-		Real_CloseHandle(hProcess);
+		//Real_CloseHandle(hProcess); //they might need this for an injection
 
 	}
 	catch(...){	} 
@@ -730,9 +797,20 @@ BOOL __stdcall My_CreateProcessA(LPCSTR a0,LPSTR a1,LPSECURITY_ATTRIBUTES a2,LPS
 
 HANDLE __stdcall My_CreateRemoteThread(HANDLE a0,LPSECURITY_ATTRIBUTES a1,DWORD a2,LPTHREAD_START_ROUTINE a3,LPVOID a4,DWORD a5,LPDWORD a6)
 {
-	
+	char *exeName = 0;
+	OPEN_HANDLE* oh = findOpenHandle(a0);
 
-	LogAPI("%x     CreateRemoteThread(h=%x, start=%x)", CalledFrom(), a0,a3);
+	if(oh && oh->resource){
+		exeName = FileNameFromPath(oh->resource);
+		LogAPI("%x     CreateRemoteThread(%s, start=%x)", CalledFrom(), exeName ,a3); 
+	}else{
+		LogAPI("%x     CreateRemoteThread(h=%x, start=%x)", CalledFrom(), a0,a3);
+	}
+
+	if( (int)a0 != 0 && (int)a0 != -1){
+		//createprocessA will already pre inject this lib, but OpenProcess injections dont so we must catch it here.
+		//todo
+	}
 
     HANDLE ret = 0;
     try {
@@ -740,6 +818,8 @@ HANDLE __stdcall My_CreateRemoteThread(HANDLE a0,LPSECURITY_ATTRIBUTES a1,DWORD 
     }
 	catch(...){	} 
 
+
+	if(exeName) free(exeName);
     return ret;
 
 }
@@ -760,8 +840,16 @@ BOOL __stdcall My_WriteProcessMemory(HANDLE a0,LPVOID a1,LPVOID a2,DWORD a3,LPDW
 	char buf[700];
 	DWORD written=0;
 
-	//todo lookup handle and relate back to which process name it was handed out for...
-	sprintf(buf, "%s\\wpm_h_%x_mem_%x.bin", GetWPMDumpPath(), a0, a1);
+	OPEN_HANDLE* oh = findOpenHandle(a0);
+	if(oh && oh->resource){
+		char *exeName = FileNameFromPath(oh->resource);
+		sprintf(buf, "%s\\wpm_%s_mem_%x.bin", GetWPMDumpPath(), exeName, a1);
+		free(exeName);
+	}
+	else{
+		sprintf(buf, "%s\\wpm_h_%x_mem_%x.bin", GetWPMDumpPath(), a0, a1);
+	}
+	
 	HANDLE h = Real_CreateFileA(buf, GENERIC_READ|GENERIC_WRITE ,0,0,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,0); 
 	/*Real_*/WriteFile(h,a2,a3,&written,0);
 	Real_CloseHandle(h);
@@ -957,7 +1045,12 @@ HANDLE __stdcall My_CreateMutexA(int a0, int a1, int a2){
 BOOL __stdcall My_ReadProcessMemory( HANDLE a0, int a1, int a2, int a3, int a4 )
 {
 
-	LogAPI("%x     ReadProcessMemory(h=%x)", CalledFrom(), a0);
+	OPEN_HANDLE* oh = findOpenHandle(a0);
+	if(oh && oh->resource){
+		LogAPI("%x     ReadProcessMemory(%s, addr=%x, sz=%x)", CalledFrom(), oh->resource, a1, a3);
+	}else{
+		LogAPI("%x     ReadProcessMemory(h=%x, addr=%x, sz=%x)", CalledFrom(), a0, a1, a3);
+	}
 
 	BOOL  ret = 0;
 	try{
@@ -1253,7 +1346,7 @@ BOOL __stdcall My_Process32Next(HANDLE hSnapshot, LPPROCESSENTRY32 lppe){
 		lppe->th32ProcessID = 0xDEADBEEF;
 	}
 
-	LogAPI("%x     Process32Next()", CalledFrom());
+	//LogAPI("%x     Process32Next()", CalledFrom());
 	return ret;
 
 }
@@ -1272,7 +1365,7 @@ BOOL __stdcall My_Process32First(HANDLE hSnapshot, LPPROCESSENTRY32 lppe){
 			lppe->th32ProcessID = 0xDEADBEEF;
 	}
 
-	LogAPI("%x     Process32First()", CalledFrom());
+	//LogAPI("%x     Process32First()", CalledFrom());
 	return ret;
 
 }
@@ -1290,7 +1383,7 @@ BOOL __stdcall My_Module32Next(HANDLE hSnapshot, LPMODULEENTRY32 lpme){
 			
 	}
 
-	LogAPI("%x     Module32Next()", CalledFrom());
+	//LogAPI("%x     Module32Next()", CalledFrom());
 	return ret;
 
 }
@@ -1307,7 +1400,7 @@ BOOL __stdcall My_Module32First(HANDLE hSnapshot, LPMODULEENTRY32 lpme){
 			}
 	}
 
-	LogAPI("%x     Module32First()", CalledFrom());
+	//LogAPI("%x     Module32First()", CalledFrom());
 	return ret;
 
 }
@@ -1422,8 +1515,13 @@ void InstallHooks(void)
 	LogAPI("***config:handler:%x", ConfigHandlerThreadProc);
 	ConfigHandlerThreadProc(0); //first one we do automatically to stay in sync...
 
+	memset(&OPEN_HANDLES, 0, sizeof(OPEN_HANDLE) * maxOpenHandles);
+
 	//DO NOT HOOK GetProcAddress or GetModuleHandle we use them below (not in hook engine)..
 	hKernelBase = GetModuleHandle("kernelbase.dll");
+
+	//before you disable any of these hooks MAKE SURE to grep the source to make sure the 
+	//Real_ versions arent in use in this lib.. or its boom boom time. (not in the good way)
 
 	curDLL = hooked_dlls[0];//kernel32.dll = 0
 	ADDHOOK(CreateFileA);
@@ -1435,7 +1533,7 @@ void InstallHooks(void)
 	ADDHOOK(ExitProcess);
 	ADDHOOK(ExitThread);
 	ADDHOOK(CreateRemoteThread);
-	//ADDHOOK(OpenProcess);
+	ADDHOOK(OpenProcess);
 	ADDHOOK(WriteProcessMemory);
 	ADDHOOK(VirtualAllocEx);
 	ADDHOOK(IsDebuggerPresent);

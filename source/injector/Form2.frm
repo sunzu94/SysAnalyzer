@@ -553,16 +553,19 @@ End Function
 Function AddPid(hex_pid As String)
     Dim li As ListItem
     Dim pid As Long
+    
     On Error Resume Next
+    
     pid = CLng("&h" & hex_pid)
     
-    For Each li In lv.ListItems
-        If li.Tag = pid Then Exit Function
+    For Each li In lvProc.ListItems
+        If li.Text = hex_pid Then Exit Function
     Next
     
-    Set li = lv.ListItems.Add(, , hex_pid)
+    Set li = lvProc.ListItems.Add(, , hex_pid)
     li.SubItems(1) = fso.FileNameFromPath(cpi.GetProcessPath(pid))
     li.Tag = pid
+    
 End Function
 
 Function ignoreit(v) As Boolean
@@ -789,8 +792,8 @@ Private Sub Form_Load()
     
     Dim defaultdll, defaultexe
     
-    If isIde() Then defaultexe = App.path & "\..\..\..\safe_test1.exe"
-    defaultdll = App.path & IIf(isIde(), "\..\..\..", "") & "\api_log.dll"
+    If isIde() Then defaultexe = App.path & "\..\..\safe_test1.exe"
+    defaultdll = App.path & IIf(isIde(), "\..\..", "") & "\api_log.dll"
     If FileExists(defaultdll) Then txtDll = defaultdll
     If FileExists(defaultexe) Then txtPacked = defaultexe
     
