@@ -211,7 +211,7 @@ char* toAscii(char* u){
 	int sz = 0, j=0, i=0;
 
 	for(i=0; i < 500; i++){
-		if( u[i]==0 && u[i+i]==0) break;
+		if( u[i]==0 && u[i+1]==0) break;
 		sz++;
 	}
 

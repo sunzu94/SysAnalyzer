@@ -71,41 +71,46 @@ int blockDebugControl = 0;
 int ignoreExitProcess = 0;
 int myPID = 0;
 
-//only in use for htProcess right now. 
-//I think socket and file/process handles can conflict if memory serves..
-//CloseSocket vrs CloseHandle different functions
-enum HANDLE_TYPES{ htFile=0, htProcess=1, htSocket=2, htUnknown=3 };
+//handles values are not guaranteed unique across these different types, so we must keep track.
+//since files and processes both share use of CloseHandle() we actually call it twice
+enum HANDLE_TYPES{ htFile=0, htProcess=1, htSocket=2, htUnknown=3, htWinInet=4 };
 
 struct OPEN_HANDLE{
 	int index;
 	HANDLE h;
 	char* resource;
 	HANDLE_TYPES hType;
+	int pid; //only for htProcess
+	bool injected;
 };
 
+//we add items in first h=0 slot, freed items clear the slot, we increment cnt if we have to use a new slot up to maxOpenHandles
 int oHandleCnt=0;
 const int maxOpenHandles = 0x1000;
 OPEN_HANDLE OPEN_HANDLES[maxOpenHandles];
 
-OPEN_HANDLE* findOpenHandle(HANDLE h){
+OPEN_HANDLE* findOpenHandle(HANDLE h, HANDLE_TYPES hType){
+	if(h==0) return NULL;
 	for(int i=0; i <= oHandleCnt; i++){
-		if(h == OPEN_HANDLES[i].h){ 
+		if(h == OPEN_HANDLES[i].h && OPEN_HANDLES[i].hType == hType){ 
 			return &OPEN_HANDLES[i];
 		}
 	}
 	return NULL;
 }
 
-void freeOpenHandle(HANDLE h){
-	OPEN_HANDLE* oh = findOpenHandle(h);
+bool freeOpenHandle(HANDLE h, HANDLE_TYPES hType){
+	OPEN_HANDLE* oh = findOpenHandle(h, hType);
 	if(oh){
 		if(oh->index == oHandleCnt) oHandleCnt--;
 		if(oh->resource) free(oh->resource);
 		memset(oh,0,sizeof(OPEN_HANDLE));
+		return true;
 	}
+	return false;
 }
 
-bool addOpenHandle(HANDLE h, char* res, HANDLE_TYPES hType){
+OPEN_HANDLE* addOpenHandle(HANDLE h, char* res, HANDLE_TYPES hType, int pid = 0){
 
 	for(int i=0; i < maxOpenHandles; i++){
 		OPEN_HANDLE* oh = &OPEN_HANDLES[i];
@@ -114,12 +119,13 @@ bool addOpenHandle(HANDLE h, char* res, HANDLE_TYPES hType){
 			oh->h = h;
 			if(res) oh->resource = strdup(res); else oh->resource = NULL;
 			oh->hType = hType;
+			oh->pid = pid;
 			if(i > oHandleCnt) oHandleCnt = i;
-			return true;
+			return oh;
 		}
 	}
 
-	return false;
+	return NULL;
 
 }
 
@@ -201,7 +207,7 @@ LPVOID __stdcall My_VirtualAllocEx( HANDLE a0, LPVOID a1, DWORD a2, DWORD a3, DW
 BOOL __stdcall My_CloseHandle(HANDLE a0)
 {
     
-	freeOpenHandle(a0);
+	if(!freeOpenHandle(a0, htFile)) freeOpenHandle(a0, htProcess);
 	LogAPI("%x     CloseHandle(h=%x)", CalledFrom(), a0);
 
     BOOL ret = 0;
@@ -650,7 +656,7 @@ HANDLE __stdcall My_OpenProcess(DWORD a0,BOOL a1,DWORD a2)
     }
 	catch(...){	} 
 
-	addOpenHandle(ret, target, htProcess);
+	addOpenHandle(ret, target, htProcess, a2);
 	LogAPI("%x     OpenProcess(pid=%ld) = 0x%x  - %s", CalledFrom(), a2, ret, target );
 	free(target);
 
@@ -700,6 +706,24 @@ UINT __stdcall My_WinExec(LPCSTR a0,UINT a1)
 
 }
 
+BOOL __stdcall My_DeleteFileW(LPCWSTR w0)
+{
+	char* a0 = toAscii( (char*)w0); //returns null if passed null
+
+	try{
+		if(a0 && (int)a0 > 0x1000){
+ 			LogAPI("%x     Skipping DeleteFileW(%s)", CalledFrom(), a0); //deleting is never cool nonet or not
+		}
+	}
+	catch(...){}
+
+	if(a0) free(a0);
+
+	return 0;
+	 
+
+}
+
 BOOL __stdcall My_DeleteFileA(LPCSTR a0)
 {
 	
@@ -715,7 +739,82 @@ BOOL __stdcall My_DeleteFileA(LPCSTR a0)
 
 }
 
+
+BOOL __stdcall My_CreateProcessInternalW(DWORD unk1, 
+										LPCTSTR w0,				   /* lpApplicationName*/
+										LPTSTR w1,				   /* lpCommandLine*/
+										LPSECURITY_ATTRIBUTES a2, 
+										LPSECURITY_ATTRIBUTES a3,
+										BOOL a4,                   /* bInheritHandles */
+										DWORD a5,                  /* dwCreationFlags */
+										LPVOID a6,                 /*  lpEnvironment */
+										LPCTSTR a7,                /* lpCurrentDirectory */
+										LPSTARTUPINFO si,
+										LPPROCESS_INFORMATION pi, 
+										DWORD unk2
+				)
+{
+
+	char* flags = "";
+	bool suspended = false;
+
+	if( (a5 & CREATE_SUSPENDED) == CREATE_SUSPENDED){
+		flags = "CREATE_SUSPENDED";
+		suspended = true;
+	}
+
+	char* dll=0;
+    BOOL retv = 0;
+	bool iInjected = false;
+	OPEN_HANDLE *oh = NULL;
+
+	try {
+		
+		char* a0 = toAscii((char*)w0); //will return null if passed null
+		char* a1 = toAscii((char*)w1);
+
+		if(a0 && strstr(a0,"git.exe") > 0) return 0;
+	
+		retv = Real_CreateProcessInternalW(unk1, w0, w1, a2, a3, a4, a5, a6, a7, si, pi, unk2);
+		
+		if(a0 && !a1){
+			LogAPI("%x     CreateProcessInternalW(%s, flags=%x, hProcess=%x)", CalledFrom(), a0, a5, pi->hProcess);
+			oh = addOpenHandle( pi->hProcess, (char*)a0, htProcess, pi->dwProcessId);
+		}
+
+		if(a1 && !a0){
+			LogAPI("%x     CreateProcessInternalW("", %s, flags=%x, hProcess=%x)", CalledFrom(), a1, a5, pi->hProcess);
+			oh = addOpenHandle( pi->hProcess, (char*)a1, htProcess, pi->dwProcessId);
+		}
+
+		if(a1 && a0){	
+			LogAPI("%x     CreateProcessInternalW(%s, %s, flags=%x, hProcess=%x)", CalledFrom(), a0, a1, a5, pi->hProcess);
+			oh = addOpenHandle( pi->hProcess, (char*)a0, htProcess, pi->dwProcessId);
+		}
+		
+		bool iInjected = doInject(pi->dwProcessId, pi->hProcess, pi->hThread, suspended);
+		if(oh) oh->injected = iInjected;
+
+		LogAPI("***** Injection result: %x", iInjected);
+
+		if(!suspended && !iInjected) ResumeThread(pi->hThread);
+		
+		if(a0) free(a0);
+		if(a1) free(a1);
+
+	}
+	catch(...){
+		LogAPI("%x     Error in CreateProcessInternalW()", CalledFrom() );
+	} 
+
+    return retv;
+
+
+
+}
+
 //should switch this over to CreateProcessInternalW hook..
+/*
 BOOL __stdcall My_CreateProcessA(LPCSTR a0,LPSTR a1,LPSECURITY_ATTRIBUTES a2,LPSECURITY_ATTRIBUTES a3,BOOL a4,DWORD a5,LPVOID a6,LPCSTR a7,struct _STARTUPINFOA* si,LPPROCESS_INFORMATION pi)
 {
 
@@ -794,22 +893,40 @@ BOOL __stdcall My_CreateProcessA(LPCSTR a0,LPSTR a1,LPSECURITY_ATTRIBUTES a2,LPS
 
 
 }
+*/
 
 HANDLE __stdcall My_CreateRemoteThread(HANDLE a0,LPSECURITY_ATTRIBUTES a1,DWORD a2,LPTHREAD_START_ROUTINE a3,LPVOID a4,DWORD a5,LPDWORD a6)
 {
 	char *exeName = 0;
-	OPEN_HANDLE* oh = findOpenHandle(a0);
+	bool iInjected = false;
 
-	if(oh && oh->resource){
-		exeName = FileNameFromPath(oh->resource);
-		LogAPI("%x     CreateRemoteThread(%s, start=%x)", CalledFrom(), exeName ,a3); 
+	if( (int)a0 == -1 || (int)a0 == 0){
+		LogAPI("%x     CreateRemoteThread(h=%x, start=%x)", CalledFrom(), a0, a3);
 	}else{
-		LogAPI("%x     CreateRemoteThread(h=%x, start=%x)", CalledFrom(), a0,a3);
-	}
+		OPEN_HANDLE* oh = findOpenHandle(a0, htProcess); //could be from OpenProcess(not injected yet) or CreateProcess(already injected)
 
-	if( (int)a0 != 0 && (int)a0 != -1){
-		//createprocessA will already pre inject this lib, but OpenProcess injections dont so we must catch it here.
-		//todo
+		if(oh){
+			if(oh->resource){
+				exeName = FileNameFromPath(oh->resource);
+				LogAPI("%x     CreateRemoteThread(%s, start=%x) already injected? %x", CalledFrom(), exeName ,a3, oh->injected); 
+				free(exeName);
+				if( !oh->injected ){
+					bool iInjected = doInject(oh->pid, 0, 0, false);
+					LogAPI("***** Api_log doInject(pid=%d) ret=%x", oh->pid, a0, iInjected); 
+					if(iInjected){
+						oh->injected = true;
+					}else{
+						iInjected = doInject(0, a0, 0, false);
+						LogAPI("***** Api_log doInject(hProc=%x) ret=%x", a0, iInjected); 
+						if(iInjected) oh->injected = true;
+					}
+				}
+			}
+		}else{
+			iInjected = doInject(0, a0, 0, false);
+			LogAPI("***** Api_log doInject provided hProc=%x ret=%x", a0, iInjected); 
+			LogAPI("%x     CreateRemoteThread(h=%x, start=%x) (unknown handle?)", CalledFrom(), a0, a3);
+		}
 	}
 
     HANDLE ret = 0;
@@ -818,11 +935,44 @@ HANDLE __stdcall My_CreateRemoteThread(HANDLE a0,LPSECURITY_ATTRIBUTES a1,DWORD 
     }
 	catch(...){	} 
 
+	if(ret==0) LogAPI("*** CreateRemoteThread FAILED");
 
-	if(exeName) free(exeName);
     return ret;
 
 }
+
+//createprocessA will already pre inject this lib, but OpenProcess injections dont so we must catch it here.
+/*if(oh->pid != 0 && !doesProcessHaveApiLogger(oh->pid) ){
+	LogAPI("*** process 0x%x does not have api_log.dll yet..injecting..", oh->pid );
+	dll = GetDllPath();
+	if(dll){
+		buflen = strlen(dll);
+		if(buflen > 0){
+			LogAPI("*****   Injecting %s into new process", dll);
+			hProcess = Real_OpenProcess(PROCESS_ALL_ACCESS, 0, oh->pid);
+			LogAPI("*****   OpenProcess Handle=%x",hProcess);
+			if(hProcess != INVALID_HANDLE_VALUE)
+			{
+				lpdllPath = Real_VirtualAllocEx(hProcess, 0, buflen, MEM_COMMIT, PAGE_READWRITE);
+				LogAPI("*****   Remote Allocation base: %x", lpdllPath);
+				if(lpdllPath){
+					ret1 = Real_WriteProcessMemory(hProcess, lpdllPath, dll, buflen, &writeLen);
+					LogAPI("*****   WriteProcessMemory=%x BufLen=%x  BytesWritten:%x", ret1, buflen, writeLen);
+			            
+					lpfnLoadLib = (int)GetProcAddress(GetModuleHandleA("kernel32.dll"), "LoadLibraryA");
+					LogAPI("*****   LoadLibraryA=%x",lpfnLoadLib);
+			    
+					ret1 = (int)Real_CreateRemoteThread(hProcess, 0, 0, (LPTHREAD_START_ROUTINE)lpfnLoadLib, lpdllPath, 0, &hThread);
+					LogAPI("*****   CreateRemoteThread=%x" , ret1);
+				}
+				Real_CloseHandle(hProcess);
+			}
+		}
+	}
+}
+else{
+	LogAPI("*** process 0x%x already has api_log.dll", oh->pid );
+}*/
 
 BOOL __stdcall My_WriteProcessMemory(HANDLE a0,LPVOID a1,LPVOID a2,DWORD a3,LPDWORD a4)
 {
@@ -840,7 +990,7 @@ BOOL __stdcall My_WriteProcessMemory(HANDLE a0,LPVOID a1,LPVOID a2,DWORD a3,LPDW
 	char buf[700];
 	DWORD written=0;
 
-	OPEN_HANDLE* oh = findOpenHandle(a0);
+	OPEN_HANDLE* oh = findOpenHandle(a0, htProcess);
 	if(oh && oh->resource){
 		char *exeName = FileNameFromPath(oh->resource);
 		sprintf(buf, "%s\\wpm_%s_mem_%x.bin", GetWPMDumpPath(), exeName, a1);
@@ -1045,7 +1195,7 @@ HANDLE __stdcall My_CreateMutexA(int a0, int a1, int a2){
 BOOL __stdcall My_ReadProcessMemory( HANDLE a0, int a1, int a2, int a3, int a4 )
 {
 
-	OPEN_HANDLE* oh = findOpenHandle(a0);
+	OPEN_HANDLE* oh = findOpenHandle(a0, htProcess);
 	if(oh && oh->resource){
 		LogAPI("%x     ReadProcessMemory(%s, addr=%x, sz=%x)", CalledFrom(), oh->resource, a1, a3);
 	}else{
@@ -1340,7 +1490,7 @@ BOOL __stdcall My_Process32Next(HANDLE hSnapshot, LPPROCESSENTRY32 lppe){
 
 	if(ret && ShouldHideProcess(lppe->szExeFile)){
 		LogAPI("%x     Process32Next() HIDING %s", CalledFrom(), lppe->szExeFile );
-		for(int i=0; i< strlen(lppe->szExeFile); i++){
+		for(int i=0; i < strlen(lppe->szExeFile); i++){
 			lppe->szExeFile[i] = 'x';
 		}
 		lppe->th32ProcessID = 0xDEADBEEF;
@@ -1479,6 +1629,11 @@ void DoHook(void* hook, int* thunk, char* name){
 	
 int ConfigHandlerThreadProc(int x){
 	
+	/*if(x==0xDEADBEEF){ //nice idea but you have to undo all the hooks..
+		FreeLibrary( GetModuleHandle("api_log") );
+		return 1;
+	}*/
+
 	noSleep = msg("***config:noSleep");
 	noGetProc = msg("***config:noGetProc");
 	noRegistry = msg("***config:noRegistry");
@@ -1522,14 +1677,18 @@ void InstallHooks(void)
 
 	//before you disable any of these hooks MAKE SURE to grep the source to make sure the 
 	//Real_ versions arent in use in this lib.. or its boom boom time. (not in the good way)
+	
+	//note 2: if you set a regular breakpoint on a hooked windows api, before it is hooked, 
+	//it will fuckup the hook engine because the int3 will be copied to the thunk. 
 
 	curDLL = hooked_dlls[0];//kernel32.dll = 0
 	ADDHOOK(CreateFileA);
 	ADDHOOK(_lcreat);
 	ADDHOOK(_lopen);
-	ADDHOOK(CreateProcessA);
+	//ADDHOOK(CreateProcessA); //now hooking CreateProcessInternalW to catch more code paths..
 	ADDHOOK(WinExec);
 	ADDHOOK(DeleteFileA);
+	ADDHOOK(DeleteFileW); //do we need both?
 	ADDHOOK(ExitProcess);
 	ADDHOOK(ExitThread);
 	ADDHOOK(CreateRemoteThread);
@@ -1594,10 +1753,6 @@ void InstallHooks(void)
 		ADDHOOK(RegSetValueExA)
 	}
 
-
-	
-
-
 	void* real = GetProcAddress( GetModuleHandleA("ntdll.dll"), "ZwQuerySystemInformation");
 	/*if ( !InstallHook( real, My_ZwQuerySystemInformation, Real_ZwQuerySystemInformation) ){ 
 		msg("Install hook ZwQuerySystemInformation failed...Error: \r\n");
@@ -1614,6 +1769,11 @@ void InstallHooks(void)
 	if ( !InstallHook( real, My_ZwSystemDebugControl, (int*)&Real_ZwSystemDebugControl,"ZwSystemDebugControl", ht_jmp ) ){ 
 		msg("Install hook NtSystemDebugControl failed...Error: \r\n");
 	}
+
+	real = GetProcAddress( hKernelBase==0 ? GetModuleHandleA("kernel32.dll") : hKernelBase , "CreateProcessInternalW");
+	if (real==0 || !InstallHook( real, My_CreateProcessInternalW, (int*)&Real_CreateProcessInternalW,"CreateProcessInternalW", ht_jmp ) ){ 
+		msg("Install hook CreateProcessInternalW failed...Error: \r\n");
+	} 
 
 	
 }

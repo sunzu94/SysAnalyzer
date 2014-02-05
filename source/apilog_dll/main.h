@@ -35,22 +35,23 @@ HANDLE   (__stdcall *Real_CreateFileA)(LPCSTR a0,DWORD a1,DWORD a2,LPSECURITY_AT
 HMODULE  (__stdcall *Real_LoadLibraryExA)(LPCSTR a0,HANDLE a1,DWORD a2) = NULL;
 HMODULE  (__stdcall *Real_LoadLibraryExW)(LPCWSTR a0,HANDLE a1,DWORD a2) = NULL;
 HMODULE  (__stdcall *Real_LoadLibraryW)(LPCWSTR a0) = NULL;
-BOOL	  (__stdcall *Real_WriteFileEx)(HANDLE a0,LPCVOID a1,DWORD a2,LPOVERLAPPED a3,LPOVERLAPPED_COMPLETION_ROUTINE a4) ;
+BOOL	 (__stdcall *Real_WriteFileEx)(HANDLE a0,LPCVOID a1,DWORD a2,LPOVERLAPPED a3,LPOVERLAPPED_COMPLETION_ROUTINE a4) ;
 HFILE    (__stdcall *Real__lclose)(HFILE a0) = NULL;
-HFILE	  (__stdcall *Real__lcreat)(LPCSTR a0,int a1) = NULL;
-HFILE	  (__stdcall *Real__lopen)(LPCSTR a0,int a1) = NULL;
-UINT	  (__stdcall *Real__lread)(HFILE a0,LPVOID a1,UINT a2) = NULL;
-UINT	  (__stdcall *Real__lwrite)(HFILE a0,LPCSTR a1,UINT a2) = NULL;
-BOOL	  (__stdcall *Real_CreateProcessA)(LPCSTR a0,LPSTR a1,LPSECURITY_ATTRIBUTES a2,LPSECURITY_ATTRIBUTES a3,BOOL a4,DWORD a5,LPVOID a6,LPCSTR a7,struct _STARTUPINFOA* a8,LPPROCESS_INFORMATION a9) = NULL;
-UINT	  (__stdcall *Real_WinExec)(LPCSTR a0,UINT a1) = NULL;
-BOOL	  (__stdcall *Real_DeleteFileA)(LPCSTR a0) = NULL;
-void	  (__stdcall *Real_ExitProcess)(UINT a0) = NULL;
-void	  (__stdcall *Real_ExitThread)(DWORD a0) = NULL;
+HFILE	 (__stdcall *Real__lcreat)(LPCSTR a0,int a1) = NULL;
+HFILE	 (__stdcall *Real__lopen)(LPCSTR a0,int a1) = NULL;
+UINT	 (__stdcall *Real__lread)(HFILE a0,LPVOID a1,UINT a2) = NULL;
+UINT	 (__stdcall *Real__lwrite)(HFILE a0,LPCSTR a1,UINT a2) = NULL;
+BOOL	 (__stdcall *Real_CreateProcessA)(LPCSTR a0,LPSTR a1,LPSECURITY_ATTRIBUTES a2,LPSECURITY_ATTRIBUTES a3,BOOL a4,DWORD a5,LPVOID a6,LPCSTR a7,struct _STARTUPINFOA* a8,LPPROCESS_INFORMATION a9) = NULL;
+UINT	 (__stdcall *Real_WinExec)(LPCSTR a0,UINT a1) = NULL;
+BOOL	 (__stdcall *Real_DeleteFileA)(LPCSTR a0) = NULL;
+BOOL	 (__stdcall *Real_DeleteFileW)(LPCWSTR w0) = NULL;  
+void	 (__stdcall *Real_ExitProcess)(UINT a0) = NULL;
+void	 (__stdcall *Real_ExitThread)(DWORD a0) = NULL;
 FARPROC  (__stdcall *Real_GetProcAddress)(HMODULE a0,LPCSTR a1) = NULL; 
-DWORD	  (__stdcall *Real_WaitForSingleObject)(HANDLE a0,DWORD a1) = NULL;
-HANDLE	  (__stdcall *Real_CreateRemoteThread)(HANDLE a0,LPSECURITY_ATTRIBUTES a1,DWORD a2,LPTHREAD_START_ROUTINE a3,LPVOID a4,DWORD a5,LPDWORD a6) = NULL;
-HANDLE	  (__stdcall *Real_OpenProcess)(DWORD a0,BOOL a1,DWORD a2) = NULL;
-BOOL	  (__stdcall *Real_WriteProcessMemory)(HANDLE a0,LPVOID a1,LPVOID a2,DWORD a3,LPDWORD a4) = NULL;
+DWORD	 (__stdcall *Real_WaitForSingleObject)(HANDLE a0,DWORD a1) = NULL;
+HANDLE	 (__stdcall *Real_CreateRemoteThread)(HANDLE a0,LPSECURITY_ATTRIBUTES a1,DWORD a2,LPTHREAD_START_ROUTINE a3,LPVOID a4,DWORD a5,LPDWORD a6) = NULL;
+HANDLE	 (__stdcall *Real_OpenProcess)(DWORD a0,BOOL a1,DWORD a2) = NULL;
+BOOL	 (__stdcall *Real_WriteProcessMemory)(HANDLE a0,LPVOID a1,LPVOID a2,DWORD a3,LPDWORD a4) = NULL;
 //HMODULE  (__stdcall *Real_GetModuleHandleA)(LPCSTR a0) = NULL;
 SOCKET	  (__stdcall *Real_accept)(SOCKET a0,sockaddr* a1,int* a2) = NULL;
 int	  (__stdcall *Real_bind)(SOCKET a0,SOCKADDR_IN* a1,int a2) = NULL;
@@ -102,6 +103,7 @@ BOOL   (__stdcall *Real_Process32First)(HANDLE hSnapshot, LPPROCESSENTRY32 lppe)
 BOOL   (__stdcall *Real_Process32Next)(HANDLE hSnapshot, LPPROCESSENTRY32 lppe) = NULL;     // 
 BOOL   (__stdcall *Real_Module32First)(HANDLE hSnapshot, LPMODULEENTRY32 lpme) = NULL;     // 
 BOOL   (__stdcall *Real_Module32Next)(HANDLE hSnapshot, LPMODULEENTRY32 lpme) = NULL;     // 
+BOOL   (__stdcall *Real_CreateProcessInternalW)(DWORD unknown1, LPCSTR a0,LPSTR a1,LPSECURITY_ATTRIBUTES a2,LPSECURITY_ATTRIBUTES a3,BOOL a4,DWORD a5,LPVOID a6,LPCSTR a7,struct _STARTUPINFOA* a8,LPPROCESS_INFORMATION a9, DWORD unknown2) = NULL;
 
 
 void msg(char);
@@ -114,6 +116,86 @@ char *dllPath = 0; //fullpath to api_log.dll
 char *wpmPath = 0; //WriteProcessMemory Dump path
 
 extern int myPID;
+char* GetDllPath();
+
+bool doInject(int pid=0, HANDLE hProcess=0, HANDLE hThread=0, bool isSuspended = false){
+
+	int buflen, ret, lpfnLoadLib ; 
+	unsigned long writeLen ;
+	HANDLE  lpdllPath;
+	char* dll=0;
+    BOOL retv = 0;
+	bool iInjected = false;
+
+	if(pid==0 && hProcess==0){
+		LogAPI("*****   Both pid and hProc cannot be 0");	
+		return false;
+	}
+	if(isSuspended && hThread==0){
+		LogAPI("*****   isSuspended requires a hThread");		
+		return false;
+	}
+
+	dll = GetDllPath();
+	if(!dll){
+		LogAPI("*****   Could not obtain dll path?");	
+		return false;
+	}
+	
+	buflen = strlen(dll);
+	if(buflen == 0){
+		LogAPI("*****   dll path length 0?");	
+		return false;
+	}
+
+	if(hProcess == 0){
+		if(isSuspended){
+			LogAPI("*****   Injecting %s into suspended thread %x for pid %x", dll, hThread, pid);
+		}else{
+			LogAPI("*****   Injecting %s into pid %x", dll, pid);
+		}
+	}else{
+		if(isSuspended){
+			LogAPI("*****   Injecting %s into suspended thread %x for provided hProc %x", dll, hThread, hProcess);
+		}else{
+			LogAPI("*****   Injecting %s into using provided hProc %x", dll, hProcess);
+		}
+	}
+
+	lpfnLoadLib = (int)GetProcAddress(GetModuleHandleA("kernel32.dll"), "LoadLibraryA");
+	LogAPI("*****   LoadLibraryA=%x",lpfnLoadLib);
+			
+	if(hProcess == 0){
+		hProcess = Real_OpenProcess(PROCESS_ALL_ACCESS, 0, pid);
+		LogAPI("*****   OpenProcess hProc %x", hProcess);
+	}
+
+	lpdllPath = Real_VirtualAllocEx( hProcess, 0, buflen, MEM_COMMIT, PAGE_READWRITE);
+	LogAPI("*****   Remote Allocation base: %x", lpdllPath);
+    
+	if(lpdllPath){
+		
+		ret = Real_WriteProcessMemory( hProcess, lpdllPath, dll, buflen, &writeLen);
+		LogAPI("*****   WriteProcessMemory=%x BufLen=%x  BytesWritten:%x", ret, buflen, writeLen);
+	    
+		if(isSuspended){
+			ret = QueueUserAPC( (PAPCFUNC)lpfnLoadLib, hThread, (ULONG_PTR)lpdllPath);
+			LogAPI("*****   QueueUserAPC %s" , (ret==0 ? "FAILED" : "Succeeded") );
+			return ret == 0 ? false : true;
+		}
+		else{
+			ret = (int)Real_CreateRemoteThread(hProcess, 0, 0, (LPTHREAD_START_ROUTINE)lpfnLoadLib, lpdllPath, 0, (LPDWORD)&hThread);
+			LogAPI("*****   CreateRemoteThread=%x  hThread=%x" , ret, hThread);
+			ResumeThread(hThread);
+			return ret == 0 ? false : true;
+		}
+	}
+	 
+	return false;
+}
+		 
+
+
 
 bool FolderExists(char* folder)
 {
@@ -138,6 +220,34 @@ char* FileNameFromPath(char* path){
 		tmp[i] = path[x+i];
 	}
 	return tmp;
+}
+
+//unicode to ascii, ret val must be freed
+char* toAscii(char* u){
+	
+	if( (int) u == 0 ) return 0;
+
+	int sz = 0, j=0, i=0;
+
+	for(i=0; i < 500; i++){
+		if( u[i]==0 && u[i+1]==0) break;
+	}
+	
+	sz = i;
+	if(sz==0) return 0;
+
+	char* tmp = (char*)malloc(sz+2);
+	memset(tmp, 0, sz+2);
+
+	for(int i=0; i < sz; i++){
+		if( u[i]!=0 ){
+			tmp[j] = u[i];
+			j++;
+		}
+	}
+
+	return tmp;
+
 }
 
 char* GetWPMDumpPath(){  //WriteProcessMemory Dump path
@@ -167,6 +277,32 @@ char* GetWPMDumpPath(){  //WriteProcessMemory Dump path
 	wpmPath = strdup(tmp);
 	return wpmPath;
    
+}
+
+bool doesProcessHaveApiLogger(int pid)
+{
+	
+	HANDLE hSnapshot = Real_CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, pid); 
+    if (hSnapshot != INVALID_HANDLE_VALUE)
+    {
+      MODULEENTRY32 ModuleEntry32;
+      ModuleEntry32.dwSize = sizeof(MODULEENTRY32);
+      if (Real_Module32First(hSnapshot, &ModuleEntry32))
+      {
+         do
+         {
+			if(ModuleEntry32.szModule && strstr(ModuleEntry32.szModule, "api_log") > 0)  
+            {
+                 Real_CloseHandle(hSnapshot); 
+				 return true;
+            }
+         }
+         while (Real_Module32Next(hSnapshot, &ModuleEntry32));
+      }
+      Real_CloseHandle(hSnapshot); 
+	} 
+
+	return false;
 }
 
 char* GetDllPath(){ //returns full path of dll
@@ -320,7 +456,7 @@ void FindVBWindow(){
 
 	if(hServer==0){
 		if(!Warned){
-			MessageBox(0,"Could not find msg window","",0);
+			//MessageBox(0,"Could not find msg window","",0);
 			Warned=true;
 		}
 	}

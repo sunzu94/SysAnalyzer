@@ -10,12 +10,48 @@ void init(STARTUPINFO *si, PROCESS_INFORMATION *pi)
 	si->cb = sizeof(STARTUPINFO);
 }
 
+//unicode to ascii, ret val must be freed
+char* toAscii(char* u){
+	
+	if( (int) u == 0 ) return 0;
+
+	int sz = 0, j=0, i=0;
+
+	for(i=0; i < 500; i++){
+		if( u[i]==0 && u[i+1]==0) break;
+	}
+	
+	sz = i;
+	if(sz==0) return 0;
+
+	char* tmp = (char*)malloc(sz+2);
+	memset(tmp, 0, sz+2);
+
+	for(int i=0; i < sz; i++){
+		if( u[i]!=0 ){
+			tmp[j] = u[i];
+			j++;
+		}
+	}
+
+	return tmp;
+
+}
+
+
+
 void main(int argc, char** argv)
 {
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
 
-	//printf("Loading api_log.dll\n", LoadLibrary("D:\\_Installs\\iDef\\github\\SysAnalyzer\\api_log.dll"));
+	/*char tmp[] = {'a', 0x00, 'b', 0x00, 'c', 0x00, 'd', 0x00, 'e', 0x00, 'f', 0x00, 'g', 0x00, 'h', 0x00, 'i', 0x00, 'j', 0x00, 'k', 0x00, 0x00};
+	char* ret1 = toAscii(&tmp[0]);
+	printf("ascii=%s\n",ret1 );
+	free(ret1);
+	return;*/
+
+	printf("Loading api_log.dll\n", LoadLibrary("D:\\_Installs\\iDef\\github\\SysAnalyzer\\api_log.dll"));
 
 	char* exe = "c:\\windows\\notepad.exe";
 
