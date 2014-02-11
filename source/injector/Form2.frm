@@ -316,10 +316,10 @@ Begin VB.Form Form2
    Begin VB.CommandButton Command1 
       Caption         =   "Stop Logging"
       Height          =   375
-      Left            =   1020
+      Left            =   765
       TabIndex        =   9
       Top             =   3900
-      Width           =   1245
+      Width           =   1560
    End
    Begin VB.CommandButton cmdContinue 
       Caption         =   "Continue"
@@ -394,9 +394,9 @@ Begin VB.Form Form2
       Width           =   975
    End
    Begin VB.Label Label2 
-      Caption         =   "API Call Log"
+      Caption         =   "Call Log"
       Height          =   255
-      Left            =   60
+      Left            =   45
       TabIndex        =   3
       Top             =   4050
       Width           =   1035
@@ -1020,45 +1020,41 @@ Private Sub RecieveTextMessage(lParam As Long)
             Exit Sub
         End If
         
+        If noLog Then Exit Sub
         If Len(temp) = 0 Then Exit Sub
-        
-        If lastMsg = temp Then
-            IncrementLastCount
-            Exit Sub 'antispam
-        End If
-            
-        lastMsg = temp
               
         'todo: parse api log and do captures here...
         'dm.HandleApiMessage temp
         
         If InStr(temp, "CloseHandle") > 0 Then Exit Sub 'to much spam
 
+        If lastMsg = temp Then
+            IncrementLastCount
+            Exit Sub 'antispam
+        End If
+            
+        lastMsg = temp
   
         'heres where we work with the intercepted message
-        If Not noLog Then
-            
-            If ignoreit(temp) Then Exit Sub
-            
-            Set li = lv.ListItems.Add(, , pid)
-            li.SubItems(1) = temp
-            li.EnsureVisible
-            
-            If Len(txtDumpAt) > 0 Then
-                If InStr(1, temp, txtDumpAt, vbTextCompare) > 0 Then
-                    'sendMessage is a blocking call so we will sit here till user hits continue
-                    cmdContinue.Enabled = True
-                    readyToReturn = False
-                    While Not readyToReturn
-                        DoEvents
-                        Sleep 60
-                    Wend
-                    cmdContinue.Enabled = False
-                End If
-            End If
-            
-        End If
+        If ignoreit(temp) Then Exit Sub
         
+        Set li = lv.ListItems.Add(, , pid)
+        li.SubItems(1) = temp
+        li.EnsureVisible
+        
+        If Len(txtDumpAt) > 0 Then
+            If InStr(1, temp, txtDumpAt, vbTextCompare) > 0 Then
+                'sendMessage is a blocking call so we will sit here till user hits continue
+                cmdContinue.Enabled = True
+                readyToReturn = False
+                While Not readyToReturn
+                    DoEvents
+                    Sleep 60
+                Wend
+                cmdContinue.Enabled = False
+            End If
+        End If
+
     End If
     
 End Sub

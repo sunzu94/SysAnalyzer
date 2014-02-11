@@ -17,13 +17,22 @@ Begin VB.Form frmAnalyzeProcess
       TabIndex        =   1
       Top             =   3780
       Width           =   9915
+      Begin VB.CommandButton cmdAbort 
+         Caption         =   "Abort"
+         Height          =   540
+         Left            =   9000
+         TabIndex        =   4
+         Top             =   0
+         Visible         =   0   'False
+         Width           =   855
+      End
       Begin MSComctlLib.ProgressBar pb 
          Height          =   255
          Left            =   0
          TabIndex        =   2
          Top             =   0
-         Width           =   9855
-         _ExtentX        =   17383
+         Width           =   8895
+         _ExtentX        =   15690
          _ExtentY        =   450
          _Version        =   393216
          Appearance      =   1
@@ -33,8 +42,8 @@ Begin VB.Form frmAnalyzeProcess
          Left            =   0
          TabIndex        =   3
          Top             =   300
-         Width           =   9855
-         _ExtentX        =   17383
+         Width           =   8895
+         _ExtentX        =   15690
          _ExtentY        =   450
          _Version        =   393216
          Appearance      =   1
@@ -71,6 +80,7 @@ Dim rep()
 Dim Base As String
 Public samplePath As String
 Dim pFolder As String
+Dim abort As Boolean
 
 Public Function ClearList()
     List1.Clear
@@ -312,7 +322,7 @@ Private Sub ScanForRWE(pid As Long, Optional prefix As String = "") 'not x64 com
     
     On Error Resume Next
     
-    AddLine "Loading memory map for pid: " & pid
+    AddLine "Loading memory map for pid: " & pid & " Path: " & proc.GetProcessPath(pid)
     
     If proc.x64.IsProcess_x64(pid) <> r_32bit Then
         AddLine "Can only load memory map for 32bit processes"
@@ -332,8 +342,21 @@ Private Sub ScanForRWE(pid As Long, Optional prefix As String = "") 'not x64 com
     Dim s As String
     Dim entropy As Integer
     
+    abort = False
+    cmdAbort.Visible = True
+    cmdAbort.Refresh
+    Me.Refresh
+    DoEvents
+    DoEvents
+    DoEvents
+    
     For Each cMem In c
                     
+        If abort Then
+            AddLine "User aborted scanning memory map!"
+            Exit For
+        End If
+        
         If cMem.Protection = PAGE_EXECUTE_READWRITE And cMem.MemType <> MEM_IMAGE Then
         
             If VBA.Left(proc.ReadMemory(cMem.pid, cMem.Base, 2), 2) = "MZ" Then
@@ -359,10 +382,15 @@ Private Sub ScanForRWE(pid As Long, Optional prefix As String = "") 'not x64 com
         End If
          
         pb2.Value = pb2.Value + 1
+        pb2.Refresh
+        Me.Refresh
+        DoEvents
+        
     Next
         
     pb2.Value = 0
-
+    cmdAbort.Visible = False
+    
 End Sub
 
 Private Function DumpMemorySection(pid As Long, cMem As CMemory, Optional prefix As String = "") As String
@@ -383,6 +411,10 @@ Private Function DumpMemorySection(pid As Long, cMem As CMemory, Optional prefix
     
 End Function
 
+Private Sub cmdAbort_Click()
+    abort = True
+End Sub
+
 Private Sub Form_Load()
     On Error Resume Next
     Me.Icon = frmMain.Icon
@@ -396,8 +428,9 @@ Private Sub Form_Resize()
     fraPB.top = Me.Height - fraPB.Height - 400
     List1.Width = Me.Width - List1.Left - 200
     fraPB.Width = Me.Width - fraPB.Left - 200
-    pb.Width = fraPB.Width
-    pb2.Width = fraPB.Width
+    cmdAbort.Left = fraPB.Width - cmdAbort.Width - 200
+    pb.Width = cmdAbort.Left - 200
+    pb2.Width = pb.Width
 End Sub
 
 Private Sub Form_Unload(Cancel As Integer)

@@ -28,7 +28,7 @@ Source: safe_test1.exe; DestDir: {app}
 Source: sniff_hit.exe; DestDir: {app}; Flags: ignoreversion
 Source: sysAnalyzer.exe; DestDir: {app}; Flags: ignoreversion
 Source: SysAnalyzer_help.chm; DestDir: {app}
-Source: SysAnalyzer.pdb; DestDir: {app}
+;Source: SysAnalyzer.pdb; DestDir: {app}
 Source: known_files.mdb; DestDir: {app}; Flags: uninsneveruninstall onlyifdoesntexist
 Source: dirwatch_ui.exe; DestDir: {app}; Flags: ignoreversion
 Source: shellext.external.txt; DestDir: {app}; Flags: ignoreversion

@@ -746,7 +746,7 @@ End Sub
  
 Private Sub cmdBrowse_Click(Index As Integer)
     Dim x
-    x = dlg.OpenDialog(AllFiles, , "Open file for analysis")
+    x = dlg.OpenDialog(AllFiles, , "Open file for analysis", Me.hWnd)
     If Len(x) = 0 Then Exit Sub
     If Index = 0 Then
         txtBinary = x

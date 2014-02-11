@@ -117,7 +117,16 @@ OPEN_HANDLE* addOpenHandle(HANDLE h, char* res, HANDLE_TYPES hType, int pid = 0)
 		if(oh->h == 0){//empty spot lets use it
 			oh->index = i;
 			oh->h = h;
-			if(res) oh->resource = strdup(res); else oh->resource = NULL;
+			if(res){
+				int sl = strlen(res);
+				if(sl > 2){
+					if(res[sl-1] == '"') res[sl-1] = 0;
+					if(res[sl-1] == '\'') res[sl-1] = 0;
+				}	
+				oh->resource = strdup(res); 
+			}else{
+				oh->resource = NULL;
+			}
 			oh->hType = hType;
 			oh->pid = pid;
 			if(i > oHandleCnt) oHandleCnt = i;
@@ -305,7 +314,7 @@ HANDLE __stdcall My_CreateFileA(LPCSTR a0,DWORD a1,DWORD a2,LPSECURITY_ATTRIBUTE
 
 }
 
-BOOL __stdcall My_WriteFile(HANDLE a0,LPCVOID a1,DWORD a2,LPDWORD a3,LPOVERLAPPED a4)
+/*BOOL __stdcall My_WriteFile(HANDLE a0,LPCVOID a1,DWORD a2,LPDWORD a3,LPOVERLAPPED a4)
 {
     
 	LogAPI("%x     WriteFile(h=%x)", CalledFrom(), a0);
@@ -316,7 +325,7 @@ BOOL __stdcall My_WriteFile(HANDLE a0,LPCVOID a1,DWORD a2,LPDWORD a3,LPOVERLAPPE
     } 
 	catch(...){	} 
     return ret;
-}
+}*/
  
 HFILE __stdcall My__lcreat(LPCSTR a0,int a1)
 {
@@ -987,16 +996,19 @@ BOOL __stdcall My_WriteProcessMemory(HANDLE a0,LPVOID a1,LPVOID a2,DWORD a3,LPDW
 		);
 	*/
 
-	char buf[700];
+	char buf[700] = {0};
 	DWORD written=0;
 
 	OPEN_HANDLE* oh = findOpenHandle(a0, htProcess);
 	if(oh && oh->resource){
 		char *exeName = FileNameFromPath(oh->resource);
-		sprintf(buf, "%s\\wpm_%s_mem_%x.bin", GetWPMDumpPath(), exeName, a1);
-		free(exeName);
+		if(exeName && strlen(exeName) > 0){
+			sprintf(buf, "%s\\wpm_%s_mem_%x.bin", GetWPMDumpPath(), exeName, a1);
+		}
+		if(exeName) free(exeName);
 	}
-	else{
+
+	if(strlen(buf)==0){
 		sprintf(buf, "%s\\wpm_h_%x_mem_%x.bin", GetWPMDumpPath(), a0, a1);
 	}
 	
@@ -1009,10 +1021,7 @@ BOOL __stdcall My_WriteProcessMemory(HANDLE a0,LPVOID a1,LPVOID a2,DWORD a3,LPDW
 
     BOOL ret = 0;
     try {
-		
-		//hexdump( (unsigned char*) a2, a3 );
         ret = Real_WriteProcessMemory(a0, a1, a2, a3, a4);
-
     }
 	catch(...){	} 
 
