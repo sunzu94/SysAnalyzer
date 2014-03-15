@@ -1,9 +1,14 @@
+
+ apilogger - option to follow injections/new processes
+           - ability to exclude certain proocesses from logging?
  
  analyze process loadmemory map can appear hung, need second progress bar to run or some feedback..
  parse dirwatch log to manually save files to \DirWatch in case it didnt
  dirwatch should check md5s before incrementing file name
  prefix strings dumps with underscore
  once injected in explorer, dll auto injects into all new processes created.. limit this..
+ dont dump api_log.dll
+ does filecopy work on hidden system files?
 
  detect file type before launching in case they have extension wrong. (msi, dll etc)
 

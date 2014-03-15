@@ -222,6 +222,25 @@ Begin VB.Form frmWizard
       Top             =   180
       Width           =   4005
    End
+   Begin VB.Label lblAdmin 
+      BackColor       =   &H005A5963&
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   9.75
+         Charset         =   0
+         Weight          =   400
+         Underline       =   -1  'True
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H0000FFFF&
+      Height          =   345
+      Left            =   270
+      MousePointer    =   14  'Arrow and Question
+      TabIndex        =   29
+      Top             =   4365
+      Width           =   5625
+   End
    Begin VB.Label lblDisplay 
       BackColor       =   &H005A5963&
       BeginProperty Font 
@@ -504,6 +523,7 @@ Private cfgFile As String
 Private procWatch As String
 
 Private going_toMainUI As Boolean
+Private Declare Function GetCurrentProcessId Lib "kernel32.dll" () As Long
 
 Private Sub cmdAbout_Click()
     frmAbout.Show 1, Me
@@ -608,13 +628,16 @@ Private Sub mnuKillAllLike_Click()
     Dim p As CProcess
     Dim match As String
     Dim count As Long
+    Dim myPid As Long
     
     match = InputBox("Enter parocess name match string to kill off")
     If Len(match) = 0 Then Exit Sub
     
+    myPid = GetCurrentProcessId()
     Set c = diff.CProc.GetRunningProcesses()
+    
     For Each p In c
-        If InStr(1, p.path, match, vbTextCompare) > 0 Then
+        If InStr(1, p.path, match, vbTextCompare) > 0 And p.pid <> myPid Then
             diff.CProc.TerminateProces p.pid
             count = count + 1
         End If
@@ -626,7 +649,7 @@ End Sub
 
 Private Sub mnuReportViewer_Click()
     Dim f As String
-    f = dlg.FolderDialog(, Me.hWnd)
+    f = dlg.FolderDialog(, Me.hwnd)
     If Len(f) > 0 Then
         frmReportViewer.OpenAnalysisFolder f
     End If
@@ -746,7 +769,7 @@ End Sub
  
 Private Sub cmdBrowse_Click(Index As Integer)
     Dim x
-    x = dlg.OpenDialog(AllFiles, , "Open file for analysis", Me.hWnd)
+    x = dlg.OpenDialog(AllFiles, , "Open file for analysis", Me.hwnd)
     If Len(x) = 0 Then Exit Sub
     If Index = 0 Then
         txtBinary = x
@@ -762,7 +785,20 @@ Private Sub Form_Load()
     
     Dim c As Collection
     Dim ip
-        
+    
+    If IsVistaPlus() Then
+        If Not IsProcessElevated() Then
+            If Not MsgBox("Can I elevate to administrator?", vbYesNo) = vbYes Then
+                If Not IsUserAnAdministrator() Then
+                    lblAdmin.Caption = "This tool really requires admin privledges"
+                Else
+                    RunElevated App.path & "\sysanalyzer.exe", essSW_SHOW
+                    End
+                End If
+            End If
+        End If
+    End If
+    
     mnuPopup.Visible = False
     
     START_TIME = Now

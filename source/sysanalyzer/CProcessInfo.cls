@@ -368,7 +368,7 @@ Function GetRunningProcesses() As Collection 'of CProcess classes
     Dim proc As CProcess
     Dim n As Long
     
-    Dim RetVal As Long
+    Dim retVal As Long
     Dim count As Long
     Dim i As Integer
     Dim lpBuffer As Long
@@ -377,9 +377,9 @@ Function GetRunningProcesses() As Collection 'of CProcess classes
     Dim itmAdd As ListItem
 
     
-    RetVal = WTSEnumerateProcesses(WTS_CURRENT_SERVER_HANDLE, 0&, 1, lpBuffer, count)
+    retVal = WTSEnumerateProcesses(WTS_CURRENT_SERVER_HANDLE, 0&, 1, lpBuffer, count)
    
-    If RetVal Then
+    If retVal Then
           p = lpBuffer
           For i = 1 To count
                 CopyMemory udtProcessInfo, ByVal p, LenB(udtProcessInfo)
@@ -433,7 +433,7 @@ Function Legacy_GetRunningProcesses() As Collection 'of CProcess classes
             .pid = myProcess.th32ProcessID
             .ParentPID = myProcess.th32ParentProcessID
             .CmdLine = GetProcessCmdLine(.pid, .fullpath)
-            .User = GetProcessUser(.pid)
+            .user = GetProcessUser(.pid)
             .is64Bit = (x64.IsProcess_x64(.pid) = r_64bit)
         End With
 
@@ -453,7 +453,7 @@ Function Legacy_GetRunningProcesses() As Collection 'of CProcess classes
                 .pid = myProcess.th32ProcessID
                 .ParentPID = myProcess.th32ParentProcessID
                 .CmdLine = GetProcessCmdLine(.pid, .fullpath)
-                .User = GetProcessUser(.pid) 'OpenProcessToken Fails for Local/Network Service
+                .user = GetProcessUser(.pid) 'OpenProcessToken Fails for Local/Network Service
                 'If Len(.User) = 0 Then Stop
                 .is64Bit = (x64.IsProcess_x64(.pid) = r_64bit)
             End With
@@ -598,7 +598,7 @@ Function GetProcessUser(pid As Long) As String
    Dim hProcess As Long
    Dim hAccessProcessToken As Long
    Dim sid_name_use As Integer
-   Dim User As String
+   Dim user As String
    Dim domain As String
    Dim lu As Long
    Dim ld As Long
@@ -619,16 +619,16 @@ Function GetProcessUser(pid As Long) As String
            ErrNo = Err.LastDllError
        Else
 
-           User = String$(100, 0)
+           user = String$(100, 0)
            domain = String$(100, 0)
-           lu = Len(User)
+           lu = Len(user)
            ld = Len(domain)
-           success = LookupAccountSid(vbNullString, InfoStructure.sID, User, lu, domain, ld, sid_name_use)
+           success = LookupAccountSid(vbNullString, InfoStructure.sID, user, lu, domain, ld, sid_name_use)
 
            If success = 0 Then
                ErrNo = Err.LastDllError
            Else
-               sUser = Left$(User, InStr(User, Chr$(0)) - 1)
+               sUser = Left$(user, InStr(user, Chr$(0)) - 1)
                sDomain = Left$(domain, InStr(domain, Chr$(0)) - 1)
                GetProcessUser = sDomain & ":" & sUser
            End If
@@ -935,8 +935,8 @@ Private Function GetUserName(sID As Long, p As CProcess) As String
     retdomain = String(255, 0)
     LookupAccountSid vbNullString, sID, retname, 255, retdomain, 255, 0
     p.domain = Left$(retdomain, InStr(retdomain, vbNullChar) - 1)
-    p.User = Left$(retname, InStr(retname, vbNullChar) - 1)
-    GetUserName = p.domain & "\" & p.User
+    p.user = Left$(retname, InStr(retname, vbNullChar) - 1)
+    GetUserName = p.domain & "\" & p.user
 End Function
 
 Public Function GetParentProcessId(ByVal pid As Long) As Long

@@ -56,6 +56,7 @@ void InstallHooks(void);
 //                      allow/block OpenProcess?
 
 bool Installed =false;
+int ShouldHideProcess(char* exe);
 
 void Closing(void){ msg("***** Injected Process Terminated *****"); exit(0);}
 	
@@ -118,12 +119,13 @@ OPEN_HANDLE* addOpenHandle(HANDLE h, char* res, HANDLE_TYPES hType, int pid = 0)
 			oh->index = i;
 			oh->h = h;
 			if(res){
+				if(res[0] == '"' || res[0] == '\'') res++;
+				oh->resource = strdup(res); 
 				int sl = strlen(res);
 				if(sl > 2){
-					if(res[sl-1] == '"') res[sl-1] = 0;
-					if(res[sl-1] == '\'') res[sl-1] = 0;
+					if(oh->resource[sl-1] == '"')  oh->resource[sl-1] = 0;
+					if(oh->resource[sl-1] == '\'') oh->resource[sl-1] = 0;
 				}	
-				oh->resource = strdup(res); 
 			}else{
 				oh->resource = NULL;
 			}
@@ -190,6 +192,156 @@ char* findProcessByPid(int pid){
 
 
 //___________________________________________________hook implementations _________
+
+HINTERNET __stdcall My_InternetConnectA(
+						HINTERNET hInternet,
+						LPCSTR lpszServerName,
+						INTERNET_PORT nServerPort,
+						LPCSTR lpszUserName OPTIONAL,
+						LPCSTR lpszPassword OPTIONAL,
+						DWORD dwService,
+						DWORD dwFlags,
+						DWORD dwContext){
+
+	HINTERNET h = Real_InternetConnectA(hInternet,lpszServerName,nServerPort,lpszUserName,lpszPassword,dwService,dwFlags,dwContext);
+
+	if(lpszServerName!=NULL){
+		LogAPI("%x    InternetConnectA(%s) = %x", CalledFrom(), lpszServerName, h);
+	}
+
+	return h;
+}
+
+HINTERNET __stdcall My_InternetConnectW(
+						HINTERNET hInternet,
+						LPCWSTR lpszServerName,
+						INTERNET_PORT nServerPort,
+						LPCWSTR lpszUserName OPTIONAL,
+						LPCWSTR lpszPassword OPTIONAL,
+						DWORD dwService,
+						DWORD dwFlags,
+						DWORD dwContext){
+
+	char* a0 = toAscii((char*)lpszServerName); //will return null if passed null
+	if(a0==NULL) a0 = strdup("null");
+
+	HINTERNET h =  Real_InternetConnectW(hInternet,lpszServerName,nServerPort,lpszUserName,lpszPassword,dwService,dwFlags,dwContext);
+	LogAPI("%x    InternetConnectW(%s) = %x", CalledFrom(), a0, h);
+	
+	free(a0);
+	return h;
+
+}
+
+HINTERNET  __stdcall My_HttpOpenRequestA(
+									HINTERNET hConnect,
+									LPCSTR lpszVerb,
+									LPCSTR lpszObjectName,
+									LPCSTR lpszVersion,
+									LPCSTR lpszReferrer,
+									LPCSTR FAR * lplpszAcceptTypes,
+									DWORD dwFlags,
+									DWORD dwContext
+									){
+
+	HINTERNET h = Real_HttpOpenRequestA(hConnect,lpszVerb,lpszObjectName,lpszVersion,lpszReferrer,lplpszAcceptTypes,dwFlags,dwContext);
+
+	bool myName = false;
+	bool myVerb = false;
+
+	char* a0 = (char*)lpszVerb;  
+	char* a1 = (char*)lpszObjectName;  
+	if(a0==NULL){ a0 = strdup("null"); myVerb=true; }
+	if(a1==NULL){ a1 = strdup("null"); myName=true; }
+
+	LogAPI("%x    HttpOpenRequestW(%x, %s, %s) = %x", CalledFrom(), hConnect, a0, a1, h);
+	
+	if(myVerb) free(a0);
+	if(myName) free(a1);
+
+	return h;
+
+}
+
+
+HINTERNET  __stdcall My_HttpOpenRequestW(
+									HINTERNET hConnect,
+									LPCWSTR lpszVerb,
+									LPCWSTR lpszObjectName,
+									LPCWSTR lpszVersion,
+									LPCWSTR lpszReferrer,
+									LPCWSTR FAR * lplpszAcceptTypes,
+									DWORD dwFlags,
+									DWORD dwContext
+									){
+
+	char* a1 = toAscii((char*)lpszObjectName); //will return null if passed null
+	char* a0 = toAscii((char*)lpszVerb);  
+	if(a0==NULL) a0 = strdup("null");
+	if(a1==NULL) a1 = strdup("null");
+	
+	HINTERNET h = Real_HttpOpenRequestW(hConnect,lpszVerb,lpszObjectName,lpszVersion,lpszReferrer,lplpszAcceptTypes,dwFlags,dwContext);
+
+	LogAPI("%x    HttpOpenRequestW(%x, %s, %s) = %x", CalledFrom(), hConnect, a0, a1, h);
+
+	free(a0);
+	free(a1);
+
+	return h;
+
+}
+
+/*
+
+BOOL __stdcall My_HttpSendRequestA(
+    HINTERNET hRequest,
+    LPCTSTR lpszHeaders,
+    DWORD dwHeadersLength,
+    LPVOID lpOptional,
+    DWORD dwOptionalLength
+){
+	
+	log_proc_name();
+
+	if(lpszHeaders!=NULL){
+		LogAPI("%d.%x> HttpSendRequestA Headers=%s", GetCurrentProcessId(), CalledFrom(), lpszHeaders);
+	}
+
+	if(dwOptionalLength>0 && lpOptional!=NULL){
+	     WriteToFile((char*)lpOptional,dwOptionalLength,1); 
+		 LogAPI("%d.%x> HttpSendRequestA Post Data written to disk Len=%x", GetCurrentProcessId(), CalledFrom(), dwOptionalLength);
+	}
+
+	return Real_HttpSendRequestA(hRequest,lpszHeaders,dwHeadersLength,lpOptional,dwOptionalLength);
+
+
+}
+
+BOOL __stdcall My_HttpSendRequestW(
+    HINTERNET hRequest,
+    LPCTSTR lpszHeaders,
+    DWORD dwHeadersLength,
+    LPVOID lpOptional,
+    DWORD dwOptionalLength
+){
+	
+	char buf[5000]={0};
+	log_proc_name();
+
+	if(lpszHeaders!=NULL){
+		stripnulls((char*)lpszHeaders,dwHeadersLength, &buf[0], 5000);
+		LogAPI("%d.%x> HttpSendRequest Headers=%s", GetCurrentProcessId(), CalledFrom(), buf);
+	}
+
+	if(dwOptionalLength>0 && lpOptional!=NULL){
+	     WriteToFile((char*)lpOptional,dwOptionalLength,1); 
+		 LogAPI("%d.%x> HttpSendRequestW Post Data written to disk Len=%x", GetCurrentProcessId(), CalledFrom(), dwOptionalLength);
+	}
+
+	return Real_HttpSendRequest(hRequest,lpszHeaders,dwHeadersLength,lpOptional,dwOptionalLength);
+}
+*/
+
 
 LPVOID __stdcall My_VirtualAllocEx( HANDLE a0, LPVOID a1, DWORD a2, DWORD a3, DWORD a4 )
 {
@@ -593,6 +745,31 @@ int My_URLDownloadToFileA(int a0,char* a1, char* a2, DWORD a3, int a4)
     return ret;
 }
 
+int My_URLDownloadToFileW(int a0, LPCWSTR w1, LPCWSTR w2, DWORD a3, int a4)
+{
+	
+	char* a1 = toAscii((char*)w1); //will return null if passed null
+	if(a1==NULL) a1 = strdup("null");
+
+	char* a2 = toAscii((char*)w2); //will return null if passed null
+	if(a2==NULL) a2 = strdup("null");
+
+    SOCKET ret = 0;
+    try {
+        ret = Real_URLDownloadToFileW(a0, w1, w2, a3, a4);
+    }
+	catch(...){	} 
+
+	char* sret = (ret == S_OK) ? "OK" : "FAILED";
+
+	LogAPI("%x     URLDownloadToFile(%s, %s) = %s", CalledFrom(), a1, a2, sret);
+
+	free(a1);
+	free(a2);
+
+    return ret;
+}
+
 //untested
 int My_URLDownloadToCacheFileA(int a0,char* a1, char* a2, DWORD a3, DWORD a4, int a5)
 {
@@ -609,6 +786,32 @@ int My_URLDownloadToCacheFileA(int a0,char* a1, char* a2, DWORD a3, DWORD a4, in
 
     return ret;
 }
+
+int My_URLDownloadToCacheFileW(int a0, LPCWSTR w1, LPCWSTR w2, DWORD a3, DWORD a4, int a5)
+{
+	
+	char* a1 = toAscii((char*)w1); //will return null if passed null
+	if(a1==NULL) a1 = strdup("null");
+
+	char* a2 = toAscii((char*)w2); //will return null if passed null
+	if(a2==NULL) a2 = strdup("null");
+
+    SOCKET ret = 0;
+    try {
+        ret = Real_URLDownloadToCacheFileW(a0, w1, w2, a3, a4, a5);
+    }
+	catch(...){	} 
+
+	char* sret = (ret == S_OK) ? "OK" : "FAILED";
+
+	LogAPI("%x     URLDownloadToCacheFileW(%s, %s)", CalledFrom(), a1, a2, sret);
+
+	free(a1);
+	free(a2);
+
+    return ret;
+}
+
 
 void __stdcall My_ExitProcess(UINT a0)
 {
@@ -776,6 +979,7 @@ BOOL __stdcall My_CreateProcessInternalW(DWORD unk1,
     BOOL retv = 0;
 	bool iInjected = false;
 	OPEN_HANDLE *oh = NULL;
+	int dontInject = 0;  //if the dll is running inside explorer, any new process as this user will get injected, exclude our tools
 
 	try {
 		
@@ -787,24 +991,30 @@ BOOL __stdcall My_CreateProcessInternalW(DWORD unk1,
 		retv = Real_CreateProcessInternalW(unk1, w0, w1, a2, a3, a4, a5, a6, a7, si, pi, unk2);
 		
 		if(a0 && !a1){
+			dontInject = ShouldHideProcess(a0);
 			LogAPI("%x     CreateProcessInternalW(%s, flags=%x, hProcess=%x)", CalledFrom(), a0, a5, pi->hProcess);
 			oh = addOpenHandle( pi->hProcess, (char*)a0, htProcess, pi->dwProcessId);
 		}
 
 		if(a1 && !a0){
+			dontInject = ShouldHideProcess(a1);
 			LogAPI("%x     CreateProcessInternalW("", %s, flags=%x, hProcess=%x)", CalledFrom(), a1, a5, pi->hProcess);
 			oh = addOpenHandle( pi->hProcess, (char*)a1, htProcess, pi->dwProcessId);
 		}
 
 		if(a1 && a0){	
+			dontInject = ShouldHideProcess(a0);
 			LogAPI("%x     CreateProcessInternalW(%s, %s, flags=%x, hProcess=%x)", CalledFrom(), a0, a1, a5, pi->hProcess);
 			oh = addOpenHandle( pi->hProcess, (char*)a0, htProcess, pi->dwProcessId);
 		}
 		
-		bool iInjected = doInject(pi->dwProcessId, pi->hProcess, pi->hThread, suspended);
-		if(oh) oh->injected = iInjected;
-
-		LogAPI("***** Injection result: %x", iInjected);
+		if(dontInject==1){
+			LogAPI("***** Protected process, we will not inject api_log into it");
+		}else{
+			iInjected = doInject(pi->dwProcessId, pi->hProcess, pi->hThread, suspended);
+			if(oh) oh->injected = iInjected;
+			LogAPI("***** Injection result: %x", iInjected);
+		}
 
 		if(!suspended && !iInjected) ResumeThread(pi->hThread);
 		
@@ -1739,12 +1949,18 @@ void InstallHooks(void)
 	curDLL = hooked_dlls[2];//Urlmon.dll = 2
 	ADDHOOK(URLDownloadToFileA);    //todo: in sclog this had to go manual lookup test me..
 	ADDHOOK(URLDownloadToCacheFileA); // ""
-	
+	ADDHOOK(URLDownloadToFileW);    //todo: in sclog this had to go manual lookup test me..
+	ADDHOOK(URLDownloadToCacheFileW); // ""
 	
 	curDLL = hooked_dlls[3];//Wininet.dll =3 
 	ADDHOOK(InternetGetConnectedState)
+	ADDHOOK(InternetConnectW)
+	ADDHOOK(HttpOpenRequestW)
+	ADDHOOK(InternetConnectA)
+	ADDHOOK(HttpOpenRequestA)
+	//ADDHOOK(HttpSendRequestA)
+	//ADDHOOK(HttpSendRequestW)
 
-		
 	//these can add allot of noise 
 	curDLL = hooked_dlls[4];//Advapi32.dll =4 
 	if(noRegistry==0){

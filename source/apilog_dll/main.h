@@ -105,6 +105,17 @@ BOOL   (__stdcall *Real_Module32First)(HANDLE hSnapshot, LPMODULEENTRY32 lpme) =
 BOOL   (__stdcall *Real_Module32Next)(HANDLE hSnapshot, LPMODULEENTRY32 lpme) = NULL;     // 
 BOOL   (__stdcall *Real_CreateProcessInternalW)(DWORD unknown1, LPCSTR a0,LPSTR a1,LPSECURITY_ATTRIBUTES a2,LPSECURITY_ATTRIBUTES a3,BOOL a4,DWORD a5,LPVOID a6,LPCSTR a7,struct _STARTUPINFOA* a8,LPPROCESS_INFORMATION a9, DWORD unknown2) = NULL;
 
+HINTERNET (__stdcall *Real_InternetConnectW)(HINTERNET hInternet,LPCWSTR lpszServerName,INTERNET_PORT nServerPort, LPCWSTR lpszUserName, LPCWSTR lpszPassword,DWORD dwService,DWORD dwFlags,	DWORD dwContext) = NULL;
+HINTERNET (__stdcall *Real_HttpOpenRequestW)(HINTERNET hConnect,LPCWSTR lpszVerb,LPCWSTR lpszObjectName,LPCWSTR lpszVersion,LPCWSTR lpszReferrer,LPCWSTR FAR * lplpszAcceptTypes,DWORD dwFlags,DWORD dwContext) = NULL;
+int	  (__stdcall *Real_URLDownloadToFileW)(int a0, LPCWSTR  a1, LPCWSTR a2, DWORD a3, int a4) = NULL;
+int	  (__stdcall *Real_URLDownloadToCacheFileW)(int a0,LPCWSTR a1, LPCWSTR a2, DWORD a3, DWORD a4, int a5) = NULL;
+//BOOL      (__stdcall *Real_HttpSendRequestW)(HINTERNET hRequest,LPCTSTR lpszHeaders,DWORD dwHeadersLength,LPVOID lpOptional, DWORD dwOptionalLength) = NULL;
+
+HINTERNET (__stdcall *Real_InternetConnectA)(HINTERNET hInternet,LPCSTR lpszServerName,INTERNET_PORT nServerPort,	LPCSTR lpszUserName OPTIONAL, LPCSTR lpszPassword OPTIONAL,DWORD dwService,DWORD dwFlags,	DWORD dwContext) = NULL;
+HINTERNET (__stdcall *Real_HttpOpenRequestA)(HINTERNET hConnect,LPCSTR lpszVerb,LPCSTR lpszObjectName,LPCSTR lpszVersion,LPCSTR lpszReferrer,LPCSTR FAR * lplpszAcceptTypes,DWORD dwFlags,DWORD dwContext)= NULL;
+//BOOL      (__stdcall *Real_HttpSendRequestA)(HINTERNET hRequest,LPCTSTR lpszHeaders,DWORD dwHeadersLength,LPVOID lpOptional, DWORD dwOptionalLength) = NULL;
+//BOOL      (__stdcall *Real_InternetCrackUrlA)(LPCTSTR lpszUrl, DWORD dwUrlLength,DWORD dwFlags,LPURL_COMPONENTS lpUrlComponents) = NULL;
+
 
 void msg(char);
 void LogAPI(const char*, ...);

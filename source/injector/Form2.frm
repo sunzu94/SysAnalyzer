@@ -550,6 +550,31 @@ Function AryIsEmpty(ary) As Boolean
 oops: AryIsEmpty = True
 End Function
 
+Sub LoadChkSettings(Optional load As Boolean = True)
+    
+    Dim cc As CheckBox
+    Dim c As Control
+    Dim r As Long
+    Dim defVal As Long
+    
+    On Error Resume Next
+    For Each c In Me.Controls
+        If TypeName(c) = "CheckBox" Then
+            Set cc = c
+            defVal = 0
+            If cc.Enabled Then
+                If load Then
+                    r = GetSetting("ApiLog", "settings", cc.name, defVal)
+                    cc.value = r
+                Else
+                    Call SaveSetting("ApiLog", "settings", cc.name, cc.value)
+                End If
+            End If
+        End If
+    Next
+        
+End Sub
+
 Function AddPid(hex_pid As String)
     Dim li As ListItem
     Dim pid As Long
@@ -780,6 +805,8 @@ Private Sub Form_Load()
         .Visible = False
     End With
     
+    LoadChkSettings
+    
     Dim i As Integer
     For i = 0 To 3
         cboLogLevel.AddItem i
@@ -819,6 +846,7 @@ Private Sub Form_Resize()
 End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
+    LoadChkSettings False
     SaveMySetting "Ignore", txtIgnore
 End Sub
 
