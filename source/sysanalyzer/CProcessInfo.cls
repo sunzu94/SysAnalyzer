@@ -53,9 +53,9 @@ Private Declare Function NtQuerySystemInformation Lib "ntdll.dll" ( _
     dwReserved As Long) As Long
 
 Private Type SYSTEM_MODULE_INFORMATION
-    reserved(1) As Long                'ULONG reserved[2];
+    Reserved(1) As Long                'ULONG reserved[2];
     Base As Long                       'PVOID Base;
-    size As Long                       'ULONG Size;
+    Size As Long                       'ULONG Size;
     flags As Long                      'ULONG Flags;
     Index As Integer                   'USHORT Index;
     unkn As Integer                    'USHORT Unknown;
@@ -132,7 +132,7 @@ Private Type MEMORY_BASIC_INFORMATION
    AllocationBase As Long
    InitialProtect As Long
    RegionSize As Long
-   state As Long
+   State As Long
    Protect As Long
    Type As Long
 End Type
@@ -271,7 +271,7 @@ End Type
 
 Private Declare Function WTSEnumerateProcesses _
    Lib "wtsapi32.dll" Alias "WTSEnumerateProcessesA" _
-   (ByVal hServer As Long, ByVal reserved As Long, _
+   (ByVal hServer As Long, ByVal Reserved As Long, _
    ByVal version As Long, ByRef ppProcessInfo As Long, _
    ByRef pCount As Long _
    ) As Long
@@ -433,7 +433,7 @@ Function Legacy_GetRunningProcesses() As Collection 'of CProcess classes
             .pid = myProcess.th32ProcessID
             .ParentPID = myProcess.th32ParentProcessID
             .CmdLine = GetProcessCmdLine(.pid, .fullpath)
-            .user = GetProcessUser(.pid)
+            .User = GetProcessUser(.pid)
             .is64Bit = (x64.IsProcess_x64(.pid) = r_64bit)
         End With
 
@@ -453,7 +453,7 @@ Function Legacy_GetRunningProcesses() As Collection 'of CProcess classes
                 .pid = myProcess.th32ProcessID
                 .ParentPID = myProcess.th32ParentProcessID
                 .CmdLine = GetProcessCmdLine(.pid, .fullpath)
-                .user = GetProcessUser(.pid) 'OpenProcessToken Fails for Local/Network Service
+                .User = GetProcessUser(.pid) 'OpenProcessToken Fails for Local/Network Service
                 'If Len(.User) = 0 Then Stop
                 .is64Bit = (x64.IsProcess_x64(.pid) = r_64bit)
             End With
@@ -576,7 +576,7 @@ Function GetProcessModules(pid As Long) As Collection
         Set cmod = New CModule
         cmod.path = mfn
         cmod.Base = lmi.lpBaseOfDll
-        cmod.size = lmi.SizeOfImage
+        cmod.Size = lmi.SizeOfImage
          
         On Error Resume Next
         mCol.Add cmod, cmod.path
@@ -598,7 +598,7 @@ Function GetProcessUser(pid As Long) As String
    Dim hProcess As Long
    Dim hAccessProcessToken As Long
    Dim sid_name_use As Integer
-   Dim user As String
+   Dim User As String
    Dim domain As String
    Dim lu As Long
    Dim ld As Long
@@ -619,16 +619,16 @@ Function GetProcessUser(pid As Long) As String
            ErrNo = Err.LastDllError
        Else
 
-           user = String$(100, 0)
+           User = String$(100, 0)
            domain = String$(100, 0)
-           lu = Len(user)
+           lu = Len(User)
            ld = Len(domain)
-           success = LookupAccountSid(vbNullString, InfoStructure.sID, user, lu, domain, ld, sid_name_use)
+           success = LookupAccountSid(vbNullString, InfoStructure.sID, User, lu, domain, ld, sid_name_use)
 
            If success = 0 Then
                ErrNo = Err.LastDllError
            Else
-               sUser = Left$(user, InStr(user, Chr$(0)) - 1)
+               sUser = Left$(User, InStr(User, Chr$(0)) - 1)
                sDomain = Left$(domain, InStr(domain, Chr$(0)) - 1)
                GetProcessUser = sDomain & ":" & sUser
            End If
@@ -658,7 +658,7 @@ Function DumpProcess(pid As Long, fpath As String) As Boolean
     Set col = GetProcessModules(pid)
     Set cmod = col(1)
 
-    DumpProcess = DumpProcessMemory(pid, cmod.Base, cmod.size, fpath)
+    DumpProcess = DumpProcessMemory(pid, cmod.Base, cmod.Size, fpath)
     
 End Function
 
@@ -866,16 +866,16 @@ Function GetMemoryMap(pid As Long) As Collection 'of CMem
     Do While cur < &H7FFEFFFF
          x = VirtualQueryEx(hProc, cur, meminfo, LenB(meminfo))
          
-         If meminfo.state <> MEM_FREE Then
+         If meminfo.State <> MEM_FREE Then
             Set cMem = New CMemory
             cMem.pid = pid
-            cMem.size = meminfo.RegionSize
+            cMem.Size = meminfo.RegionSize
             cMem.Base = cur
             cMem.AllocBase = meminfo.AllocationBase
             cMem.InitialProtection = meminfo.InitialProtect
             cMem.MemType = meminfo.Type
             cMem.Protection = meminfo.Protect
-            cMem.state = meminfo.state
+            cMem.State = meminfo.State
                        
             If cur > 0 Then
                n = String(256, Chr(0))
@@ -935,8 +935,8 @@ Private Function GetUserName(sID As Long, p As CProcess) As String
     retdomain = String(255, 0)
     LookupAccountSid vbNullString, sID, retname, 255, retdomain, 255, 0
     p.domain = Left$(retdomain, InStr(retdomain, vbNullChar) - 1)
-    p.user = Left$(retname, InStr(retname, vbNullChar) - 1)
-    GetUserName = p.domain & "\" & p.user
+    p.User = Left$(retname, InStr(retname, vbNullChar) - 1)
+    GetUserName = p.domain & "\" & p.User
 End Function
 
 Public Function GetParentProcessId(ByVal pid As Long) As Long
@@ -963,6 +963,78 @@ Function GetProcess(pid As Long, cp As CProcess) As Boolean
     Set cp = Nothing
     
 End Function
+
+'x64 NOT supported yet..
+Public Function InjectShellcode(pid As Long, scPath As String, Optional injLog As String, Optional cp As CProcess) As Boolean
+
+    Dim hProcess As Long
+    Dim lpfnLoadLib As Long
+    Dim ret As Long
+    Dim lpMem As Long
+    Dim pi As PROCESS_INFORMATION
+    Dim si As STARTUPINFO
+    Dim hThread As Long
+    Dim writeLen As Long
+    Dim b() As Byte
+    Dim buflen As Long
+    Dim li As ListItem
+    Dim c As Collection
+    Dim found As Boolean
+    Dim rv As Boolean
+    
+    Const PAGE_READWRITE = 4
+    Const CREATE_SUSPENDED = &H4
+    Const MEM_COMMIT = &H1000
+    
+    injLog = Empty
+    
+    If Not GetProcess(pid, cp) Then
+        injLog = "pid " & pid & " not found"
+        GoTo hell
+    End If
+    
+    If cp.is64Bit Then
+        'rv = x64.x64Inject(pid, dllPath, injLog)
+        injLog = "Injecting shellcode into a 64 bit process is not yet supported..."
+        GoTo hell
+    End If
+    
+    Dim f As Long
+    f = FreeFile
+    Open scPath For Binary As f
+    ReDim b(LOF(f))
+    Get f, , b()
+    Close f
+    
+    buflen = UBound(b) + 1
+ 
+    hProcess = OpenProcess(PROCESS_ALL_ACCESS, False, pid)
+    injLog = injLog & "Opening PID: " & pid & " Process Handle=" & hProcess & vbCrLf
+    If hProcess = -1 Then GoTo hell
+     
+    lpMem = VirtualAllocEx(hProcess, ByVal 0, buflen, MEM_COMMIT, ByVal PAGE_EXECUTE_READWRITE)
+    injLog = injLog & "Remote Allocation base: " & Hex(lpMem) & vbCrLf
+    If lpMem = 0 Then GoTo hell
+    
+    ret = WriteProcessBytes(hProcess, ByVal lpMem, b(0), buflen, writeLen)
+    injLog = injLog & "WriteProcessMemory=" & ret & " BufLen=" & buflen & " Bytes Written: " & writeLen & vbCrLf
+    If ret = 0 Then GoTo hell
+         
+    'DebugBreak
+    ret = CreateRemoteThread(hProcess, ByVal 0, 0, lpMem, lpMem, 0, hThread)
+    injLog = injLog & "CreateRemoteThread = " & ret & " ThreadID: " & Hex(hThread) & vbCrLf
+    If ret = -1 Then GoTo hell
+    
+    Sleep 300
+    rv = True
+    
+hell:
+   CloseHandle hProcess
+   InjectShellcode = rv
+    
+End Function
+
+
 
 '64 bit safe
 Public Function InjectDLL(pid As Long, dllPath As String, Optional injLog As String, Optional cp As CProcess) As Boolean

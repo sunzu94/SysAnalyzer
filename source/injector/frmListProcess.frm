@@ -255,6 +255,7 @@ Private Sub Form_Load()
     Dim User As String
     On Error Resume Next
     
+    ClassicTheme Me
     lv2.Move lv.Left, lv.Top, lv.Width, lv.Height
     lv.ColumnHeaders(3).Width = lv.Width - lv.ColumnHeaders(3).Left - 350
     lv2.ColumnHeaders(3).Width = lv.Width - lv.ColumnHeaders(3).Left - 350

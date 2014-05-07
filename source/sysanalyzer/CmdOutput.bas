@@ -104,6 +104,28 @@ Private Declare Function OemToCharBuff _
  ByVal lpszDst As String, _
  ByVal cchDstLength As Long) As Long
 
+
+Private Declare Function DeactivateWindowTheme Lib "uxtheme" _
+    Alias "SetWindowTheme" ( _
+    ByVal hWnd As Long, _
+    Optional ByRef pszSubAppName As String = " ", _
+    Optional ByRef pszSubIdList As String = " ") As Long
+
+Private Declare Function EnableTheming Lib "UxTheme.dll" (ByVal b As Boolean) As Long
+Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
+Private Declare Function GetProcAddress Lib "kernel32" (ByVal hModule As Long, ByVal lpProcName As String) As Long
+
+Function ClassicTheme(f As Form)
+    Dim h As Long
+    h = LoadLibrary("uxtheme.dll")
+    If h = 0 Then Exit Function
+    h = GetProcAddress(h, "SetWindowTheme")
+    If h = 0 Then Exit Function 'windows 2000
+    DeactivateWindowTheme f.hWnd
+End Function
+
+
+
 ' Function GetCommandOutput
 '
 ' sCommandLine:  [in] Command line to launch

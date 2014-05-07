@@ -45,7 +45,7 @@ Public Sub LoadSampleApiLogPromptFile()
     Dim f As String
     Dim lines() As String
     Dim x, y, a, b
-    f = Form2.dlg.OpenDialog(textFiles, , , Me.hwnd)
+    f = Form2.dlg.OpenDialog(textFiles, , , Me.hWnd)
     If Len(f) = 0 Then Exit Sub
     f = Form2.fso.ReadFile(f)
     LoadSampleApiLog f
@@ -73,6 +73,7 @@ End Sub
 
 
 Private Sub Form_Load()
+    ClassicTheme Me
     Set dm = New CApiDataManager
 End Sub
 
@@ -104,7 +105,7 @@ Private Function AddChildIfNotExist(pNode As Node, name As String)
     
     Set c = GetChildrenFor(pNode)
     
-    If c.Count > 0 Then
+    If c.count > 0 Then
         For Each n In c
             If n.Text = name Then Exit Function
         Next

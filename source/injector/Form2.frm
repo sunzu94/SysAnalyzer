@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Begin VB.Form Form2 
    Caption         =   "ApiLogger"
    ClientHeight    =   7665
@@ -385,13 +385,23 @@ Begin VB.Form Form2
       Top             =   1110
       Width           =   915
    End
-   Begin VB.Label Label3 
+   Begin VB.Label lblDll 
       Caption         =   "Inject DLL"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   400
+         Underline       =   -1  'True
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00FF0000&
       Height          =   315
-      Left            =   60
+      Left            =   45
       TabIndex        =   4
       Top             =   750
-      Width           =   975
+      Width           =   1065
    End
    Begin VB.Label Label2 
       Caption         =   "Call Log"
@@ -612,7 +622,7 @@ End Function
 
 Private Sub cmdBrowse_Click(Index As Integer)
     Dim f As String
-    f = dlg.OpenDialog(AllFiles, , "Open Executable to monitor", Me.hwnd)
+    f = dlg.OpenDialog(AllFiles, , "Open Executable to monitor", Me.hWnd)
     If Len(f) = 0 Then Exit Sub
     If Index = 0 Then
         txtPacked = f
@@ -669,7 +679,7 @@ Private Sub cmdSave_Click()
     Dim i As Long, t, f As String
     Dim li As ListItem
     
-    f = dlg.SaveDialog(textFiles, , , , Me.hwnd)
+    f = dlg.SaveDialog(textFiles, , , , Me.hWnd)
     If Len(f) = 0 Then Exit Sub
     
     For Each li In lv.ListItems
@@ -696,10 +706,13 @@ Private Sub cmdStart_Click()
     Dim pid As Long
     Dim failed As Boolean
     Dim li As ListItem
+    Dim injDll As Boolean
     
     Dim x As String, tmp, y
     
     On Error GoTo hell
+    
+    injDll = (InStr(lblDll.Caption, "DLL") > 0)
     
     lv.ListItems.Clear
     List2.Clear
@@ -724,7 +737,11 @@ Private Sub cmdStart_Click()
     End If
     
     If Not FileExists(txtDll) Then
-        MsgBox "Dll To inject not found"
+        If injDll Then
+            MsgBox "Dll To inject not found"
+        Else
+            MsgBox "Shellcode file To inject not found"
+        End If
         Exit Sub
     End If
     
@@ -733,15 +750,27 @@ Private Sub cmdStart_Click()
     If Not isX64 And Len(txtArgs) > 0 Then exe = exe & " " & txtArgs
     
     If isPid Then
-        If Not cpi.InjectDLL(pid, txtDll, x, cp) Then
-            failed = True
-            MsgBox "Injection failed", vbInformation
+        If injDll Then
+            If Not cpi.InjectDLL(pid, txtDll, x, cp) Then
+                failed = True
+                MsgBox "Injection failed", vbInformation
+            End If
+        Else
+            If Not cpi.InjectShellcode(pid, txtDll, x, cp) Then
+                failed = True
+                MsgBox "Injection failed", vbInformation
+            End If
         End If
     Else
         cpi.x64.DisableRedir
-        If Not cpi.StartProcessWithDLL(exe, txtDll, x, cp) Then
+        If injDll Then
+            If Not cpi.StartProcessWithDLL(exe, txtDll, x, cp) Then
+                failed = True
+                MsgBox "Injection failed", vbInformation
+            End If
+        Else
+            MsgBox "Injecting shellcode requires an already running process", vbInformation
             failed = True
-            MsgBox "Injection failed", vbInformation
         End If
         cpi.x64.RevertRedir
     End If
@@ -800,6 +829,8 @@ End Sub
 
 Private Sub Form_Load()
     
+    ClassicTheme Me
+    
     With List2
         lvProc.Move .Left, .Top, .Width, .Height
         .Visible = False
@@ -815,7 +846,7 @@ Private Sub Form_Load()
     
     Set sc = New CSubclass2
     
-    sc.AttachMessage Me.hwnd, WM_COPYDATA
+    sc.AttachMessage Me.hWnd, WM_COPYDATA
     
     Dim defaultdll, defaultexe
     
@@ -848,6 +879,10 @@ End Sub
 Private Sub Form_Unload(Cancel As Integer)
     LoadChkSettings False
     SaveMySetting "Ignore", txtIgnore
+End Sub
+
+Private Sub lblDll_Click()
+    lblDll.Caption = IIf(InStr(lblDll.Caption, "DLL") > 0, "Shellcode", "Inject DLL")
 End Sub
 
 Private Sub lv_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
@@ -948,7 +983,7 @@ Private Sub mnuUpdateConfig_Click()
     End If
 End Sub
 
-Private Sub sc_MessageReceived(hwnd As Long, wMsg As Long, wParam As Long, lParam As Long, Cancel As Boolean) '
+Private Sub sc_MessageReceived(hWnd As Long, wMsg As Long, wParam As Long, lParam As Long, Cancel As Boolean) '
     If wMsg = WM_COPYDATA Then RecieveTextMessage lParam
 End Sub
 

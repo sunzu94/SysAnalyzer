@@ -1,7 +1,19 @@
 
  apilogger - option to follow injections/new processes
            - ability to exclude certain proocesses from logging?
+           - pause button
+           - ability to ignore certain processes or only include target ones..
+               (if it makes it way into explorer, then all children will get it..)
+	   - save button should save process map at top (way to save process map on its own?)
+           - each new process should create its own tab and own listview
+
+
  
+ is dirwatch able to capture files created with hidden attrib? 
+   if it cant immediatly capture a file, it should add it to a try again list 
+
+ right click on driverrs hide known
+
  analyze process loadmemory map can appear hung, need second progress bar to run or some feedback..
  parse dirwatch log to manually save files to \DirWatch in case it didnt
  dirwatch should check md5s before incrementing file name

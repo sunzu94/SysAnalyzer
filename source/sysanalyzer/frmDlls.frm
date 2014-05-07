@@ -66,6 +66,7 @@ Public dlg As New clsCmnDlg
 Private Sub Form_Load()
     On Error Resume Next
     
+    ClassicTheme Me
     lv.ColumnHeaders(3).Width = lv.Width - lv.ColumnHeaders(3).Left - 350
     
 End Sub
@@ -113,8 +114,8 @@ Private Sub Form_Resize()
     On Error Resume Next
     lv.Width = Me.Width - lv.Left - 200
     lv.ColumnHeaders(3).Width = lv.Width - lv.ColumnHeaders(3).Left - 350
-    lv.Height = Me.Height - lv.top - 500 - Command1.Height
-    Command1.top = Me.Height - Command1.Height - 400
+    lv.Height = Me.Height - lv.Top - 500 - Command1.Height
+    Command1.Top = Me.Height - Command1.Height - 400
     Command1.Left = Me.Width - Command1.Width - 400
 End Sub
 
