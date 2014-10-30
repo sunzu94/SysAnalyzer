@@ -622,7 +622,7 @@ End Function
 
 Private Sub cmdBrowse_Click(Index As Integer)
     Dim f As String
-    f = dlg.OpenDialog(AllFiles, , "Open Executable to monitor", Me.hWnd)
+    f = dlg.OpenDialog(AllFiles, , "Open Executable to monitor", Me.hwnd)
     If Len(f) = 0 Then Exit Sub
     If Index = 0 Then
         txtPacked = f
@@ -679,7 +679,7 @@ Private Sub cmdSave_Click()
     Dim i As Long, t, f As String
     Dim li As ListItem
     
-    f = dlg.SaveDialog(textFiles, , , , Me.hWnd)
+    f = dlg.SaveDialog(textFiles, , , , Me.hwnd)
     If Len(f) = 0 Then Exit Sub
     
     For Each li In lv.ListItems
@@ -831,6 +831,19 @@ Private Sub Form_Load()
     
     ClassicTheme Me
     
+    If IsVistaPlus() Then
+        If Not IsProcessElevated() Then
+            'If Not MsgBox("Can I elevate to administrator?", vbYesNo) = vbYes Then
+                If Not IsUserAnAdministrator() Then
+                    Me.Caption = "This tool really requires admin privledges"
+                Else
+                    RunElevated App.path & "\api_logger.exe", essSW_SHOW
+                    End
+                End If
+            'End If
+        End If
+    End If
+    
     With List2
         lvProc.Move .Left, .Top, .Width, .Height
         .Visible = False
@@ -846,7 +859,7 @@ Private Sub Form_Load()
     
     Set sc = New CSubclass2
     
-    sc.AttachMessage Me.hWnd, WM_COPYDATA
+    sc.AttachMessage Me.hwnd, WM_COPYDATA
     
     Dim defaultdll, defaultexe
     
@@ -983,7 +996,7 @@ Private Sub mnuUpdateConfig_Click()
     End If
 End Sub
 
-Private Sub sc_MessageReceived(hWnd As Long, wMsg As Long, wParam As Long, lParam As Long, Cancel As Boolean) '
+Private Sub sc_MessageReceived(hwnd As Long, wMsg As Long, wParam As Long, lParam As Long, Cancel As Boolean) '
     If wMsg = WM_COPYDATA Then RecieveTextMessage lParam
 End Sub
 

@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Begin VB.Form frmListProcess 
    BorderStyle     =   5  'Sizable ToolWindow
    Caption         =   "Choose Process"
@@ -134,6 +134,9 @@ Begin VB.Form frmListProcess
       End
       Begin VB.Menu mnuDumpProcess 
          Caption         =   "Dump Process"
+      End
+      Begin VB.Menu mnuDumpRange 
+         Caption         =   "Dump mem range"
       End
    End
 End
@@ -424,6 +427,24 @@ Private Sub txtSearch_Change()
 End Sub
 
 
+Private Sub mnuDumpRange_Click()
+
+    If selli Is Nothing Then Exit Sub
+    Dim pth As String
+    
+    pth = dlg.SaveDialog(AllFiles, , "Save dump as")
+    If Len(pth) = 0 Then Exit Sub
+    
+    Dim hexBase As String
+    Dim hexSize As String
+    Dim pid As Long
+    
+    pid = CLng(selli.Text)
+    hexBase = InputBox("Enter hex base address")
+    hexSize = InputBox("Enter hex size")
+    
+    MsgBox "Dump saved? " & cpi.DumpMemory(pid, hexBase, hexSize, pth)
+End Sub
 
 
 

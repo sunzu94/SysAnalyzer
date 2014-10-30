@@ -17,6 +17,7 @@ Form=frmLogParser.frm
 Class=Cx64; ..\sysanalyzer\Cx64.cls
 Module=CmdOutput; ..\sysanalyzer\CmdOutput.bas
 Form=..\sysanalyzer\frmDlls.frm
+Module=ModElevate; ..\sysanalyzer\ModElevate.bas
 IconForm="Form2"
 Startup="Form2"
 HelpFile=""

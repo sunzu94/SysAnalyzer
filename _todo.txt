@@ -1,4 +1,6 @@
 
+ lock log files exclusive no share so crypto malware cant encrypt them...
+
  apilogger - option to follow injections/new processes
            - ability to exclude certain proocesses from logging?
            - pause button
@@ -6,8 +8,9 @@
                (if it makes it way into explorer, then all children will get it..)
 	   - save button should save process map at top (way to save process map on its own?)
            - each new process should create its own tab and own listview
+           - frmdlls right click menu not working (modal issue?)
 
-
+ monitor Software\Microsoft\Windows NT\CurrentVersion\Windows\Load,AppInit_DLLs
  
  is dirwatch able to capture files created with hidden attrib? 
    if it cant immediatly capture a file, it should add it to a try again list 

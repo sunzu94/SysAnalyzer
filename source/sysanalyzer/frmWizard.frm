@@ -932,6 +932,7 @@ Sub cmdStart_Click()
     Dim saveAs As String
     
     baseName = "sample_" & fso.FileNameFromPath(txtBinary)
+    If Len(baseName) = 0 Then baseName = "sample"
     saveAs = UserDeskTopFolder & "\" & baseName & "_"
     If Not fso.FileExists(saveAs) Then FileCopy txtBinary, saveAs
     

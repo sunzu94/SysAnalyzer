@@ -275,7 +275,7 @@ int startwdll(char* dll, char* exePath){
 }
 
 
-int dump(int pid, uint base, uint size, char* out_file){
+int dump(int pid, __int64 base, __int64 size, char* out_file){
 
 	HANDLE h = OpenProcess(PROCESS_VM_READ, FALSE, pid);
 
@@ -340,7 +340,7 @@ int DumpProcess( DWORD processID, char* dumpPath )
 		if(GetModuleInformation(hProcess, hMods[0], &minfo, sizeof(minfo)) == 0){
 			printf("Error: GetModuleInformation failed %x", ret); 
 		}else{
-			rv = dump(processID, (uint)minfo.lpBaseOfDll, minfo.SizeOfImage, dumpPath);
+			rv = dump(processID, (__int64)minfo.lpBaseOfDll, minfo.SizeOfImage, dumpPath);
 		}
 	}
 	else{
@@ -352,6 +352,68 @@ int DumpProcess( DWORD processID, char* dumpPath )
     return rv;
 }
 
+int memMap(int pid, char* pth)
+{
+
+	HANDLE hProcess;
+    DWORD cbNeeded;
+	int rv=0;
+
+    hProcess = OpenProcess( PROCESS_QUERY_INFORMATION |
+                            PROCESS_VM_READ,
+                            FALSE, pid );
+    if (NULL == hProcess){
+		printf("Error: failed to open process..");
+        return 1;
+	}
+
+	MEMORY_BASIC_INFORMATION mbi;
+	long long va = 0;  
+	SIZE_T wErr;
+	FILE* f = fopen(pth, "w");
+    char mod[500];
+	DWORD modLen=0;
+    int i=0;
+
+	if(f==NULL){
+		printf("Error: failed to open file %s", pth);
+        return 1;
+	}
+    
+	fprintf(f, "va, AllocationBase, Size, AllocationProtect, Type, Protect, State, ModuleFileName\r\n");
+
+	while(va < 0x000007FFFFFFFFFF)// x64 User Space Limit
+	{
+		wErr = VirtualQueryEx(hProcess, (LPCVOID)va, &mbi, sizeof(mbi));
+
+		if(mbi.State != MEM_FREE){
+			mod[0]=0;
+			modLen=0;
+			if(va > 0){
+				modLen = GetModuleFileNameExA(hProcess, (HMODULE)va, mod, 500);
+				if(modLen==0) mod[0]=0;
+			}
+			fprintf(f, 
+				    /*"%.16llX,%.16llX,%.16llX,%.8lX,%.8lX,%.8lX,%.8lX,%s\r\n",*/
+				    "%llX,%llX,%llX,%lX,%lX,%lX,%lX,%s\r\n",
+				    va, mbi.AllocationBase, mbi.RegionSize, mbi.AllocationProtect, mbi.Type, mbi.Protect, mbi.State, mod);      
+		}
+
+		va += mbi.RegionSize;
+		//printf("%d) %.16llX\r\n", i++, va);
+
+		/*if(va >= 0x000007FFFFFFFFFF) {
+			break;
+		}*/
+
+	}
+
+	fclose(f);
+	return 0;
+
+}
+
+
 void usage(int invalidOptionCount=0){
 	if(invalidOptionCount>0) printf("Error: Invalid option sequence specified expects %d..\n\n", invalidOptionCount);
 	printf("Usage x64Helper:\n");
@@ -360,6 +422,7 @@ void usage(int invalidOptionCount=0){
 	printf("\t/dumpmodule decimal_pid hex_string_base hex_string_size out_file_path\n");
 	printf("\t/dumpprocess decimal_pid out_file_path\n");
 	printf("\t/startwdll exe_path dll_path\n");
+	printf("\t/memmap decimal_pid out_file_path\n");
 	if( IsDebuggerPresent() ) getch();
 	exit(0);
 }
@@ -414,9 +477,9 @@ int main(int argc, char* argv[] )
 	// /dump decimal_pid, hex_string_base, hex_string_size out_file_path
 	if(!handled && strstr(argv[1],"/dumpmod") > 0 ){ 
 		if(argc!=6) usage(5);
-		pid        = atoi( argv[2] );
-		uint base  = strtol(argv[3], NULL, 16);
-		uint sz    = strtol(argv[4], NULL, 16);
+		pid            = atoi( argv[2] );
+		__int64 base   = _strtoi64(argv[3], NULL, 16);
+		__int64 sz     = _strtoi64(argv[4], NULL, 16);
 		char* dumpFile = strdup(argv[5]);
 		if(FileExists(dumpFile)){
 			printf("Error: dump file already exists aborting: %s\n\n",  dumpFile);
@@ -440,13 +503,28 @@ int main(int argc, char* argv[] )
 		handled = true;
 	}
 
+    // /memmap decimal_pid out_path
+	if(strstr(argv[1],"/memmap") > 0 ){ 
+		if(argc!=4) usage(3);
+		pid = atoi( argv[2] );
+		dll = strdup(argv[3]);
+		if(FileExists(dll)){
+			printf("Error: out file already exists: %s\n\n",dll);
+			usage();
+		}
+		rv = memMap(pid,dll);
+		handled = true;
+	}
 
 	if(handled==false){
 		printf("Error: Unknown option %s\n\n", argv[1]);
 		usage();
 	}
 
-	if( IsDebuggerPresent() ) getch();
+	if( IsDebuggerPresent() ){
+		printf("press any key to exit...");
+		getch();
+	}
 
     return rv;
 }

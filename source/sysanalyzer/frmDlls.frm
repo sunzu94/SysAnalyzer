@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Begin VB.Form frmDlls 
    Caption         =   "Dll Viewer"
    ClientHeight    =   4155
@@ -51,6 +51,9 @@ Begin VB.Form frmDlls
       Begin VB.Menu mnuDumpModule 
          Caption         =   "Dump Module"
       End
+      Begin VB.Menu mnuDumpRange 
+         Caption         =   "Dump Mem Range"
+      End
    End
 End
 Attribute VB_Name = "frmDlls"
@@ -66,6 +69,7 @@ Public dlg As New clsCmnDlg
 Private Sub Form_Load()
     On Error Resume Next
     
+    mnuPopup.Visible = False
     ClassicTheme Me
     lv.ColumnHeaders(3).Width = lv.Width - lv.ColumnHeaders(3).Left - 350
     
@@ -80,17 +84,17 @@ Private Sub lv_ItemClick(ByVal Item As MSComctlLib.ListItem)
 End Sub
 
 Private Sub lv_MouseDown(Button As Integer, Shift As Integer, x As Single, y As Single)
-    If Button = 2 Then
-        DoEvents
-        PopupMenu mnuPopup
-    End If
-End Sub
-
-Private Sub lv_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
 '    If Button = 2 Then
 '        DoEvents
 '        PopupMenu mnuPopup
 '    End If
+End Sub
+
+Private Sub lv_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+    If Button = 2 Then
+        DoEvents
+        PopupMenu mnuPopup
+    End If
 End Sub
 
 Public Sub LV_ColumnSort(ListViewControl As ListView, Column As ColumnHeader)
@@ -130,8 +134,8 @@ Sub ShowDllsFor(pid As Long, Optional owner As Object)
     Set c = cpi.GetProcessModules(pid)
     
     For Each cm In c
-        Set li = lv.ListItems.Add(, , cm.HexBase)
-        li.SubItems(1) = cm.HexSize
+        Set li = lv.ListItems.Add(, , cm.hexBase)
+        li.SubItems(1) = cm.hexSize
         li.SubItems(2) = cm.path
         Set li.Tag = cm
     Next
@@ -151,5 +155,22 @@ Private Sub mnuDumpModule_Click()
     
     Set cm = selli.Tag
     
-    MsgBox "Dump saved? " & cpi.DumpMemory(curPid, cm.HexBase, cm.HexSize, pth)
+    MsgBox "Dump saved? " & cpi.DumpMemory(curPid, cm.hexBase, cm.hexSize, pth)
+End Sub
+
+Private Sub mnuDumpRange_Click()
+
+    If selli Is Nothing Then Exit Sub
+    Dim pth As String
+    
+    pth = dlg.SaveDialog(AllFiles, , "Save dump as")
+    If Len(pth) = 0 Then Exit Sub
+    
+    Dim hexBase As String
+    Dim hexSize As String
+    
+    hexBase = InputBox("Enter hex base address")
+    hexSize = InputBox("Enter hex size")
+    
+    MsgBox "Dump saved? " & cpi.DumpMemory(curPid, hexBase, hexSize, pth)
 End Sub
