@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.1#0"; "MSCOMCTL.OCX"
 Begin VB.Form frmMemoryMap 
    Caption         =   "Memory Map"
    ClientHeight    =   6165
@@ -156,8 +156,8 @@ Public Sub ShowDlls(pid As Long) 'x64 ok.
     Set c = pi.GetProcessModules(pid)
     
     For Each cm In c
-        Set li = lv2.ListItems.Add(, , cm.HexBase)
-        li.SubItems(1) = cm.HexSize
+        Set li = lv2.ListItems.Add(, , cm.hexBase)
+        li.SubItems(1) = cm.hexSize
         li.SubItems(2) = cm.path
         
         If known.Loaded And known.Ready Then
@@ -173,7 +173,7 @@ Public Sub ShowDlls(pid As Long) 'x64 ok.
     
 End Sub
 
-Public Sub ShowMemoryMap(pid As Long) 'not x64 compatiabled...
+Public Sub ShowMemoryMap(pid As Long) 'now x64 compatiabled...
     
     Dim c As Collection
     Dim cMem As CMemory
@@ -199,7 +199,7 @@ Public Sub ShowMemoryMap(pid As Long) 'not x64 compatiabled...
     
     lv.ListItems.Clear
     For Each cMem In c
-        Set li = lv.ListItems.Add(, , Hex(cMem.Base))
+        Set li = lv.ListItems.Add(, , cMem.BaseAsHexString)
         li.SubItems(1) = Hex(cMem.size)
         li.SubItems(2) = cMem.MemTypeAsString()
         li.SubItems(3) = cMem.ProtectionAsString()
@@ -221,10 +221,10 @@ Public Sub ShowMemoryMap(pid As Long) 'not x64 compatiabled...
         Then
             If cMem.Protection = PAGE_EXECUTE_READWRITE And cMem.MemType <> MEM_IMAGE Then
                 SetLiColor li, vbRed
-                If VBA.Left(pi.ReadMemory(cMem.pid, cMem.Base, 2), 2) = "MZ" Then
-                    List1.AddItem Hex(cMem.Base) & " is RWE but not part of an image (CONFIRMED INJECTION)"
+                If VBA.Left(pi.ReadMemory2(cMem.pid, cMem.Base, 2), 2) = "MZ" Then
+                    List1.AddItem cMem.BaseAsHexString & " is RWE but not part of an image (CONFIRMED INJECTION)"
                 Else
-                    List1.AddItem Hex(cMem.Base) & " is RWE but not part of an image..possible injection"
+                    List1.AddItem cMem.BaseAsHexString & " is RWE but not part of an image..possible injection"
                 End If
             Else
                 SetLiColor li, vbBlue
@@ -297,7 +297,7 @@ Private Sub mnuDumpDll_Click()
     
     'If pi.DumpProcessMemory(active_pid, CLng("&h" & selli.Text), CLng("&h" & selli.SubItems(1)), f) Then
     
-    If pi.DumpMemory(active_pid, selli.Text, selli.SubItems(1), f) Then   'x64 enabled version...
+    If pi.DumpMemory(active_pid, selli.Text, selli.SubItems(1), f) Then    'x64 enabled version...
         MsgBox "File successfully saved"
     Else
         MsgBox "Error saving file: " & Err.Description
@@ -339,7 +339,7 @@ Private Sub mnuSaveMemory_Click()
     'f = InputBox("Save file as: ", , UserDeskTopFolder & "\" & selli.Text & ".mem")
     f = frmDlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save Memory as:", , Me, selli.Text & ".mem")
     If Len(f) = 0 Then Exit Sub
-    If pi.DumpProcessMemory(active_pid, CLng("&h" & selli.Text), CLng("&h" & selli.SubItems(1)), f) Then
+    If pi.DumpMemory(active_pid, selli.Text, selli.SubItems(1), f) Then
         MsgBox "File successfully saved"
     Else
         MsgBox "Error saving file: " & Err.Description
@@ -375,9 +375,9 @@ Private Sub mnuSearchMemory_Click()
         li.EnsureVisible
         DoEvents
         lv.Refresh
-        Base = CLng("&h" & li.Text)
+        'Base = CLng("&h" & li.Text)
         size = CLng("&h" & li.SubItems(1))
-        m = pi.ReadMemory(active_pid, Base, size)
+        m = pi.ReadMemory2(active_pid, li.Text, size)
         a = InStr(1, m, s, vbTextCompare)
         b = InStr(1, m, s2, vbTextCompare)
         If a > 0 Then ret = ret & "pid: " & li.Text & " base: " & li.SubItems(1) & " offset: " & Hex(Base + a) & " ASCII " & li.SubItems(5) & vbCrLf
@@ -397,7 +397,7 @@ Private Sub mnuStrings_Click()
     On Error Resume Next
     Dim f As String
     f = fso.GetFreeFileName(Environ("temp"), ".bin")
-    If pi.DumpProcessMemory(active_pid, CLng("&h" & selli.Text), CLng("&h" & selli.SubItems(1)), f) Then
+    If pi.DumpMemory(active_pid, selli.Text, selli.SubItems(1), f) Then
        LaunchStrings f, True
     Else
         MsgBox "Error saving file: " & Err.Description
@@ -409,14 +409,15 @@ Private Sub mnuViewMemory_Click()
     Dim s As String
     Dim Base As Long
     On Error Resume Next
-    Base = CLng("&h" & selli.Text)
-    s = pi.ReadMemory(active_pid, Base, CLng("&h" & selli.SubItems(1)))
+    'Base = CLng("&h" & selli.Text)
+    s = pi.ReadMemory2(active_pid, selli.Text, CLng("&h" & selli.SubItems(1)))
     If Len(s) = 0 Then
-        List1.AddItem "Failed to readmemory?"
+        List1.AddItem Now & ": Failed to readmemory?"
+        List1.ListIndex = List1.ListCount - 1
         Exit Sub
     End If
     'frmReport.ShowList HexDump(s, , base), False, selli.Text & ".mem", False
     Dim f As New rhexed.CHexEditor
-    f.Editor.AdjustBaseOffset = Base
+    If Len(selli.Text) < 8 Then f.Editor.AdjustBaseOffset = Base
     f.Editor.LoadString s
 End Sub

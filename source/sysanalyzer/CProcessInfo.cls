@@ -42,9 +42,9 @@ Option Explicit
 '  added is64Bit, domain, fullpath, sessionID to CProcess
 
 ' x64 safe functions..
-'    DumpProcess, DumpMemory, GetProcessModules, EnumDrivers, GetRunningProcesses
+'    DumpProcess, DumpMemory, GetProcessModules, EnumDrivers, GetRunningProcesses,  GetMemoryMap, ReadMemory2
 '
-' x64unsafe: GetMemoryMap,ReadMemory
+' x64 unsafe: ReadMemory
 
 Private Declare Function NtQuerySystemInformation Lib "ntdll.dll" ( _
     ByVal dwInfoType As Long, _
@@ -53,9 +53,9 @@ Private Declare Function NtQuerySystemInformation Lib "ntdll.dll" ( _
     dwReserved As Long) As Long
 
 Private Type SYSTEM_MODULE_INFORMATION
-    Reserved(1) As Long                'ULONG reserved[2];
+    reserved(1) As Long                'ULONG reserved[2];
     Base As Long                       'PVOID Base;
-    Size As Long                       'ULONG Size;
+    size As Long                       'ULONG Size;
     flags As Long                      'ULONG Flags;
     Index As Integer                   'USHORT Index;
     unkn As Integer                    'USHORT Unknown;
@@ -132,7 +132,7 @@ Private Type MEMORY_BASIC_INFORMATION
    AllocationBase As Long
    InitialProtect As Long
    RegionSize As Long
-   State As Long
+   state As Long
    Protect As Long
    Type As Long
 End Type
@@ -271,7 +271,7 @@ End Type
 
 Private Declare Function WTSEnumerateProcesses _
    Lib "wtsapi32.dll" Alias "WTSEnumerateProcessesA" _
-   (ByVal hServer As Long, ByVal Reserved As Long, _
+   (ByVal hServer As Long, ByVal reserved As Long, _
    ByVal version As Long, ByRef ppProcessInfo As Long, _
    ByRef pCount As Long _
    ) As Long
@@ -433,7 +433,7 @@ Function Legacy_GetRunningProcesses() As Collection 'of CProcess classes
             .pid = myProcess.th32ProcessID
             .ParentPID = myProcess.th32ParentProcessID
             .CmdLine = GetProcessCmdLine(.pid, .fullpath)
-            .User = GetProcessUser(.pid)
+            .user = GetProcessUser(.pid)
             .is64Bit = (x64.IsProcess_x64(.pid) = r_64bit)
         End With
 
@@ -453,7 +453,7 @@ Function Legacy_GetRunningProcesses() As Collection 'of CProcess classes
                 .pid = myProcess.th32ProcessID
                 .ParentPID = myProcess.th32ParentProcessID
                 .CmdLine = GetProcessCmdLine(.pid, .fullpath)
-                .User = GetProcessUser(.pid) 'OpenProcessToken Fails for Local/Network Service
+                .user = GetProcessUser(.pid) 'OpenProcessToken Fails for Local/Network Service
                 'If Len(.User) = 0 Then Stop
                 .is64Bit = (x64.IsProcess_x64(.pid) = r_64bit)
             End With
@@ -576,7 +576,7 @@ Function GetProcessModules(pid As Long) As Collection
         Set cmod = New CModule
         cmod.path = mfn
         cmod.Base = lmi.lpBaseOfDll
-        cmod.Size = lmi.SizeOfImage
+        cmod.size = lmi.SizeOfImage
          
         On Error Resume Next
         mCol.Add cmod, cmod.path
@@ -598,7 +598,7 @@ Function GetProcessUser(pid As Long) As String
    Dim hProcess As Long
    Dim hAccessProcessToken As Long
    Dim sid_name_use As Integer
-   Dim User As String
+   Dim user As String
    Dim domain As String
    Dim lu As Long
    Dim ld As Long
@@ -619,16 +619,16 @@ Function GetProcessUser(pid As Long) As String
            ErrNo = Err.LastDllError
        Else
 
-           User = String$(100, 0)
+           user = String$(100, 0)
            domain = String$(100, 0)
-           lu = Len(User)
+           lu = Len(user)
            ld = Len(domain)
-           success = LookupAccountSid(vbNullString, InfoStructure.sID, User, lu, domain, ld, sid_name_use)
+           success = LookupAccountSid(vbNullString, InfoStructure.sID, user, lu, domain, ld, sid_name_use)
 
            If success = 0 Then
                ErrNo = Err.LastDllError
            Else
-               sUser = Left$(User, InStr(User, Chr$(0)) - 1)
+               sUser = Left$(user, InStr(user, Chr$(0)) - 1)
                sDomain = Left$(domain, InStr(domain, Chr$(0)) - 1)
                GetProcessUser = sDomain & ":" & sUser
            End If
@@ -658,15 +658,16 @@ Function DumpProcess(pid As Long, fpath As String) As Boolean
     Set col = GetProcessModules(pid)
     Set cmod = col(1)
 
-    DumpProcess = DumpProcessMemory(pid, cmod.Base, cmod.Size, fpath)
+    DumpProcess = DumpProcessMemory(pid, cmod.Base, cmod.size, fpath)
     
 End Function
 
-Function DumpMemory(pid As Long, hex_start As String, hex_size As String, ByVal fpath As String) As Boolean
+Function DumpMemory(pid As Long, ByVal hex_start As String, hex_size As String, ByVal fpath As String) As Boolean
     
     Dim s As Long, l As Long
     
     If x64.IsProcess_x64(pid) = r_64bit Then
+        hex_start = Replace(hex_start, "`", Empty)
         DumpMemory = x64.DumpMemory(pid, Trim(hex_start), Trim(hex_size), fpath)
     Else
         s = CLng("&h" & Trim(hex_start))
@@ -703,6 +704,37 @@ Function DumpProcessMemory(pid As Long, start As Long, Length As Long, fpath As 
     Exit Function
 hell:
     DumpProcessMemory = False
+    
+End Function
+
+'for x64 processes assumes start is hex string, length can be hexstring or long..
+Function ReadMemory2(pid As Long, ByVal start As Variant, ByVal Length As Variant) As String
+   
+    Dim pHandle As Long
+    Dim b() As Byte
+    Dim tmp As String
+    Dim f As Long
+    
+    If x64.IsProcess_x64(pid) = r_64bit Then
+        If TypeName(Length) = "Long" Then Length = Hex(Length)
+        If TypeName(start) = "Long" Then start = Hex(start)
+        start = Replace(start, "`", Empty)
+        tmp = fso.GetFreeFileName(Environ("temp"), ".bin")
+        If DumpMemory(pid, CStr(start), CStr(Length), tmp) Then
+             ReadMemory2 = fso.ReadFile(tmp)
+             Kill tmp
+             Exit Function
+        End If
+    Else
+        If TypeName(Length) = "String" Or TypeName(Length) = "Variant" Then Length = CLng("&h" & Length)
+        If TypeName(start) = "String" Or TypeName(start) = "Variant" Then start = CLng("&h" & start)
+
+        ReDim b(Length + 1)
+        pHandle = OpenProcess(PROCESS_VM_READ, False, pid)
+        ReadProcessMemory pHandle, CLng(start), b(0), CLng(Length), CLng(Length)
+        CloseHandle pHandle
+        ReadMemory2 = StrConv(b(), vbUnicode, &H409)
+    End If
     
 End Function
 
@@ -823,7 +855,7 @@ Function TerminateProces(pid As Long) As Boolean
 End Function
 
 Function GetSeDebug() As Boolean
-    Dim hToken As Long, hProcess As Long, lRet As Long
+    Dim hToken As Long, hProcess As Long, lret As Long
     Dim tkp As TOKEN_PRIVILEGES
     
     Const TOKEN_ADJUST_PRIVILEGES As Long = &H20
@@ -836,7 +868,7 @@ Function GetSeDebug() As Boolean
     tkp.PrivilegeCount = 1
     tkp.Attributes = 2 'SE_PRIVILEGE_ENABLED
     
-    If AdjustTokenPrivileges(hToken, False, tkp, Len(tkp), tkp, lRet) = 0 Then Exit Function
+    If AdjustTokenPrivileges(hToken, False, tkp, Len(tkp), tkp, lret) = 0 Then Exit Function
         
     If GetLastError = 0 Then GetSeDebug = True
 
@@ -856,6 +888,11 @@ Function GetMemoryMap(pid As Long) As Collection 'of CMem
     Dim n As String
     Dim cMem As CMemory
     
+    If x64.IsProcess_x64(pid) = r_64bit Then
+        Set GetMemoryMap = x64.GetMemoryMap(pid)
+        Exit Function
+    End If
+
     hProc = OpenProcess(CLng(PROCESS_QUERY_INFORMATION Or PROCESS_VM_READ), False, pid)
     If hProc = 0 Then
         Set GetMemoryMap = ret
@@ -866,16 +903,16 @@ Function GetMemoryMap(pid As Long) As Collection 'of CMem
     Do While cur < &H7FFEFFFF
          x = VirtualQueryEx(hProc, cur, meminfo, LenB(meminfo))
          
-         If meminfo.State <> MEM_FREE Then
+         If meminfo.state <> MEM_FREE Then
             Set cMem = New CMemory
             cMem.pid = pid
-            cMem.Size = meminfo.RegionSize
+            cMem.size = meminfo.RegionSize
             cMem.Base = cur
             cMem.AllocBase = meminfo.AllocationBase
             cMem.InitialProtection = meminfo.InitialProtect
             cMem.MemType = meminfo.Type
             cMem.Protection = meminfo.Protect
-            cMem.State = meminfo.State
+            cMem.state = meminfo.state
                        
             If cur > 0 Then
                n = String(256, Chr(0))
@@ -935,8 +972,8 @@ Private Function GetUserName(sID As Long, p As CProcess) As String
     retdomain = String(255, 0)
     LookupAccountSid vbNullString, sID, retname, 255, retdomain, 255, 0
     p.domain = Left$(retdomain, InStr(retdomain, vbNullChar) - 1)
-    p.User = Left$(retname, InStr(retname, vbNullChar) - 1)
-    GetUserName = p.domain & "\" & p.User
+    p.user = Left$(retname, InStr(retname, vbNullChar) - 1)
+    GetUserName = p.domain & "\" & p.user
 End Function
 
 Public Function GetParentProcessId(ByVal pid As Long) As Long

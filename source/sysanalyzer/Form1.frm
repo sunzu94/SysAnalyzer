@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.1#0"; "MSCOMCTL.OCX"
 Object = "{BDC217C8-ED16-11CD-956C-0000C04E4C0A}#1.1#0"; "TABCTL32.OCX"
 Begin VB.Form frmMain 
    Caption         =   "SysAnalyzer"
@@ -881,7 +881,7 @@ Option Explicit
 '
 
 Private Capturing As Boolean
-Private Declare Function SetCapture Lib "user32" (ByVal hWnd As Long) As Long
+Private Declare Function SetCapture Lib "user32" (ByVal hwnd As Long) As Long
 Private Declare Function ReleaseCapture Lib "user32" () As Long
 
 Dim WithEvents subclass As CSubclass2
@@ -918,13 +918,13 @@ Sub Initalize()
    
     If Me.SSTab1.TabVisible(6) Then
         If Not isIde() Then 'already debugged
-            subclass.AttachMessage frmDirWatch.hWnd, WM_COPYDATA
+            subclass.AttachMessage frmDirWatch.hwnd, WM_COPYDATA
         End If
     End If
     
     If Me.SSTab1.TabVisible(5) Then
         If Not isIde() Then 'already debugged
-            subclass.AttachMessage frmApiLogger.hWnd, WM_COPYDATA
+            subclass.AttachMessage frmApiLogger.hwnd, WM_COPYDATA
         End If
     End If
     
@@ -1269,10 +1269,10 @@ Private Sub mnuScanProcForStealthInjects_Click()
     If liProc Is Nothing Then Exit Sub
     Dim pid As Long
     pid = CLng(liProc.Tag)
-    If diff.CProc.x64.IsProcess_x64(pid) <> r_32bit Then
-        MsgBox x64Error, vbInformation
-        Exit Sub
-    End If
+    'If diff.CProc.x64.IsProcess_x64(pid) <> r_32bit Then
+    '    MsgBox x64Error, vbInformation
+    '    Exit Sub
+    'End If
     frmInjectionScan.FindStealthInjections pid, liProc.SubItems(3)
 End Sub
 
@@ -1337,10 +1337,10 @@ Private Sub mnuShowMemoryMap_Click()
     If liProc Is Nothing Then Exit Sub
     Dim pid As Long
     pid = CLng(liProc.Tag)
-    If diff.CProc.x64.IsProcess_x64(pid) <> r_32bit Then
-        MsgBox x64Error, vbInformation
-        Exit Sub
-    End If
+'    If diff.CProc.x64.IsProcess_x64(pid) <> r_32bit Then
+'        MsgBox x64Error, vbInformation
+'        Exit Sub
+'    End If
     frmMemoryMap.ShowMemoryMap pid
 End Sub
 
@@ -1576,13 +1576,13 @@ Private Sub Form_Unload(Cancel As Integer)
      
     If Me.SSTab1.TabVisible(6) Then
         If Not isIde() Then
-            subclass.DetatchMessage frmDirWatch.hWnd, WM_COPYDATA
+            subclass.DetatchMessage frmDirWatch.hwnd, WM_COPYDATA
         End If
     End If
     
     If Me.SSTab1.TabVisible(5) Then
         If Not isIde() Then
-            subclass.DetatchMessage frmApiLogger.hWnd, WM_COPYDATA
+            subclass.DetatchMessage frmApiLogger.hwnd, WM_COPYDATA
         End If
         If lvAPILog.ListItems.count > 0 Then cmdSaveApiLog_Click
     End If
@@ -1677,7 +1677,7 @@ End Sub
  
 
 
-Private Sub subclass_MessageReceived(hWnd As Long, wMsg As Long, wParam As Long, lParam As Long, Cancel As Boolean)
+Private Sub subclass_MessageReceived(hwnd As Long, wMsg As Long, wParam As Long, lParam As Long, Cancel As Boolean)
     Dim msg As String
     Dim tmp
     Dim li As ListItem
@@ -1688,7 +1688,7 @@ Private Sub subclass_MessageReceived(hWnd As Long, wMsg As Long, wParam As Long,
     
     If wMsg = WM_COPYDATA Then
         If RecieveTextMessage(lParam, msg) Then
-            If hWnd = Me.hWnd Then
+            If hwnd = Me.hwnd Then
             
 '                If msg = "analyzer_report" Then
 '                    frmReport.Text1 = frmReport.Text1 & vbCrLf & vbCrLf & _
@@ -1699,7 +1699,7 @@ Private Sub subclass_MessageReceived(hWnd As Long, wMsg As Long, wParam As Long,
 '                    If Not frmReport.Visible Then frmReport.Visible = True
 '                End If
                 
-            ElseIf hWnd = frmApiLogger.hWnd Then
+            ElseIf hwnd = frmApiLogger.hwnd Then
             
                 apiDataManager.HandleApiMessage msg '5.18.12
                 If ignoreAPILOG Then Exit Sub
@@ -1946,7 +1946,7 @@ Private Sub splitterDlls_MouseMove(Button As Integer, Shift As Integer, x As Sin
     If Button = 1 Then 'The mouse is down
         If Capturing = False Then
             splitterDlls.ZOrder
-            SetCapture splitterDlls.hWnd
+            SetCapture splitterDlls.hwnd
             Capturing = True
         End If
         With splitterDlls

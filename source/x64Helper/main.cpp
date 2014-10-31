@@ -296,7 +296,14 @@ int dump(int pid, __int64 base, __int64 size, char* out_file){
 
 	SIZE_T bytesRead;
 	if( ReadProcessMemory(h,(void*)base,mem,size,&bytesRead) == 0){
-		printf("Error: Failed to read memory from process base=%x, size=%x\n",base,size);
+		printf("Error: Failed to read memory from process base=%llx, size=%x\n",base,size);
+		CloseHandle(h);
+		free(mem);
+		return 1;
+	}
+
+	if( bytesRead != size){
+		printf("Error: Read size did not match requested size base=%llx, size=%x\n",base,size);
 		CloseHandle(h);
 		free(mem);
 		return 1;

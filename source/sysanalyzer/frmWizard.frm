@@ -780,7 +780,7 @@ End Sub
 
 
 Private Sub Form_Load()
-            
+      
     On Error GoTo hell
     
     Dim c As Collection

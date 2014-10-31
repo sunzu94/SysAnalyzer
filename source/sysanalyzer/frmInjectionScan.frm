@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.1#0"; "MSCOMCTL.OCX"
 Begin VB.Form frmInjectionScan 
    Caption         =   "32bit process Injection Scan"
    ClientHeight    =   3720
@@ -197,9 +197,9 @@ Function StealthInjectionScan()
     For Each cp In c
         Me.Caption = "Scanning " & pb.Value & "/" & c.count & "  Found: " & lv.ListItems.count & " Processing: " & cp.path & " TotalRWEFound: " & totalRWEFound & " Total Allocs Scanned: " & totalScanned
        
-        If diff.CProc.x64.IsProcess_x64(cp.pid) = r_32bit Then
+        'If diff.CProc.x64.IsProcess_x64(cp.pid) = r_32bit Then
             FindStealthInjections cp.pid, pi.GetProcessPath(cp.pid)
-        End If
+        'End If
         
         DoEvents
         Sleep 20
@@ -232,10 +232,10 @@ Sub FindStealthInjections(pid As Long, pName As String)
     Me.Visible = True
     minEntropy = CLng(txtMinEntropy)
     
-    If diff.CProc.x64.IsProcess_x64(pid) <> r_32bit Then
-        MsgBox x64Error, vbInformation
-        Exit Sub
-    End If
+    'If diff.CProc.x64.IsProcess_x64(pid) <> r_32bit Then
+    '    MsgBox x64Error, vbInformation
+    '    Exit Sub
+    'End If
     
     If Err.Number <> 0 Then
         minEntropy = 50
@@ -265,7 +265,7 @@ Sub FindStealthInjections(pid As Long, pName As String)
         If cMem.Protection = PAGE_EXECUTE_READWRITE And cMem.MemType <> MEM_IMAGE Then
             
             totalRWEFound = totalRWEFound + 1
-            s = pi.ReadMemory(cMem.pid, cMem.Base, cMem.size) 'doesnt add that much time
+            s = pi.ReadMemory2(cMem.pid, cMem.Base, cMem.size) 'doesnt add that much time
             entropy = CalculateEntropy(s)
             s = Empty
              
@@ -274,13 +274,13 @@ Sub FindStealthInjections(pid As Long, pName As String)
             'End If
             
             Set li = lv.ListItems.Add(, , pid)
-            li.SubItems(1) = Hex(cMem.Base)
+            li.SubItems(1) = cMem.BaseAsHexString
             li.SubItems(2) = Hex(cMem.size)
             li.SubItems(3) = cMem.MemTypeAsString()
             li.SubItems(4) = cMem.ProtectionAsString()
             li.SubItems(5) = pName
             
-            If VBA.Left(pi.ReadMemory(cMem.pid, cMem.Base, 2), 2) = "MZ" Then
+            If VBA.Left(pi.ReadMemory2(cMem.pid, cMem.Base, 2), 2) = "MZ" Then
                 SetLiColor li, vbRed
             End If
 
@@ -345,7 +345,7 @@ Private Sub mnuSave_Click()
     'f = InputBox("Save file as: ", , UserDeskTopFolder & "\" & pid & "_" & selli.SubItems(1) & ".mem")
     f = frmDlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save As:", , Me, pid & "_" & selli.SubItems(1) & ".mem")
     If Len(f) = 0 Then Exit Sub
-    If pi.DumpProcessMemory(pid, CLng("&h" & selli.SubItems(1)), CLng("&h" & selli.SubItems(2)), f) Then
+    If pi.DumpMemory(pid, selli.SubItems(1), selli.SubItems(2), f) Then
         MsgBox "File successfully saved"
     Else
         MsgBox "Error saving file: " & Err.Description
@@ -383,11 +383,11 @@ Private Sub mnuSearchMem_Click()
         Set cMem = li.Tag
         DoEvents
         lv.Refresh
-        m = pi.ReadMemory(cMem.pid, cMem.Base, cMem.size)
+        m = pi.ReadMemory2(cMem.pid, cMem.Base, cMem.size)
         a = InStr(1, m, s, vbTextCompare)
         b = InStr(1, m, s2, vbTextCompare)
-        If a > 0 Then ret = ret & "pid: " & li.Text & " base: " & li.SubItems(1) & " offset: " & Hex(cMem.Base + a) & " ASCII " & li.SubItems(5) & vbCrLf
-        If b > 0 Then ret = ret & "pid: " & li.Text & " base: " & li.SubItems(1) & " offset: " & Hex(cMem.Base + b) & " UNICODE " & li.SubItems(5) & vbCrLf
+        If a > 0 Then ret = ret & "pid: " & li.Text & " base: " & li.SubItems(1) & " offset: " & cMem.Base & "+" & a & " ASCII " & li.SubItems(5) & vbCrLf
+        If b > 0 Then ret = ret & "pid: " & li.Text & " base: " & li.SubItems(1) & " offset: " & cMem.Base & "+" & b & " UNICODE " & li.SubItems(5) & vbCrLf
         pb.Value = pb.Value + 1
     Next
             
@@ -408,7 +408,7 @@ Private Sub mnuStrings_Click()
     On Error Resume Next
     pid = CLng(selli.Text)
     f = fso.GetFreeFileName(Environ("temp"), ".bin")
-    If pi.DumpProcessMemory(pid, CLng("&h" & selli.SubItems(1)), CLng("&h" & selli.SubItems(2)), f) Then
+    If pi.DumpMemory(pid, selli.SubItems(1), selli.SubItems(2), f) Then
         LaunchStrings f, True
     Else
         MsgBox "Error saving file: " & Err.Description
@@ -419,11 +419,11 @@ Private Sub mnuView_Click()
     If selli Is Nothing Then Exit Sub
     Dim s As String
     Dim pid As Long
-    Dim Base As Long
+    Dim Base 'As Long
     On Error Resume Next
-    Base = CLng("&h" & selli.SubItems(1))
+    Base = selli.SubItems(1)
     pid = CLng(selli.Text)
-    s = pi.ReadMemory(pid, Base, CLng("&h" & selli.SubItems(2)))
+    s = pi.ReadMemory2(pid, Base, CLng("&h" & selli.SubItems(2)))
     If Len(s) = 0 Then
         MsgBox "Failed to readmemory?"
         Exit Sub

@@ -12,21 +12,33 @@ Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Public pid As Long
-Public Base As Long
-Public Size As Long
+Public isx64 As Boolean
+
+'for x64 these two will be strings, otherwise longs..
+Public Base As Variant
+Public AllocBase As Variant
+
+Public size As Long
 Public MemType As MemoryTypes
-Public State As MemoryTypes
+Public state As MemoryTypes
 Public Protection As MemAccess
 Public InitialProtection As MemAccess
 Public ModuleName As String
-Public AllocBase As Long
+
+Public Function BaseAsHexString()
+    If isx64 Then BaseAsHexString = Base Else BaseAsHexString = Hex(Base)
+End Function
+
+Public Function AllocBaseAsHexString()
+    If isx64 Then AllocBaseAsHexString = AllocBase Else AllocBaseAsHexString = Hex(AllocBase)
+End Function
 
 Public Function MemTypeAsString() As String
     MemTypeAsString = GetTypeAsString(MemType)
 End Function
 
 Public Function StateAsString() As String
-    StateAsString = GetTypeAsString(State)
+    StateAsString = GetTypeAsString(state)
 End Function
 
 Public Function ProtectionAsString(Optional verbose As Boolean = False) As String

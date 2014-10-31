@@ -398,9 +398,13 @@ End Function
 Private Function GetShortName(sFile As String) As String
     Dim sShortFile As String * 67
     Dim lResult As Long
+    Dim iCreated As Boolean
     
     'the path must actually exist to get the short path name !!
-    If Not FileExists(sFile) Then writeFile sFile, " "
+    If Not FileExists(sFile) Then
+        iCreated = True
+        writeFile sFile, " "
+    End If
     
     'Make a call to the GetShortPathName API
     DisableRedir
@@ -410,12 +414,13 @@ Private Function GetShortName(sFile As String) As String
     'Trim out unused characters from the string.
     GetShortName = Left$(sShortFile, lResult)
     
+    If iCreated Then Kill GetShortName
     'If Len(GetShortName) = 0 Then GetShortName = sFile
 
 End Function
 
 Private Function GetSeDebug() As Boolean
-    Dim hToken As Long, hProcess As Long, lRet As Long
+    Dim hToken As Long, hProcess As Long, lret As Long
     Dim tkp As TOKEN_PRIVILEGES
     
     Const TOKEN_ADJUST_PRIVILEGES As Long = &H20
@@ -428,7 +433,7 @@ Private Function GetSeDebug() As Boolean
     tkp.PrivilegeCount = 1
     tkp.Attributes = 2 'SE_PRIVILEGE_ENABLED
     
-    If AdjustTokenPrivileges(hToken, False, tkp, Len(tkp), tkp, lRet) = 0 Then Exit Function
+    If AdjustTokenPrivileges(hToken, False, tkp, Len(tkp), tkp, lret) = 0 Then Exit Function
         
     If GetLastError = 0 Then GetSeDebug = True
 
@@ -447,6 +452,64 @@ Function ReadFile(fileName) As String 'this one should be binary safe...
   ReadFile = StrConv(b(), vbUnicode, LANG_US)
   Exit Function
 hell:   ReadFile = ""
+End Function
+
+Function GetMemoryMap(pid As Long) As Collection 'of Cmemory
+
+    On Error Resume Next
+     
+    Dim mCol As New Collection
+    Dim cMem As CMemory
+    Dim a, b
+    Dim mem, x, parts
+    Dim tmp As String
+    
+    If Not HelperEnabled Then GoTo hell
+    
+    tmp = fso.GetFreeFileName(Environ("temp"))
+    x = GetCommandOutput(helperPath & " /memmap " & pid & " " & tmp)
+    'x = ReadFile("c:\x64_memmap.txt")
+    
+    If InStr(1, x, "Error:", vbTextCompare) > 0 Then
+        GoTo hell
+    End If
+    
+    x = ReadFile(tmp)
+    mem = Split(x, vbCrLf)
+     
+    For i = 1 To UBound(mem)
+        x = mem(i)
+        '"%llX,%llX,%llX,%lX,%lX,%lX,%lX,%s\r\n",
+        'va, mbi.AllocationBase, mbi.RegionSize, mbi.AllocationProtect, mbi.Type, mbi.Protect, mbi.State, mod);
+        parts = Split(x, ",")
+        If UBound(parts) = 7 Then
+            Set cMem = New CMemory
+            With cMem
+                .pid = pid
+                .isx64 = True
+                .Base = parts(0)
+                .AllocBase = parts(1)
+                If Len(.AllocBase) > 8 Then
+                    .AllocBase = Mid(.AllocBase, 1, Len(.AllocBase) - 8) & "`" & VBA.Right(.AllocBase, 8)
+                End If
+                If Len(.Base) > 8 Then
+                    .Base = Mid(.Base, 1, Len(.Base) - 8) & "`" & VBA.Right(.Base, 8)
+                End If
+                .size = CLng("&h" & parts(2))
+                .InitialProtection = CLng("&h" & parts(3))
+                .MemType = CLng("&h" & parts(4))
+                .Protection = CLng("&h" & parts(5))
+                .state = CLng("&h" & parts(6))
+                .ModuleName = parts(7)
+            End With
+            mCol.Add cMem
+        End If
+        
+    Next
+    
+hell:
+    Set GetMemoryMap = mCol
+        
 End Function
 
 Function GetProcessModules(pid As Long) As Collection
@@ -477,7 +540,7 @@ Function GetProcessModules(pid As Long) As Collection
             cmod.path = parts(2)
             cmod.x64Base = parts(0)
             cmod.x64Size = parts(1)
-            cmod.isX64 = True
+            cmod.isx64 = True
             mCol.Add cmod, cmod.path
         End If
         
@@ -508,10 +571,10 @@ Function DumpProcess(pid As Long, ByVal fpath As String) As Boolean
     
     If Not HelperEnabled Then Exit Function
     
-    fpath = GetShortName(fpath)
+    'fpath = GetShortName(fpath)
     If FileExists(fpath) Then Kill fpath
     
-    x = GetCommandOutput(helperPath & " /dumpprocess " & pid & " " & fpath)
+    x = GetCommandOutput(helperPath & " /dumpprocess " & pid & " """ & fpath & """")
     
     If InStr(1, x, "Error:", vbTextCompare) > 0 Then
         Exit Function
@@ -526,16 +589,18 @@ Function DumpMemory(pid As Long, hex_start As String, hex_size As String, ByVal 
     
     If Not HelperEnabled Then Exit Function
     
-    fpath = GetShortName(fpath)
+    'fpath = GetShortName(fpath) 'x64helper seems to have a problem with short paths?
     If FileExists(fpath) Then Kill fpath
     
-    x = GetCommandOutput(helperPath & " /dumpmodule " & pid & " " & hex_start & " " & hex_size & " " & fpath)
+    x = GetCommandOutput(helperPath & " /dumpmodule " & pid & " " & hex_start & " " & hex_size & " """ & fpath & """")
     
     If InStr(1, x, "Error:", vbTextCompare) > 0 Then
         Exit Function
     End If
     
-    DumpMemory = True
+    If InStr(1, x, "Dump saved to", vbTextCompare) > 0 Then
+        DumpMemory = True
+    End If
     
 End Function
 
