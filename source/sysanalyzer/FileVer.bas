@@ -28,7 +28,7 @@ Public Declare Function IDEStartWatch Lib "./../../dir_watch.dll" Alias "StartWa
 Public Declare Function IDECloseWatch Lib "./../../dir_watch.dll" Alias "CloseWatch" (ByVal threadID As Long) As Long
 
 Public Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
-Private Declare Function SetWindowPos Lib "user32" (ByVal hWnd As Long, ByVal hWndInsertAfter As Long, ByVal x As Long, ByVal y As Long, ByVal cx As Long, ByVal cy As Long, ByVal wFlags As Long) As Long
+Private Declare Function SetWindowPos Lib "user32" (ByVal hwnd As Long, ByVal hWndInsertAfter As Long, ByVal x As Long, ByVal y As Long, ByVal cx As Long, ByVal cy As Long, ByVal wFlags As Long) As Long
 
 Global fso As New clsFileSystem
 Global dlg As New clsCmnDlg2 'comdlg threadlocks on main form?! even MS one does..
@@ -72,7 +72,7 @@ Private Declare Sub MoveMemory Lib "kernel32" Alias "RtlMoveMemory" (Dest As Any
 Private Declare Function lstrcpy Lib "kernel32" Alias "lstrcpyA" (ByVal lpString1 As String, ByVal lpString2 As Long) As Long
 Public Declare Function FindWindow Lib "user32" Alias "FindWindowA" (ByVal lpClassName As String, ByVal lpWindowName As String) As Long
 Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (hpvDest As Any, hpvSource As Any, ByVal cbCopy As Long)
-Public Declare Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteA" (ByVal hWnd As Long, ByVal lpOperation As String, ByVal lpFile As String, ByVal lpParameters As String, ByVal lpDirectory As String, ByVal nShowCmd As Long) As Long
+Public Declare Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteA" (ByVal hwnd As Long, ByVal lpOperation As String, ByVal lpFile As String, ByVal lpParameters As String, ByVal lpDirectory As String, ByVal nShowCmd As Long) As Long
 
 
 Public Type FILEPROPERTIE
@@ -177,7 +177,7 @@ Public Sub AlwaysOnTop(f As Form, Optional SetOnTop As Boolean = True)
     
     lflag = IIf(SetOnTop, HWND_TOPMOST, HWND_NOTOPMOST)
      
-    SetWindowPos f.hWnd, lflag, f.Left / tx, f.top / ty, f.Width / tx, f.Height / ty, SWP_NOACTIVATE Or SWP_SHOWWINDOW
+    SetWindowPos f.hwnd, lflag, f.Left / tx, f.top / ty, f.Width / tx, f.Height / ty, SWP_NOACTIVATE Or SWP_SHOWWINDOW
     
 End Sub
 
@@ -281,6 +281,44 @@ Function LaunchStrings(data As String, Optional isPath As Boolean = False)
     Close h
     
     Shell exe & " """ & f & """ /peek"
+
+End Function
+
+Function LaunchExternalHexViewer(data As String, Optional isPath As Boolean = False, Optional base As String = Empty)
+
+    Dim b() As Byte
+    Dim f As String
+    Dim exe As String
+    Dim h As Long
+    
+    On Error Resume Next
+    
+    If Len(base) > 0 Then base = "/base=" & base
+    
+    exe = App.path & IIf(isIde(), "\..\..", "") & "\shellext.exe"
+    If Not fso.FileExists(exe) Then
+        MsgBox "Could not launch strings shellext not found", vbInformation
+        Exit Function
+    End If
+    
+    If isPath Then
+        If fso.FileExists(data) Then
+            f = data
+        Else
+            MsgBox "Can not launch strings, File not found: " & data, vbInformation
+            Exit Function
+        End If
+    Else
+        b() = StrConv(data, vbFromUnicode, LANG_US)
+        f = fso.GetFreeFileName(Environ("temp"), ".bin")
+        h = FreeFile
+    End If
+    
+    Open f For Binary As h
+    Put h, , b()
+    Close h
+    
+    Shell exe & " """ & f & """" & IIf(Len(base) > 0, " " & base, "") & " /hexv"
 
 End Function
 
@@ -762,7 +800,7 @@ Sub ScanProcsForDll(Optional lblDisplay As Label = Nothing)
                     tmp2 = Empty
                     For Each cm In m
                         If InStr(1, cm.path, find, vbTextCompare) > 0 Then
-                           tmp2 = tmp2 & vbTab & Hex(cm.Base) & vbTab & cm.path & vbCrLf
+                           tmp2 = tmp2 & vbTab & Hex(cm.base) & vbTab & cm.path & vbCrLf
                            hit = True
                         End If
                     Next

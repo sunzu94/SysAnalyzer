@@ -575,9 +575,9 @@ Sub LoadChkSettings(Optional load As Boolean = True)
             If cc.Enabled Then
                 If load Then
                     r = GetSetting("ApiLog", "settings", cc.name, defVal)
-                    cc.value = r
+                    cc.Value = r
                 Else
-                    Call SaveSetting("ApiLog", "settings", cc.name, cc.value)
+                    Call SaveSetting("ApiLog", "settings", cc.name, cc.Value)
                 End If
             End If
         End If
@@ -622,7 +622,7 @@ End Function
 
 Private Sub cmdBrowse_Click(Index As Integer)
     Dim f As String
-    f = dlg.OpenDialog(AllFiles, , "Open Executable to monitor", Me.hwnd)
+    f = dlg.OpenDialog(AllFiles, , "Open Executable to monitor", Me.hWnd)
     If Len(f) = 0 Then Exit Sub
     If Index = 0 Then
         txtPacked = f
@@ -679,7 +679,7 @@ Private Sub cmdSave_Click()
     Dim i As Long, t, f As String
     Dim li As ListItem
     
-    f = dlg.SaveDialog(textFiles, , , , Me.hwnd)
+    f = dlg.SaveDialog(textFiles, , , , Me.hWnd)
     If Len(f) = 0 Then Exit Sub
     
     For Each li In lv.ListItems
@@ -693,15 +693,12 @@ End Sub
 Private Sub cmdSelectProcess_Click()
     Dim cp As CProcess
     Set cp = frmListProcess.SelectProcess(cpi.GetRunningProcesses)
-    If Not cp Is Nothing Then
-        txtPacked = "pid:" & cp.pid
-    End If
 End Sub
 
 Private Sub cmdStart_Click()
         
     Dim exe As String
-    Dim isX64 As Boolean
+    Dim isx64 As Boolean
     Dim isPid As Boolean
     Dim pid As Long
     Dim failed As Boolean
@@ -726,13 +723,13 @@ Private Sub cmdStart_Click()
         isPid = True
         exe = Replace(txtPacked, "pid:", Empty)
         pid = CLng(Trim(exe))
-        If cpi.x64.IsProcess_x64(CLng(exe)) = r_64bit Then isX64 = True
+        If cpi.x64.IsProcess_x64(CLng(exe)) = r_64bit Then isx64 = True
     Else
         If Not FileExists(txtPacked) Then
             MsgBox "Executable not found"
             Exit Sub
         End If
-        If cpi.x64.isExe_x64(txtPacked) = r_64bit Then isX64 = True
+        If cpi.x64.isExe_x64(txtPacked) = r_64bit Then isx64 = True
         exe = txtPacked
     End If
     
@@ -747,7 +744,7 @@ Private Sub cmdStart_Click()
     
     Dim cp As CProcess
     
-    If Not isX64 And Len(txtArgs) > 0 Then exe = exe & " " & txtArgs
+    If Not isx64 And Len(txtArgs) > 0 Then exe = exe & " " & txtArgs
     
     If isPid Then
         If injDll Then
@@ -859,7 +856,7 @@ Private Sub Form_Load()
     
     Set sc = New CSubclass2
     
-    sc.AttachMessage Me.hwnd, WM_COPYDATA
+    sc.AttachMessage Me.hWnd, WM_COPYDATA
     
     Dim defaultdll, defaultexe
     
@@ -996,7 +993,7 @@ Private Sub mnuUpdateConfig_Click()
     End If
 End Sub
 
-Private Sub sc_MessageReceived(hwnd As Long, wMsg As Long, wParam As Long, lParam As Long, Cancel As Boolean) '
+Private Sub sc_MessageReceived(hWnd As Long, wMsg As Long, wParam As Long, lParam As Long, Cancel As Boolean) '
     If wMsg = WM_COPYDATA Then RecieveTextMessage lParam
 End Sub
 
@@ -1013,13 +1010,13 @@ Private Sub HandleConfig(msg As String, spid As String)
     End If
     
     Select Case LCase(cmd(1))
-        Case "nosleep": If chkIgnoreSleep.value = 1 Then sc.OverRideRetVal 1
-        Case "noregistry": If chkNoRegistry.value = 1 Then sc.OverRideRetVal 1
-        Case "nogetproc": If chkNoGetProc.value = 1 Then sc.OverRideRetVal 1
-        Case "querygettick": If chkAdvanceGetTick.value = 1 Then sc.OverRideRetVal 1
-        Case "blockopenprocess": If chkBlockOpenProcess.value = 1 Then sc.OverRideRetVal 1
-        Case "blockdebugcontrol": If chkBlockDebugControl.value = 1 Then sc.OverRideRetVal 1
-        Case "ignoreexitprocess": If chkIgnoreExitProcess.value = 1 Then sc.OverRideRetVal 1
+        Case "nosleep": If chkIgnoreSleep.Value = 1 Then sc.OverRideRetVal 1
+        Case "noregistry": If chkNoRegistry.Value = 1 Then sc.OverRideRetVal 1
+        Case "nogetproc": If chkNoGetProc.Value = 1 Then sc.OverRideRetVal 1
+        Case "querygettick": If chkAdvanceGetTick.Value = 1 Then sc.OverRideRetVal 1
+        Case "blockopenprocess": If chkBlockOpenProcess.Value = 1 Then sc.OverRideRetVal 1
+        Case "blockdebugcontrol": If chkBlockDebugControl.Value = 1 Then sc.OverRideRetVal 1
+        Case "ignoreexitprocess": If chkIgnoreExitProcess.Value = 1 Then sc.OverRideRetVal 1
         Case "hooklibloglevel": sc.OverRideRetVal CLng(cboLogLevel.Text)
         
         Case "handler": 'reconfig handler that can be called with CreateRemoteThread()
@@ -1193,7 +1190,7 @@ Function GetMySetting(key, def)
     GetMySetting = GetSetting(App.EXEName, "General", key, def)
 End Function
 
-Sub SaveMySetting(key, value)
-    SaveSetting App.EXEName, "General", key, value
+Sub SaveMySetting(key, Value)
+    SaveSetting App.EXEName, "General", key, Value
 End Sub
 

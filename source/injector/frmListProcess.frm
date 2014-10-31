@@ -14,6 +14,12 @@ Begin VB.Form frmListProcess
    ScaleWidth      =   6915
    ShowInTaskbar   =   0   'False
    StartUpPosition =   2  'CenterScreen
+   Begin VB.Timer tmrModalMemMap 
+      Enabled         =   0   'False
+      Interval        =   200
+      Left            =   4545
+      Top             =   3285
+   End
    Begin VB.TextBox txtSearch 
       Height          =   315
       Left            =   780
@@ -135,8 +141,8 @@ Begin VB.Form frmListProcess
       Begin VB.Menu mnuDumpProcess 
          Caption         =   "Dump Process"
       End
-      Begin VB.Menu mnuDumpRange 
-         Caption         =   "Dump mem range"
+      Begin VB.Menu mnuMemMap 
+         Caption         =   "Memory Map"
       End
    End
 End
@@ -181,7 +187,15 @@ Private Sub Command1_Click()
         Exit Sub
     End If
 
-    Me.Visible = False
+    'Me.Visible = False
+    Dim cp As CProcess
+    Set cp = selli.Tag
+    
+    If Not cp Is Nothing Then
+        Form2.txtPacked = "pid:" & cp.pid
+        Unload Me
+    End If
+    
     
 End Sub
 
@@ -212,13 +226,14 @@ End Function
 Function SelectProcess(c As Collection) As CProcess
 
     LoadProccesses c
+    Me.Visible = True
     
-    On Error Resume Next
-    Me.Show 1
+    'On Error Resume Next
+    'fuck modal forms
     
-    If selli Is Nothing Then Exit Function
-    Set SelectProcess = selli.Tag
-    Unload Me
+    'If selli Is Nothing Then Exit Function
+    'Set SelectProcess = selli.Tag
+    'Unload Me
     
 End Function
 
@@ -292,6 +307,7 @@ End Sub
 Private Sub Form_Unload(Cancel As Integer)
     On Error Resume Next
     Set selli = Nothing
+    Unload Me
 End Sub
 
 Private Sub lblRefresh_Click()
@@ -353,6 +369,13 @@ Private Sub mnuDumpProcess_Click()
     
 End Sub
 
+Private Sub mnuMemMap_Click()
+    If selli Is Nothing Then Exit Sub
+    frmMemoryMap.ShowMemoryMap (CLng(selli.Text))
+    'tmrModalMemMap.Enabled = True
+End Sub
+
+
 Private Sub mnuShowDlls_Click()
     If selli Is Nothing Then Exit Sub
     
@@ -402,6 +425,11 @@ hell:
     End If
 End Function
 
+'Private Sub tmrModalMemMap_Timer()
+'    tmrModalMemMap.Enabled = False
+'    frmMemoryMap.Show 1, Me
+'End Sub
+
 Private Sub txtSearch_Change()
     
     If Len(txtSearch) = 0 Then
@@ -425,27 +453,6 @@ Private Sub txtSearch_Change()
     Next
     
 End Sub
-
-
-Private Sub mnuDumpRange_Click()
-
-    If selli Is Nothing Then Exit Sub
-    Dim pth As String
-    
-    pth = dlg.SaveDialog(AllFiles, , "Save dump as")
-    If Len(pth) = 0 Then Exit Sub
-    
-    Dim hexBase As String
-    Dim hexSize As String
-    Dim pid As Long
-    
-    pid = CLng(selli.Text)
-    hexBase = InputBox("Enter hex base address")
-    hexSize = InputBox("Enter hex size")
-    
-    MsgBox "Dump saved? " & cpi.DumpMemory(pid, hexBase, hexSize, pth)
-End Sub
-
 
 
 

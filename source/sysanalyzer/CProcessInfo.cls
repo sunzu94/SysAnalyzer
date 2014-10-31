@@ -46,6 +46,8 @@ Option Explicit
 '
 ' x64 unsafe: ReadMemory
 
+Private Declare Function GetTickCount Lib "kernel32" () As Long
+
 Private Declare Function NtQuerySystemInformation Lib "ntdll.dll" ( _
     ByVal dwInfoType As Long, _
     ByRef lpStructure As Any, _
@@ -53,7 +55,7 @@ Private Declare Function NtQuerySystemInformation Lib "ntdll.dll" ( _
     dwReserved As Long) As Long
 
 Private Type SYSTEM_MODULE_INFORMATION
-    reserved(1) As Long                'ULONG reserved[2];
+    Reserved(1) As Long                'ULONG reserved[2];
     Base As Long                       'PVOID Base;
     size As Long                       'ULONG Size;
     flags As Long                      'ULONG Flags;
@@ -271,7 +273,7 @@ End Type
 
 Private Declare Function WTSEnumerateProcesses _
    Lib "wtsapi32.dll" Alias "WTSEnumerateProcessesA" _
-   (ByVal hServer As Long, ByVal reserved As Long, _
+   (ByVal hServer As Long, ByVal Reserved As Long, _
    ByVal version As Long, ByRef ppProcessInfo As Long, _
    ByRef pCount As Long _
    ) As Long
@@ -433,7 +435,7 @@ Function Legacy_GetRunningProcesses() As Collection 'of CProcess classes
             .pid = myProcess.th32ProcessID
             .ParentPID = myProcess.th32ParentProcessID
             .CmdLine = GetProcessCmdLine(.pid, .fullpath)
-            .user = GetProcessUser(.pid)
+            .User = GetProcessUser(.pid)
             .is64Bit = (x64.IsProcess_x64(.pid) = r_64bit)
         End With
 
@@ -453,7 +455,7 @@ Function Legacy_GetRunningProcesses() As Collection 'of CProcess classes
                 .pid = myProcess.th32ProcessID
                 .ParentPID = myProcess.th32ParentProcessID
                 .CmdLine = GetProcessCmdLine(.pid, .fullpath)
-                .user = GetProcessUser(.pid) 'OpenProcessToken Fails for Local/Network Service
+                .User = GetProcessUser(.pid) 'OpenProcessToken Fails for Local/Network Service
                 'If Len(.User) = 0 Then Stop
                 .is64Bit = (x64.IsProcess_x64(.pid) = r_64bit)
             End With
@@ -598,7 +600,7 @@ Function GetProcessUser(pid As Long) As String
    Dim hProcess As Long
    Dim hAccessProcessToken As Long
    Dim sid_name_use As Integer
-   Dim user As String
+   Dim User As String
    Dim domain As String
    Dim lu As Long
    Dim ld As Long
@@ -619,16 +621,16 @@ Function GetProcessUser(pid As Long) As String
            ErrNo = Err.LastDllError
        Else
 
-           user = String$(100, 0)
+           User = String$(100, 0)
            domain = String$(100, 0)
-           lu = Len(user)
+           lu = Len(User)
            ld = Len(domain)
-           success = LookupAccountSid(vbNullString, InfoStructure.sID, user, lu, domain, ld, sid_name_use)
+           success = LookupAccountSid(vbNullString, InfoStructure.sID, User, lu, domain, ld, sid_name_use)
 
            If success = 0 Then
                ErrNo = Err.LastDllError
            Else
-               sUser = Left$(user, InStr(user, Chr$(0)) - 1)
+               sUser = Left$(User, InStr(User, Chr$(0)) - 1)
                sDomain = Left$(domain, InStr(domain, Chr$(0)) - 1)
                GetProcessUser = sDomain & ":" & sUser
            End If
@@ -855,7 +857,7 @@ Function TerminateProces(pid As Long) As Boolean
 End Function
 
 Function GetSeDebug() As Boolean
-    Dim hToken As Long, hProcess As Long, lret As Long
+    Dim hToken As Long, hProcess As Long, lRet As Long
     Dim tkp As TOKEN_PRIVILEGES
     
     Const TOKEN_ADJUST_PRIVILEGES As Long = &H20
@@ -868,7 +870,7 @@ Function GetSeDebug() As Boolean
     tkp.PrivilegeCount = 1
     tkp.Attributes = 2 'SE_PRIVILEGE_ENABLED
     
-    If AdjustTokenPrivileges(hToken, False, tkp, Len(tkp), tkp, lret) = 0 Then Exit Function
+    If AdjustTokenPrivileges(hToken, False, tkp, Len(tkp), tkp, lRet) = 0 Then Exit Function
         
     If GetLastError = 0 Then GetSeDebug = True
 
@@ -972,8 +974,8 @@ Private Function GetUserName(sID As Long, p As CProcess) As String
     retdomain = String(255, 0)
     LookupAccountSid vbNullString, sID, retname, 255, retdomain, 255, 0
     p.domain = Left$(retdomain, InStr(retdomain, vbNullChar) - 1)
-    p.user = Left$(retname, InStr(retname, vbNullChar) - 1)
-    GetUserName = p.domain & "\" & p.user
+    p.User = Left$(retname, InStr(retname, vbNullChar) - 1)
+    GetUserName = p.domain & "\" & p.User
 End Function
 
 Public Function GetParentProcessId(ByVal pid As Long) As Long
@@ -1317,3 +1319,85 @@ Dim tmp As String
 End Function
 '-------------------------------------------------
 
+'Private Function GetFreeFileName(ByVal folder As String, Optional extension = ".txt") As String
+'
+'    On Error GoTo handler 'can have overflow err once in awhile :(
+'    Dim i As Integer
+'    Dim tmp As String
+'
+'    If Not FolderExists(folder) Then Exit Function
+'    If Right(folder, 1) <> "\" Then folder = folder & "\"
+'    If Left(extension, 1) <> "." Then extension = "." & extension
+'
+'again:
+'    Do
+'      tmp = folder & RandomNum() & extension
+'    Loop Until Not FileExists(tmp)
+'
+'    GetFreeFileName = tmp
+'
+'Exit Function
+'handler:
+'
+'    If i < 10 Then
+'        i = i + 1
+'        GoTo again
+'    End If
+'
+'End Function
+'
+'Private Function ReadFile(filename) As Variant
+'  Dim f As Long
+'  Dim temp As Variant
+'  f = FreeFile
+'  temp = ""
+'   Open filename For Binary As #f        ' Open file.(can be text or image)
+'     temp = Input(FileLen(filename), #f) ' Get entire Files data
+'   Close #f
+'   ReadFile = temp
+'End Function
+'
+'Private Function FolderExists(path As String) As Boolean
+'  On Error GoTo hell
+'  Dim tmp As String
+'  tmp = path & "\"
+'  If Len(tmp) = 1 Then Exit Function
+'  If Dir(tmp, vbDirectory) <> "" Then FolderExists = True
+'  Exit Function
+'hell:
+'    FolderExists = False
+'End Function
+'
+'Private Function FileExists(path As String) As Boolean
+'  On Error GoTo hell
+'
+'  If Len(path) = 0 Then Exit Function
+'  If Right(path, 1) = "\" Then Exit Function
+'  If Dir(path, vbHidden Or vbNormal Or vbReadOnly Or vbSystem) <> "" Then FileExists = True
+'
+'  Exit Function
+'hell: FileExists = False
+'End Function
+'
+'Private Function RandomNum() As Long
+'    Dim tmp As Long
+'    Dim tries As Long
+'
+'    On Error Resume Next
+'
+'    Do While 1
+'        Err.Clear
+'        Randomize
+'        tmp = Round(Timer * Now * Rnd(), 0)
+'        RandomNum = tmp
+'        If Err.Number = 0 Then Exit Function
+'        If tries < 100 Then
+'            tries = tries + 1
+'        Else
+'            Exit Do
+'        End If
+'    Loop
+'
+'    RandomNum = GetTickCount
+'
+'End Function

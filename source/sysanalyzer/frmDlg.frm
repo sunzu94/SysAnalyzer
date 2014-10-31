@@ -12,6 +12,7 @@ Begin VB.Form frmDlg
    ScaleHeight     =   3960
    ScaleWidth      =   7230
    ShowInTaskbar   =   0   'False
+   StartUpPosition =   2  'CenterScreen
    Begin VB.CommandButton Command2 
       Caption         =   "Cancel"
       Height          =   405

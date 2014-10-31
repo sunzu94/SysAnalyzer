@@ -4,12 +4,18 @@ Begin VB.Form frmDlls
    Caption         =   "Dll Viewer"
    ClientHeight    =   4155
    ClientLeft      =   60
-   ClientTop       =   345
+   ClientTop       =   630
    ClientWidth     =   7815
    LinkTopic       =   "Form1"
    ScaleHeight     =   4155
    ScaleWidth      =   7815
    StartUpPosition =   2  'CenterScreen
+   Begin VB.Timer tmrModal 
+      Enabled         =   0   'False
+      Interval        =   200
+      Left            =   270
+      Top             =   450
+   End
    Begin MSComctlLib.ListView lv 
       Height          =   4155
       Left            =   0
@@ -47,12 +53,8 @@ Begin VB.Form frmDlls
    End
    Begin VB.Menu mnuPopup 
       Caption         =   "mnuPopup"
-      Visible         =   0   'False
       Begin VB.Menu mnuDumpModule 
          Caption         =   "Dump Module"
-      End
-      Begin VB.Menu mnuDumpRange 
-         Caption         =   "Dump Mem Range"
       End
    End
 End
@@ -118,7 +120,7 @@ Private Sub Form_Resize()
     On Error Resume Next
     lv.Width = Me.Width - lv.Left - 200
     lv.ColumnHeaders(3).Width = lv.Width - lv.ColumnHeaders(3).Left - 350
-    lv.Height = Me.Height - lv.Top - 500 - Command1.Height
+    lv.Height = Me.Height - lv.Top - 500 '- Command1.Height
     Command1.Top = Me.Height - Command1.Height - 400
     Command1.Left = Me.Width - Command1.Width - 400
 End Sub
@@ -141,9 +143,23 @@ Sub ShowDllsFor(pid As Long, Optional owner As Object)
     Next
     
     Me.Visible = True
-    If Not owner Is Nothing Then Me.Show 1, owner
+    
+    'If Not owner Is Nothing Then
+    '    Set mOwner = owner
+    '    tmrModal.Enabled = True
+    'End If
     
 End Sub
+
+'popup menu on modal form not showing:
+'  Did you open the /Modal/ form from /another/ menu item?
+'  IIRC, /that's/ the problem, not the Modal form itself.
+'  Use a Timer (in the original form) to "sidestep" this problem, as in
+'Private Sub tmrModal_Timer()
+'    tmrModal.Enabled = False
+'    Me.Show 1, mOwner
+'End Sub
+
 
 Private Sub mnuDumpModule_Click()
     If selli Is Nothing Then Exit Sub
@@ -174,3 +190,4 @@ Private Sub mnuDumpRange_Click()
     
     MsgBox "Dump saved? " & cpi.DumpMemory(curPid, hexBase, hexSize, pth)
 End Sub
+

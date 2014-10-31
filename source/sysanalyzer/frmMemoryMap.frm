@@ -1,15 +1,15 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.1#0"; "MSCOMCTL.OCX"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Begin VB.Form frmMemoryMap 
    Caption         =   "Memory Map"
    ClientHeight    =   6165
    ClientLeft      =   60
-   ClientTop       =   345
+   ClientTop       =   630
    ClientWidth     =   11655
    LinkTopic       =   "Form1"
    ScaleHeight     =   6165
    ScaleWidth      =   11655
-   StartUpPosition =   3  'Windows Default
+   StartUpPosition =   2  'CenterScreen
    Begin MSComctlLib.ListView lv2 
       Height          =   4125
       Left            =   1740
@@ -105,7 +105,6 @@ Begin VB.Form frmMemoryMap
    End
    Begin VB.Menu mnuPopup 
       Caption         =   "mnuPopup"
-      Visible         =   0   'False
       Begin VB.Menu mnuViewMemory 
          Caption         =   "View"
       End
@@ -121,7 +120,6 @@ Begin VB.Form frmMemoryMap
    End
    Begin VB.Menu mnuPopup2 
       Caption         =   "mnuPopup2"
-      Visible         =   0   'False
       Begin VB.Menu mnuDumpDll 
          Caption         =   "Dump Dll"
       End
@@ -160,10 +158,12 @@ Public Sub ShowDlls(pid As Long) 'x64 ok.
         li.SubItems(1) = cm.hexSize
         li.SubItems(2) = cm.path
         
-        If known.Loaded And known.Ready Then
-            mm = known.isFileKnown(cm.path)
-            li.ListSubItems(2).ForeColor = IIf(mm = exact_match, vbGreen, vbRed)
-        End If
+        #If isSysanalyzer = 1 Then
+            If known.Loaded And known.Ready Then
+                mm = known.isFileKnown(cm.path)
+                li.ListSubItems(2).ForeColor = IIf(mm = exact_match, vbGreen, vbRed)
+            End If
+        #End If
         
         DoEvents
     Next
@@ -180,7 +180,11 @@ Public Sub ShowMemoryMap(pid As Long) 'now x64 compatiabled...
     Dim li As ListItem
     Dim modules As Long
     Dim execSections As Long
-    Dim mm As matchModes
+    
+    #If isSysanalyzer = 1 Then
+        Dim mm As matchModes
+    #End If
+    
     Dim knownModules As Long
     
     On Error Resume Next
@@ -205,14 +209,16 @@ Public Sub ShowMemoryMap(pid As Long) 'now x64 compatiabled...
         li.SubItems(3) = cMem.ProtectionAsString()
         li.SubItems(4) = cMem.ModuleName
         
-        If known.Loaded And known.Ready Then
-            If Len(cMem.ModuleName) > 0 Then
-                mm = known.isFileKnown(cMem.ModuleName)
-                li.ListSubItems(4).ForeColor = IIf(mm = exact_match, vbGreen, vbRed)
-                knownModules = knownModules + 1
+        #If isSysanalyzer = 1 Then
+            If known.Loaded And known.Ready Then
+                If Len(cMem.ModuleName) > 0 Then
+                    mm = known.isFileKnown(cMem.ModuleName)
+                    li.ListSubItems(4).ForeColor = IIf(mm = exact_match, vbGreen, vbRed)
+                    knownModules = knownModules + 1
+                End If
             End If
-        End If
-            
+        #End If
+        
         If Len(cMem.ModuleName) > 0 Then modules = modules + 1
         
         If cMem.Protection = PAGE_EXECUTE_READWRITE Or _
@@ -221,7 +227,7 @@ Public Sub ShowMemoryMap(pid As Long) 'now x64 compatiabled...
         Then
             If cMem.Protection = PAGE_EXECUTE_READWRITE And cMem.MemType <> MEM_IMAGE Then
                 SetLiColor li, vbRed
-                If VBA.Left(pi.ReadMemory2(cMem.pid, cMem.Base, 2), 2) = "MZ" Then
+                If VBA.Left(pi.ReadMemory2(cMem.pid, cMem.base, 2), 2) = "MZ" Then
                     List1.AddItem cMem.BaseAsHexString & " is RWE but not part of an image (CONFIRMED INJECTION)"
                 Else
                     List1.AddItem cMem.BaseAsHexString & " is RWE but not part of an image..possible injection"
@@ -236,19 +242,23 @@ Public Sub ShowMemoryMap(pid As Long) 'now x64 compatiabled...
     
     List1.AddItem "Found " & modules & " modules and " & execSections & " executable sections"
     
-    If known.Loaded And known.Ready Then
-        List1.AddItem knownModules & " known modules found"
-        'ado.CloseConnection
-    End If
+    #If isSysanalyzer = 1 Then
+        If known.Loaded And known.Ready Then
+            List1.AddItem knownModules & " known modules found"
+            'ado.CloseConnection
+        End If
+    #End If
     
     
 End Sub
 
 Private Sub Form_Load()
     On Error Resume Next
+    mnuPopup.Visible = False
+    mnuPopup2.Visible = False
     Me.Icon = frmMain.Icon
     lv.ColumnHeaders(5).Width = lv.Width - lv.ColumnHeaders(5).Left - 350
-    lv2.Move lv.Left, lv.top, lv.Width, lv.Height
+    lv2.Move lv.Left, lv.Top, lv.Width, lv.Height
     lv2.ColumnHeaders(3).Width = lv2.Width - lv2.ColumnHeaders(3).Left - 350
 End Sub
 
@@ -366,7 +376,7 @@ Private Sub mnuSearchMemory_Click()
     s2 = StrConv(s, vbUnicode, LANG_US)
     'abort = False
     
-    Dim Base As Long
+    Dim base As Long
     Dim size As Long
     
     For Each li In lv.ListItems
@@ -380,8 +390,8 @@ Private Sub mnuSearchMemory_Click()
         m = pi.ReadMemory2(active_pid, li.Text, size)
         a = InStr(1, m, s, vbTextCompare)
         b = InStr(1, m, s2, vbTextCompare)
-        If a > 0 Then ret = ret & "pid: " & li.Text & " base: " & li.SubItems(1) & " offset: " & Hex(Base + a) & " ASCII " & li.SubItems(5) & vbCrLf
-        If b > 0 Then ret = ret & "pid: " & li.Text & " base: " & li.SubItems(1) & " offset: " & Hex(Base + b) & " UNICODE " & li.SubItems(5) & vbCrLf
+        If a > 0 Then ret = ret & "pid: " & li.Text & " base: " & li.SubItems(1) & " offset: " & Hex(base + a) & " ASCII " & li.SubItems(5) & vbCrLf
+        If b > 0 Then ret = ret & "pid: " & li.Text & " base: " & li.SubItems(1) & " offset: " & Hex(base + b) & " UNICODE " & li.SubItems(5) & vbCrLf
     Next
     
     If Len(ret) > 0 Then
@@ -407,17 +417,37 @@ End Sub
 Private Sub mnuViewMemory_Click()
     If selli Is Nothing Then Exit Sub
     Dim s As String
-    Dim Base As Long
+    Dim base As Long
     On Error Resume Next
+    
     'Base = CLng("&h" & selli.Text)
     s = pi.ReadMemory2(active_pid, selli.Text, CLng("&h" & selli.SubItems(1)))
+    
     If Len(s) = 0 Then
         List1.AddItem Now & ": Failed to readmemory?"
         List1.ListIndex = List1.ListCount - 1
         Exit Sub
     End If
+    
     'frmReport.ShowList HexDump(s, , base), False, selli.Text & ".mem", False
+    
+#If isSysanalyzer = 1 Then
     Dim f As New rhexed.CHexEditor
-    If Len(selli.Text) < 8 Then f.Editor.AdjustBaseOffset = Base
+    If Len(selli.Text) <= 8 Then f.Editor.AdjustBaseOffset = CLng("&h" & selli.Text)
     f.Editor.LoadString s
+    
+    If Err.Number <> 0 Then
+        If Err.Number = 401 Then 'cant show non-modal form from modal form..
+            LaunchExternalHexViewer s, , selli.Text
+            Exit Sub
+        End If
+        MsgBox "ViewErr: " & Err.Number
+    End If
+#Else
+    LaunchExternalHexViewer s, , selli.Text
+#End If
+
+
+    
 End Sub
+
