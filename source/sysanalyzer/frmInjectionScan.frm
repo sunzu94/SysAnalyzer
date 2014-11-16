@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.1#0"; "MSCOMCTL.OCX"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Begin VB.Form frmInjectionScan 
    Caption         =   "32bit process Injection Scan"
    ClientHeight    =   3720
@@ -265,13 +265,17 @@ Sub FindStealthInjections(pid As Long, pName As String)
         If cMem.Protection = PAGE_EXECUTE_READWRITE And cMem.MemType <> MEM_IMAGE Then
             
             totalRWEFound = totalRWEFound + 1
-            s = pi.ReadMemory2(cMem.pid, cMem.Base, cMem.size) 'doesnt add that much time
-            entropy = CalculateEntropy(s)
-            s = Empty
-             
-            'If chkMinEntropy.Value = 1 Then
-            '    If entropy < minEntropy Then GoTo nextOne
-            'End If
+            entropy = -1
+            
+            If cMem.size < &H10000 Then 'some level of DoS protection against huge allocations (Dridex)...
+                s = pi.ReadMemory2(cMem.pid, cMem.Base, cMem.size) 'doesnt add that much time
+                entropy = CalculateEntropy(s)
+                s = Empty
+            
+                'If chkMinEntropy.Value = 1 Then
+                '    If entropy < minEntropy Then GoTo nextOne
+                'End If
+            End If
             
             Set li = lv.ListItems.Add(, , pid)
             li.SubItems(1) = cMem.BaseAsHexString

@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.1#0"; "MSCOMCTL.OCX"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Object = "{BDC217C8-ED16-11CD-956C-0000C04E4C0A}#1.1#0"; "TABCTL32.OCX"
 Begin VB.Form frmMain 
    Caption         =   "SysAnalyzer"
@@ -91,12 +91,12 @@ Begin VB.Form frmMain
       TabCaption(2)   =   "Process Dlls"
       TabPicture(2)   =   "Form1.frx":5C4A
       Tab(2).ControlEnabled=   0   'False
-      Tab(2).Control(0)=   "splitterDlls"
-      Tab(2).Control(1)=   "fraDlls"
-      Tab(2).Control(2)=   "lvExplorer"
-      Tab(2).Control(3)=   "lvIE"
-      Tab(2).Control(4)=   "Label1(0)"
-      Tab(2).Control(5)=   "lblIEDlls"
+      Tab(2).Control(0)=   "lblIEDlls"
+      Tab(2).Control(1)=   "Label1(0)"
+      Tab(2).Control(2)=   "lvIE"
+      Tab(2).Control(3)=   "lvExplorer"
+      Tab(2).Control(4)=   "fraDlls"
+      Tab(2).Control(5)=   "splitterDlls"
       Tab(2).ControlCount=   6
       TabCaption(3)   =   "Loaded Drivers"
       TabPicture(3)   =   "Form1.frx":5C66
@@ -111,14 +111,14 @@ Begin VB.Form frmMain
       TabCaption(5)   =   "Api Log"
       TabPicture(5)   =   "Form1.frx":5C9E
       Tab(5).ControlEnabled=   0   'False
-      Tab(5).Control(0)=   "lvAPILog"
-      Tab(5).Control(1)=   "fraAPILog"
+      Tab(5).Control(0)=   "fraAPILog"
+      Tab(5).Control(1)=   "lvAPILog"
       Tab(5).ControlCount=   2
       TabCaption(6)   =   "Directory Watch Data"
       TabPicture(6)   =   "Form1.frx":5CBA
       Tab(6).ControlEnabled=   0   'False
-      Tab(6).Control(0)=   "lvDirWatch"
-      Tab(6).Control(1)=   "fraDirWatch"
+      Tab(6).Control(0)=   "fraDirWatch"
+      Tab(6).Control(1)=   "lvDirWatch"
       Tab(6).ControlCount=   2
       Begin VB.Frame fraAPILog 
          BorderStyle     =   0  'None
@@ -1838,10 +1838,10 @@ Private Sub mnuDumpProcess_Click()
     Dim pid As Long
 
     pid = CLng(liProc.Tag)
-    If diff.CProc.x64.IsProcess_x64(pid) <> r_32bit Then
-        MsgBox x64Error, vbInformation
-        Exit Sub
-    End If
+    'If diff.CProc.x64.IsProcess_x64(pid) <> r_32bit Then
+    '    MsgBox x64Error, vbInformation
+    '    Exit Sub
+    'End If
     
     Dim pth As String
     pth = fso.FileNameFromPath(liProc.SubItems(3)) & ".dmp"

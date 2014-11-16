@@ -10,6 +10,8 @@
            - each new process should create its own tab and own listview
            - frmdlls right click menu not working (modal issue?)
 
+ ** do not rwe scan or dump gigantic allocations automatically (DoS)
+
  monitor Software\Microsoft\Windows NT\CurrentVersion\Windows\Load,AppInit_DLLs
  
  is dirwatch able to capture files created with hidden attrib? 

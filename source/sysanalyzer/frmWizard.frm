@@ -666,10 +666,10 @@ Private Sub mnuRWEScanSingle_Click()
     
     If p Is Nothing Then Exit Sub
     
-    If diff.CProc.x64.IsProcess_x64(p.pid) <> r_32bit Then
-        MsgBox x64Error, vbInformation
-        Exit Sub
-    End If
+    'If diff.CProc.x64.IsProcess_x64(p.pid) <> r_32bit Then
+    '    MsgBox x64Error, vbInformation
+    '    Exit Sub
+    'End If
     
     frmInjectionScan.FindStealthInjections p.pid, p.path
     

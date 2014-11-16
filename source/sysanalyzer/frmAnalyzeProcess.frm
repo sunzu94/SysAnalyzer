@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Begin VB.Form frmAnalyzeProcess 
    Caption         =   "Analyze Process"
    ClientHeight    =   4455
@@ -324,10 +324,10 @@ Private Sub ScanForRWE(pid As Long, Optional prefix As String = "") 'not x64 com
     
     AddLine "Loading memory map for pid: " & pid & " Path: " & proc.GetProcessPath(pid)
     
-    If proc.x64.IsProcess_x64(pid) <> r_32bit Then
-        AddLine "Can only load memory map for 32bit processes"
-        Exit Sub
-    End If
+    'If proc.x64.IsProcess_x64(pid) <> r_32bit Then
+    '    AddLine "Can only load memory map for 32bit processes"
+    '    Exit Sub
+    'End If
     
     Set c = proc.GetMemoryMap(pid)
     
@@ -369,12 +369,17 @@ Private Sub ScanForRWE(pid As Long, Optional prefix As String = "") 'not x64 com
                     qdf.QuickDumpFix dmpPath
                 End If
             Else
-                s = proc.ReadMemory(cMem.pid, cMem.Base, cMem.size) 'doesnt add that much time
-                entropy = CalculateEntropy(s)
-                If entropy > 40 Then
-                    AddLine pHex(cMem.Base) & " is RWE but not part of an image..possible injection entropy: " & entropy & "%  size:" & Hex(cMem.size)
-                    dmpPath = DumpMemorySection(pid, cMem, "raw_" & prefix)
-                    If fso.FileExists(dmpPath) Then AddLine "Memory dump saved as " & dmpPath
+                If cMem.size < &H10000 Then
+                    s = proc.ReadMemory(cMem.pid, cMem.Base, cMem.size) 'doesnt add that much time
+                    entropy = CalculateEntropy(s)
+                    If entropy > 40 Then
+                        AddLine pHex(cMem.Base) & " is RWE but not part of an image..possible injection entropy: " & entropy & "%  size:" & Hex(cMem.size)
+                        dmpPath = DumpMemorySection(pid, cMem, "raw_" & prefix)
+                        If fso.FileExists(dmpPath) Then AddLine "Memory dump saved as " & dmpPath
+                        push rep, List1.list(List1.ListCount - 1)
+                    End If
+                Else
+                    AddLine pHex(cMem.Base) & " is RWE but not part of an image..possible injection **LARGER THAN AUTO-DUMP LIMIT** size:" & Hex(cMem.size)
                     push rep, List1.list(List1.ListCount - 1)
                 End If
             End If
