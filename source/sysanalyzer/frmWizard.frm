@@ -6,12 +6,12 @@ Begin VB.Form frmWizard
    ClientHeight    =   4755
    ClientLeft      =   45
    ClientTop       =   720
-   ClientWidth     =   8955
+   ClientWidth     =   10530
    LinkTopic       =   "Form2"
    MaxButton       =   0   'False
    MinButton       =   0   'False
    ScaleHeight     =   4755
-   ScaleWidth      =   8955
+   ScaleWidth      =   10530
    ShowInTaskbar   =   0   'False
    StartUpPosition =   2  'CenterScreen
    Begin VB.CommandButton cmdBrowse 
@@ -35,6 +35,7 @@ Begin VB.Form frmWizard
    Begin VB.TextBox txtArgs 
       Height          =   285
       Left            =   4350
+      OLEDropMode     =   1  'Manual
       TabIndex        =   18
       Top             =   570
       Width           =   3975
@@ -47,7 +48,7 @@ Begin VB.Form frmWizard
       Left            =   3840
       TabIndex        =   7
       Top             =   1290
-      Width           =   5025
+      Width           =   6465
       Begin VB.TextBox txtRWEScan 
          Height          =   315
          Left            =   1440
@@ -191,9 +192,9 @@ Begin VB.Form frmWizard
    Begin VB.CommandButton cmdStart 
       Caption         =   "Start"
       Height          =   375
-      Left            =   7740
+      Left            =   9135
       TabIndex        =   3
-      Top             =   4320
+      Top             =   4275
       Width           =   1155
    End
    Begin VB.CommandButton cmdBrowse 
@@ -221,6 +222,24 @@ Begin VB.Form frmWizard
       TabIndex        =   1
       Top             =   180
       Width           =   4005
+   End
+   Begin VB.Label lblAStats 
+      BackColor       =   &H005A5963&
+      ForeColor       =   &H00E0E0E0&
+      Height          =   255
+      Left            =   9000
+      TabIndex        =   31
+      Top             =   585
+      Width           =   1455
+   End
+   Begin VB.Label lblBStats 
+      BackColor       =   &H005A5963&
+      ForeColor       =   &H00E0E0E0&
+      Height          =   255
+      Left            =   9000
+      TabIndex        =   30
+      Top             =   225
+      Width           =   1455
    End
    Begin VB.Label lblAdmin 
       BackColor       =   &H005A5963&
@@ -386,7 +405,7 @@ Begin VB.Form frmWizard
       EndProperty
       ForeColor       =   &H00E0E0E0&
       Height          =   255
-      Left            =   6180
+      Left            =   6660
       MousePointer    =   14  'Arrow and Question
       TabIndex        =   6
       Top             =   4380
@@ -686,6 +705,13 @@ End Sub
 Private Sub txtBinary_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, y As Single)
     On Error Resume Next
     txtBinary = data.files(1)
+    lblBStats.Caption = GetCompileDateOrType(txtBinary, , , True)
+End Sub
+
+Private Sub txtArgs_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, y As Single)
+    On Error Resume Next
+    txtArgs = data.files(1)
+    lblAStats.Caption = GetCompileDateOrType(txtArgs, , , True)
 End Sub
 
 Sub SetConfigDefaults()
@@ -697,6 +723,7 @@ Sub SetConfigDefaults()
             .sniffer = 1
             .interface = 1
             .tcpdump = 1
+            txtDelay = .delay
     End With
 End Sub
 
@@ -773,8 +800,10 @@ Private Sub cmdBrowse_Click(Index As Integer)
     If Len(x) = 0 Then Exit Sub
     If Index = 0 Then
         txtBinary = x
+        lblBStats.Caption = GetCompileDateOrType(txtBinary, , , True)
     Else
         txtArgs = x
+        lblAStats.Caption = GetCompileDateOrType(txtArgs, , , True)
     End If
 End Sub
 
@@ -792,7 +821,7 @@ Private Sub Form_Load()
                 If Not IsUserAnAdministrator() Then
                     lblAdmin.Caption = "This tool really requires admin privledges"
                 Else
-                    RunElevated App.path & "\sysAnalyzer.exe", essSW_SHOW
+                    RunElevated App.path & "\sysAnalyzer.exe", essSW_SHOW, , Command
                     End
                 End If
             'End If
@@ -860,6 +889,7 @@ Private Sub Form_Load()
         cmd = Trim(Replace(Command, """", Empty))
         If fso.FileExists(cmd) Then
             txtBinary = cmd
+            lblBStats.Caption = GetCompileDateOrType(txtBinary, , , True)
             'TODO auto run exe with settings if /launch
         End If
     End If

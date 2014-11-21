@@ -134,7 +134,7 @@ Private Function CompiledDate(stamp As Double) As String
 
 End Function
 
-Function GetCompileDateOrType(fpath As String, Optional ByRef out_isType As Boolean, Optional ByRef out_isPE As Boolean) As String
+Function GetCompileDateOrType(fpath As String, Optional ByRef out_isType As Boolean, Optional ByRef out_isPE As Boolean, Optional typeOnly As Boolean = False) As String
     On Error GoTo hell
         
         Dim i As Long
@@ -179,23 +179,33 @@ Function GetCompileDateOrType(fpath As String, Optional ByRef out_isType As Bool
         End If
         
         Close f
-        GetCompileDateOrType = CompiledDate(CDbl(NTHEADER.FileHeader.TimeDateStamp))
+        
+        If Not typeOnly Then
+            GetCompileDateOrType = CompiledDate(CDbl(NTHEADER.FileHeader.TimeDateStamp))
+        End If
+        
         out_isPE = True
         'RevertRedir fs
         
         If is64Bit(NTHEADER.FileHeader.Machine) Then
-            GetCompileDateOrType = GetCompileDateOrType & " - 64 Bit"
+            GetCompileDateOrType = GetCompileDateOrType & IIf(typeOnly, "", " - ") & "64 Bit"
         ElseIf is32Bit(NTHEADER.FileHeader.Machine) Then
-            GetCompileDateOrType = GetCompileDateOrType & " - 32 Bit"
-        End If
-        
-        Dim cli As Long 'Partition II, 24.2.3.3, CLI Header (rva)
-        cli = NTHEADER.OptionalHeader.DataDirectory(eDATA_DIRECTORY.CLI_Header).VirtualAddress
-        If cli <> 0 Then
-            GetCompileDateOrType = GetCompileDateOrType & " .NET"
+            GetCompileDateOrType = GetCompileDateOrType & IIf(typeOnly, "", " - ") & "32 Bit"
+            
+            Dim cli As Long 'Partition II, 24.2.3.3, CLI Header (rva) I get false positive on x64 dlls?
+            cli = NTHEADER.OptionalHeader.DataDirectory(eDATA_DIRECTORY.CLI_Header).VirtualAddress
+            If cli <> 0 Then
+                GetCompileDateOrType = GetCompileDateOrType & " .NET"
+            End If
+            
         End If
 
-        GetCompileDateOrType = GetCompileDateOrType & isExe_orDll(NTHEADER.FileHeader.Characteristics)
+        If NTHEADER.OptionalHeader.Subsystem = 1 Then
+            GetCompileDateOrType = GetCompileDateOrType & " Native"
+        Else
+            GetCompileDateOrType = GetCompileDateOrType & isExe_orDll(NTHEADER.FileHeader.Characteristics)
+        End If
+        
 Exit Function
 hell:
     
