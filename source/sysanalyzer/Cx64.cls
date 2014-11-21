@@ -297,6 +297,34 @@ hell:
     Err.Clear
 End Function
 
+Public Sub x64LoadLib(ByVal dll As String, out_injLog As String)
+    
+    If Not FileExists(dll) Then
+        out_injLog = "dll not found: " & dll
+        Exit Sub
+    End If
+    
+    If isExe_x64(dll) <> r_64bit Then
+        out_injLog = "target dll is not x64"
+        Exit Sub
+    End If
+    
+    If Not HelperEnabled Then
+        out_injLog = "x64Helper not found: " & exe
+        Exit Sub
+    End If
+    
+    If Not isWindows64Bit Then
+        out_injLog = "x64Helper can not run on 32bit windows."
+        Exit Sub
+    End If
+    
+    
+    dll = GetShortName(dll)
+    Shell helperPath & " /loadlib " & dll
+    
+End Sub
+
 Public Function x64Inject(pid As Long, ByVal dll As String, out_injLog As String) As Boolean
     
     If IsProcess_x64(pid) <> r_64bit Then
@@ -309,6 +337,11 @@ Public Function x64Inject(pid As Long, ByVal dll As String, out_injLog As String
         Exit Function
     End If
     
+    If Not isWindows64Bit Then
+        out_injLog = "x64Helper can not run on 32bit windows."
+        Exit Function
+    End If
+
     If Not FileExists(dll) Then
         out_injLog = "dll not found: " & dll
         Exit Function
@@ -343,6 +376,11 @@ Public Function x64StartWithDll(exePath As String, ByVal dll As String, out_injL
         Exit Function
     End If
     
+    If Not isWindows64Bit Then
+        out_injLog = "x64Helper can not run on 32bit windows."
+        Exit Function
+    End If
+
     If Not FileExists(dll) Then
         out_injLog = "dll not found: " & dll
         Exit Function
@@ -420,7 +458,7 @@ Private Function GetShortName(sFile As String) As String
 End Function
 
 Private Function GetSeDebug() As Boolean
-    Dim hToken As Long, hProcess As Long, lret As Long
+    Dim hToken As Long, hProcess As Long, lRet As Long
     Dim tkp As TOKEN_PRIVILEGES
     
     Const TOKEN_ADJUST_PRIVILEGES As Long = &H20
@@ -433,7 +471,7 @@ Private Function GetSeDebug() As Boolean
     tkp.PrivilegeCount = 1
     tkp.Attributes = 2 'SE_PRIVILEGE_ENABLED
     
-    If AdjustTokenPrivileges(hToken, False, tkp, Len(tkp), tkp, lret) = 0 Then Exit Function
+    If AdjustTokenPrivileges(hToken, False, tkp, Len(tkp), tkp, lRet) = 0 Then Exit Function
         
     If GetLastError = 0 Then GetSeDebug = True
 

@@ -10,7 +10,7 @@
            - each new process should create its own tab and own listview
            - frmdlls right click menu not working (modal issue?)
 
- ** do not rwe scan or dump gigantic allocations automatically (DoS)
+
 
  monitor Software\Microsoft\Windows NT\CurrentVersion\Windows\Load,AppInit_DLLs
  
@@ -28,14 +28,17 @@
  does filecopy work on hidden system files?
 
  detect file type before launching in case they have extension wrong. (msi, dll etc)
+ detect if arguments txtbox is x64 binary path and exe path is 32bit?
 
  RWE memory scan - save known injections automatically  ?
  rwe mem scan and pause all threads on procwatch ?
  always inject a nodelete.dll ?
  test all manner of file deletion against api_log.dll blocks
  make sure CreateProcess Apilogger hook is crash free..should switch over to CreateProcessInternalW, have it somewhere..
- TEST MORE WITH WIN7 AND WIN7X64
- ability to runas another user? (explorer injection, screen lockers etc)
+
+--> TEST MORE WITH WIN7 AND WIN7X64
+--> ability to runas another user? (explorer injection, screen lockers etc)
+
  make sure IE process running at start of test?
  Cstrings - be able to set min match leng
  add second progress bar to FindStealthInjections dialog, remove global multiscanMode

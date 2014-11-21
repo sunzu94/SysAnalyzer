@@ -430,6 +430,7 @@ void usage(int invalidOptionCount=0){
 	printf("\t/dumpprocess decimal_pid out_file_path\n");
 	printf("\t/startwdll exe_path dll_path\n");
 	printf("\t/memmap decimal_pid out_file_path\n");
+	printf("\t/loadlib file_path\n");
 	if( IsDebuggerPresent() ) getch();
 	exit(0);
 }
@@ -458,7 +459,20 @@ int main(int argc, char* argv[] )
 		rv = inject(dll,pid);
 		handled = true;
 	}
-		
+	
+	// /loadlib path
+	if(strstr(argv[1],"/loadlib") > 0 ){ 
+		if(argc!=3) usage(2);
+		dll = strdup(argv[2]);
+		if(!FileExists(dll)){
+			printf("Error: dll file not found: %s\n\n",dll);
+			usage();
+		}
+		printf("loadlib=%x\npress any key to continue...", LoadLibrary(dll));
+		getch();
+		handled = true;
+	}
+
 	// /dlls decimal_pid
 	if(strstr(argv[1],"/dlls") > 0 ){ 
 		if(argc!=3) usage(2);

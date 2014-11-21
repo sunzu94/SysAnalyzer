@@ -788,14 +788,14 @@ Private Sub Form_Load()
     
     If IsVistaPlus() Then
         If Not IsProcessElevated() Then
-            If Not MsgBox("Can I elevate to administrator?", vbYesNo) = vbYes Then
+            'If Not MsgBox("Can I elevate to administrator?", vbYesNo) = vbYes Then
                 If Not IsUserAnAdministrator() Then
                     lblAdmin.Caption = "This tool really requires admin privledges"
                 Else
-                    RunElevated App.path & "\sysanalyzer.exe", essSW_SHOW
+                    RunElevated App.path & "\sysAnalyzer.exe", essSW_SHOW
                     End
                 End If
-            End If
+            'End If
         End If
     End If
     
@@ -900,6 +900,12 @@ Sub cmdStart_Click()
     End If
     
     Dim cx As New Cx64
+    
+    If cx.isExe_x64(txtBinary) = r_64bit And cx.isWindows64Bit = False Then
+        MsgBox "This binary 64bit, but your OS is 32bit. It can not be run on this system.", vbInformation
+        Exit Sub
+    End If
+    
     If cx.isExe_x64(txtBinary) = r_64bit And chkApiLog.Value = 1 Then
         MsgBox "ApiLogger option is not yet compatiable with x64 targets", vbInformation
         chkApiLog.Value = 0
@@ -1009,6 +1015,9 @@ End Function
 
 Private Sub tmrDelayShell_Timer()
 
+    Dim cx As New Cx64
+    Dim xx As String
+    
     tmrDelayShell.Enabled = False
     On Error GoTo hell
     
@@ -1051,8 +1060,14 @@ Private Sub tmrDelayShell_Timer()
     Else
         frmMain.SSTab1.TabVisible(5) = False
         If LCase(VBA.Right(txtBinary, 4)) = ".dll" Then
-            debugLog "Starting dll with loadlib.exe"
-            Shell App.path & "\loadlib.exe """ & txtBinary & """"
+            If cx.isExe_x64(txtBinary) = r_64bit Then
+                debugLog "Starting x64 dll with x64Helper.exe"
+                'Shell App.path & "\x64Helper.exe /loadlib """ & txtBinary & """"
+                cx.x64LoadLib txtBinary, xx
+            Else
+                debugLog "Starting dll with loadlib.exe"
+                Shell App.path & "\loadlib.exe """ & txtBinary & """"
+            End If
         Else
             debugLog "Starting malware directly"
             
