@@ -166,8 +166,8 @@ Function QuickDumpFix(fpath As String) As Boolean
         Get f, , udtSH
         
         With udtSH
-            .VirtualAddress = .PointerToRawData
-            .VirtualSize = .SizeOfRawData
+            .PointerToRawData = .VirtualAddress
+            .SizeOfRawData = .VirtualSize
         End With
         
         Sections(i) = udtSH
