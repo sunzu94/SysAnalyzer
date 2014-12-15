@@ -24,7 +24,7 @@ Source: api_logger.exe; DestDir: {app}; Flags: ignoreversion
 Source: dir_watch.dll; DestDir: {app}; Flags: ignoreversion
 Source: exploit_sigs.txt; DestDir: {app}
 Source: proc_watch.exe; DestDir: {app}; Flags: ignoreversion
-Source: safe_test1.exe; DestDir: {app}
+;Source: safe_test1.exe; DestDir: {app}
 Source: sniff_hit.exe; DestDir: {app}; Flags: ignoreversion
 Source: sysAnalyzer.exe; DestDir: {app}; Flags: ignoreversion
 Source: SysAnalyzer_help.chm; DestDir: {app}
@@ -47,7 +47,7 @@ Name: {group}\ApiLogger; Filename: {app}\api_logger.exe
 Name: {group}\Sniff_Hit; Filename: {app}\sniff_hit.exe
 Name: {group}\Uninstall; Filename: {app}\unins000.exe; WorkingDir: {app}
 Name: {userdesktop}\SysAnalyzer; Filename: {app}\sysAnalyzer.exe; WorkingDir: {app}; IconIndex: 0
-Name: {group}\Test Binary; Filename: {app}\sysAnalyzer.exe; Parameters: safe_test1.exe; WorkingDir: {app}; IconFilename: {app}\safe_test1.exe
+;Name: {group}\Test Binary; Filename: {app}\sysAnalyzer.exe; Parameters: safe_test1.exe; WorkingDir: {app}; IconFilename: {app}\safe_test1.exe
 Name: {group}\Help File; Filename: {app}\SysAnalyzer_help.chm; WorkingDir: {app}
 Name: {userdesktop}\DirWatch; Filename: {app}\dirwatch_ui.exe; IconIndex: 0
 Name: {userdesktop}\Sniffhit; Filename: {app}\sniff_hit.exe; IconIndex: 0
