@@ -1,4 +1,6 @@
 
+ bug: RWE memscan one: works first time, fails subsequent
+
  lock log files exclusive no share so crypto malware cant encrypt them...
 
  apilogger - option to follow injections/new processes

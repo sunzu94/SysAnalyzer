@@ -243,6 +243,7 @@ Sub FindStealthInjections(pid As Long, pName As String)
         Err.Clear
     End If
     
+    abort = False
     nextProc = False
     Set c = pi.GetMemoryMap(pid)
 
