@@ -49,6 +49,16 @@ Begin VB.Form frmWizard
       TabIndex        =   7
       Top             =   1290
       Width           =   6465
+      Begin VB.CheckBox chkFilterHostOnly 
+         BackColor       =   &H005A5963&
+         Caption         =   "host only"
+         ForeColor       =   &H00E0E0E0&
+         Height          =   255
+         Left            =   3330
+         TabIndex        =   32
+         Top             =   1620
+         Width           =   990
+      End
       Begin VB.TextBox txtRWEScan 
          Height          =   315
          Left            =   1440
@@ -554,6 +564,7 @@ End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
     SaveConfig
+    SaveMySetting "chkFilterHostOnly.Value", chkFilterHostOnly.Value
     If Len(txtRWEScan) > 0 Then SaveMySetting "txtRWEScan", txtRWEScan.Text
     Dim f As Form
     If Not going_toMainUI Then
@@ -829,6 +840,7 @@ Private Sub Form_Load()
     End If
     
     mnuPopup.Visible = False
+    chkFilterHostOnly.Value = CInt(GetMySetting("chkFilterHostOnly.Value", 1))
     
     START_TIME = Now
     DebugLogFile = UserDeskTopFolder & "\debug.log"
@@ -1026,9 +1038,14 @@ Private Function launchtcpdump()
             Wend
         End If
         
-        args = " -w ""[PATH]"" -q -U -l -s 0 -i " & txtInterface & " ip src [IP] or ip dst [IP]"
+        args = " -w ""[PATH]"" -q -U -l -s 0 -i " & txtInterface
         args = Replace(args, "[PATH]", f)
-        args = Replace(args, "[IP]", cboIp.Text)
+        
+        If chkFilterHostOnly.Value = 1 Then
+            args = args & " ip src [IP] or ip dst [IP]"
+            args = Replace(args, "[IP]", cboIp.Text)
+        End If
+        
         args = "cmd /k """ & """" & tcpdump & """" & args & """"  'takes to long to initilize showing up in snapshots?
         'args = tcpdump & """" & args & """"
         
