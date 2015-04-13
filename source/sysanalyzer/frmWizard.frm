@@ -3,14 +3,14 @@ Begin VB.Form frmWizard
    BackColor       =   &H005A5963&
    BorderStyle     =   3  'Fixed Dialog
    Caption         =   "SysAnalyzer Configuration Wizard"
-   ClientHeight    =   4755
+   ClientHeight    =   5325
    ClientLeft      =   45
    ClientTop       =   720
    ClientWidth     =   10530
    LinkTopic       =   "Form2"
    MaxButton       =   0   'False
    MinButton       =   0   'False
-   ScaleHeight     =   4755
+   ScaleHeight     =   5325
    ScaleWidth      =   10530
    ShowInTaskbar   =   0   'False
    StartUpPosition =   2  'CenterScreen
@@ -44,27 +44,51 @@ Begin VB.Form frmWizard
       BackColor       =   &H005A5963&
       Caption         =   " Options "
       ForeColor       =   &H00E0E0E0&
-      Height          =   2865
+      Height          =   3360
       Left            =   3840
       TabIndex        =   7
-      Top             =   1290
+      Top             =   1260
       Width           =   6465
+      Begin VB.TextBox txtPassword 
+         Height          =   285
+         Left            =   4770
+         TabIndex        =   38
+         Top             =   2340
+         Width           =   1095
+      End
+      Begin VB.ComboBox cboUsers 
+         Height          =   315
+         Left            =   2340
+         TabIndex        =   35
+         Top             =   2295
+         Width           =   1845
+      End
+      Begin VB.CheckBox chkRunAsUser 
+         BackColor       =   &H005A5963&
+         Caption         =   "Run As Another User"
+         ForeColor       =   &H00E0E0E0&
+         Height          =   315
+         Left            =   495
+         TabIndex        =   34
+         Top             =   2340
+         Width           =   1875
+      End
       Begin VB.CheckBox chkFilterHostOnly 
          BackColor       =   &H005A5963&
-         Caption         =   "host only"
+         Caption         =   "filter for host only traffic"
          ForeColor       =   &H00E0E0E0&
          Height          =   255
          Left            =   3330
          TabIndex        =   32
          Top             =   1620
-         Width           =   990
+         Width           =   2025
       End
       Begin VB.TextBox txtRWEScan 
          Height          =   315
-         Left            =   1440
+         Left            =   1575
          TabIndex        =   20
          Text            =   "explorer.exe,iexplore.exe"
-         Top             =   2400
+         Top             =   2835
          Width           =   3435
       End
       Begin VB.ComboBox cboIp 
@@ -122,14 +146,84 @@ Begin VB.Form frmWizard
          Top             =   960
          Width           =   2835
       End
+      Begin VB.Label lblRunAsUserHelp 
+         BackColor       =   &H005A5963&
+         Caption         =   "?"
+         BeginProperty Font 
+            Name            =   "MS Sans Serif"
+            Size            =   8.25
+            Charset         =   0
+            Weight          =   400
+            Underline       =   -1  'True
+            Italic          =   0   'False
+            Strikethrough   =   0   'False
+         EndProperty
+         ForeColor       =   &H00E0E0E0&
+         Height          =   255
+         Left            =   6030
+         MousePointer    =   14  'Arrow and Question
+         TabIndex        =   39
+         Top             =   2385
+         Width           =   225
+      End
+      Begin VB.Label Label5 
+         BackColor       =   &H005A5963&
+         Caption         =   "Pass"
+         ForeColor       =   &H00E0E0E0&
+         Height          =   195
+         Left            =   4320
+         TabIndex        =   37
+         Top             =   2385
+         Width           =   480
+      End
+      Begin VB.Label Label4 
+         BackColor       =   &H005A5963&
+         Caption         =   "?"
+         BeginProperty Font 
+            Name            =   "MS Sans Serif"
+            Size            =   8.25
+            Charset         =   0
+            Weight          =   400
+            Underline       =   -1  'True
+            Italic          =   0   'False
+            Strikethrough   =   0   'False
+         EndProperty
+         ForeColor       =   &H00E0E0E0&
+         Height          =   255
+         Left            =   1980
+         MousePointer    =   14  'Arrow and Question
+         TabIndex        =   36
+         Top             =   585
+         Width           =   225
+      End
+      Begin VB.Label lblFilterHelp 
+         BackColor       =   &H005A5963&
+         Caption         =   "?"
+         BeginProperty Font 
+            Name            =   "MS Sans Serif"
+            Size            =   8.25
+            Charset         =   0
+            Weight          =   400
+            Underline       =   -1  'True
+            Italic          =   0   'False
+            Strikethrough   =   0   'False
+         EndProperty
+         ForeColor       =   &H00E0E0E0&
+         Height          =   255
+         Left            =   5355
+         MousePointer    =   14  'Arrow and Question
+         TabIndex        =   33
+         Top             =   1620
+         Width           =   225
+      End
       Begin VB.Label Label3 
          BackColor       =   &H005A5963&
          Caption         =   "RWE Scan:"
          ForeColor       =   &H00E0E0E0&
          Height          =   195
-         Left            =   420
+         Left            =   495
          TabIndex        =   19
-         Top             =   2460
+         Top             =   2880
          Width           =   915
       End
       Begin VB.Label lblip 
@@ -202,9 +296,9 @@ Begin VB.Form frmWizard
    Begin VB.CommandButton cmdStart 
       Caption         =   "Start"
       Height          =   375
-      Left            =   9135
+      Left            =   9090
       TabIndex        =   3
-      Top             =   4275
+      Top             =   4770
       Width           =   1155
    End
    Begin VB.CommandButton cmdBrowse 
@@ -264,10 +358,10 @@ Begin VB.Form frmWizard
       EndProperty
       ForeColor       =   &H0000FFFF&
       Height          =   345
-      Left            =   270
+      Left            =   225
       MousePointer    =   14  'Arrow and Question
       TabIndex        =   29
-      Top             =   4365
+      Top             =   4860
       Width           =   5625
    End
    Begin VB.Label lblDisplay 
@@ -323,7 +417,7 @@ Begin VB.Form frmWizard
       EndProperty
       ForeColor       =   &H00E0E0E0&
       Height          =   255
-      Left            =   120
+      Left            =   90
       MousePointer    =   14  'Arrow and Question
       TabIndex        =   26
       Top             =   3300
@@ -415,10 +509,10 @@ Begin VB.Form frmWizard
       EndProperty
       ForeColor       =   &H00E0E0E0&
       Height          =   255
-      Left            =   6660
+      Left            =   6615
       MousePointer    =   14  'Arrow and Question
       TabIndex        =   6
-      Top             =   4380
+      Top             =   4875
       Width           =   435
    End
    Begin VB.Image Image1 
@@ -564,7 +658,7 @@ End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
     SaveConfig
-    SaveMySetting "chkFilterHostOnly.Value", chkFilterHostOnly.Value
+    SaveMySetting "chkFilterHostOnly.Value", chkFilterHostOnly.value
     If Len(txtRWEScan) > 0 Then SaveMySetting "txtRWEScan", txtRWEScan.Text
     Dim f As Form
     If Not going_toMainUI Then
@@ -572,6 +666,10 @@ Private Sub Form_Unload(Cancel As Integer)
             Unload f
         Next
     End If
+End Sub
+
+Private Sub Label4_Click()
+    MsgBox "this can cause crashs, I generally dont use it unless i need to dig deeper", vbInformation
 End Sub
 
 Private Sub lblBinary_Click()
@@ -591,6 +689,10 @@ Private Sub lblBuildKnownFileDB_Click()
     
 End Sub
 
+Private Sub lblFilterHelp_Click()
+    MsgBox "generally you will always want this checked unless you are looking at a ddos tool which spoofs the sender's address", vbInformation
+End Sub
+
 Private Sub lblInterfaces_Click(Index As Integer)
     On Error Resume Next
     Dim f As String
@@ -606,6 +708,13 @@ End Sub
 
 Private Sub lblLaunchTcpDump_Click()
     launchtcpdump
+End Sub
+
+Private Sub lblRunAsUserHelp_Click()
+    MsgBox "this option does not work with the API logger, credentials will be verified before execution. " & vbCrLf & vbCrLf & _
+           "Also if you are trying to launch a file by extension such as a doc file, " & vbCrLf & _
+           "you must specify the handler app as the binary, and the file under analysis as the argument. " & vbCrLf & vbCrLf & _
+           "This can however launch DLL files directly as well as executables.", vbInformation
 End Sub
 
 Private Sub lblSkip_Click()
@@ -756,12 +865,12 @@ Sub LoadConfig()
     End If
     
     With cfg
-        chkApiLog.Value = .apilog
+        chkApiLog.value = .apilog
         chkNetworkAnalyzer = .sniffer
         chkWatchDirs = .dirwatch
         txtDelay = .delay
         txtInterface = .interface
-        chkPacketCapture.Value = .tcpdump
+        chkPacketCapture.value = .tcpdump
     End With
     
 End Sub
@@ -773,12 +882,12 @@ Sub SaveConfig()
     If Len(txtDelay) = 0 Or Not IsNumeric(txtDelay) Then txtDelay = 30
             
     With cfg
-        .apilog = chkApiLog.Value
+        .apilog = chkApiLog.value
         .sniffer = chkNetworkAnalyzer
         .dirwatch = chkWatchDirs
         .delay = CLng(txtDelay)
         .interface = CByte(txtInterface)
-        .tcpdump = chkPacketCapture.Value
+        .tcpdump = chkPacketCapture.value
     End With
     
     Dim f As Long
@@ -840,7 +949,7 @@ Private Sub Form_Load()
     End If
     
     mnuPopup.Visible = False
-    chkFilterHostOnly.Value = CInt(GetMySetting("chkFilterHostOnly.Value", 1))
+    chkFilterHostOnly.value = CInt(GetMySetting("chkFilterHostOnly.Value", 1))
     
     START_TIME = Now
     DebugLogFile = UserDeskTopFolder & "\debug.log"
@@ -891,8 +1000,8 @@ Private Sub Form_Load()
 
     If cboIp.ListCount = 0 Then  'no active interfaces ?
         chkPacketCapture.Enabled = False
-        chkPacketCapture.Value = 0
-        chkNetworkAnalyzer.Value = 0
+        chkPacketCapture.value = 0
+        chkNetworkAnalyzer.value = 0
         chkNetworkAnalyzer.Enabled = False
     End If
     
@@ -910,7 +1019,7 @@ Private Sub Form_Load()
         txtBinary = App.path & "\..\..\safe_test1.exe"
     End If
 
-    
+    LoadUsers
     Me.Icon = frmMain.Icon
     
 Exit Sub
@@ -918,13 +1027,39 @@ hell:
         MsgBox Err.Description
 End Sub
 
+Private Sub LoadUsers()
+    On Error Resume Next
+    Dim tmp() As String, x
+    If GetUsers(tmp) Then
+       For Each x In tmp
+            If Len(Trim(x)) > 0 Then cboUsers.AddItem x
+        Next
+        cboUsers.ListIndex = 0
+    Else
+        chkRunAsUser.value = 0
+        chkRunAsUser.Enabled = False
+    End If
+End Sub
+
 Sub cmdStart_Click()
         
     On Error Resume Next
+    Dim errmsg As String
+    
+    If chkRunAsUser.value = 1 Then
+        If chkApiLog.value = 1 Then
+            MsgBox "Sorry run as user option is currently not compatiable with the apilog option", vbInformation
+            Exit Sub
+        End If
+        If Not IsValidNTAccount(cboUsers.Text, txtPassword, "", errmsg) Then
+            MsgBox "Could not logon as user " & cboUsers.Text & " Message: " & errmsg
+            Exit Sub
+        End If
+    End If
     
     ProcessesToRWEScan = txtRWEScan
     
-    If chkPacketCapture.Value = 1 Then
+    If chkPacketCapture.value = 1 Then
         If Not IsNumeric(txtInterface.Text) Or txtInterface.Text = 0 Then
             MsgBox "Interface for tcpdump must be numeric and non-zero", vbInformation
             Exit Sub
@@ -948,9 +1083,9 @@ Sub cmdStart_Click()
         Exit Sub
     End If
     
-    If cx.isExe_x64(txtBinary) = r_64bit And chkApiLog.Value = 1 Then
+    If cx.isExe_x64(txtBinary) = r_64bit And chkApiLog.value = 1 Then
         MsgBox "ApiLogger option is not yet compatiable with x64 targets", vbInformation
-        chkApiLog.Value = 0
+        chkApiLog.value = 0
         Exit Sub
     End If
     
@@ -959,7 +1094,7 @@ Sub cmdStart_Click()
         txtDelay = 30
     End If
         
-    If chkNetworkAnalyzer.Value = 1 Then
+    If chkNetworkAnalyzer.value = 1 Then
         If Not isNetworkAnalyzerRunning() Then
             If fso.FileExists(networkAnalyzer) Then
                 Shell """" & networkAnalyzer & """ /start /log """ & UserDeskTopFolder & """", vbMinimizedNoFocus
@@ -969,7 +1104,7 @@ Sub cmdStart_Click()
         End If
     End If
         
-    If chkPacketCapture.Value = 1 Then launchtcpdump
+    If chkPacketCapture.value = 1 Then launchtcpdump
     
     'must be last external process to launch as it monitors others...
     If fso.FileExists(procWatch) Then
@@ -1041,7 +1176,7 @@ Private Function launchtcpdump()
         args = " -w ""[PATH]"" -q -U -l -s 0 -i " & txtInterface
         args = Replace(args, "[PATH]", f)
         
-        If chkFilterHostOnly.Value = 1 Then
+        If chkFilterHostOnly.value = 1 Then
             args = args & " ip src [IP] or ip dst [IP]"
             args = Replace(args, "[IP]", cboIp.Text)
         End If
@@ -1068,7 +1203,7 @@ Private Sub tmrDelayShell_Timer()
     tmrDelayShell.Enabled = False
     On Error GoTo hell
     
-    If chkWatchDirs.Value = 1 Then
+    If chkWatchDirs.value = 1 Then
         DirWatchCtl True
     Else
         frmMain.SSTab1.TabVisible(6) = False
@@ -1076,7 +1211,7 @@ Private Sub tmrDelayShell_Timer()
     
     frmMain.Display = "Launching malware..."
     
-    If chkApiLog.Value = 1 Then
+    If chkApiLog.value = 1 Then
         Dim exe As String
             
         If VBA.Left(txtBinary, 4) = "pid:" Then
@@ -1108,12 +1243,23 @@ Private Sub tmrDelayShell_Timer()
         frmMain.SSTab1.TabVisible(5) = False
         If LCase(VBA.Right(txtBinary, 4)) = ".dll" Then
             If cx.isExe_x64(txtBinary) = r_64bit Then
-                debugLog "Starting x64 dll with x64Helper.exe"
-                'Shell App.path & "\x64Helper.exe /loadlib """ & txtBinary & """"
-                cx.x64LoadLib txtBinary, xx
+                If chkRunAsUser.value = 1 Then
+                    debugLog "Starting x64 dll with x64Helper.exe RunAsUser"
+                    cx.x64LoadLib txtBinary, xx, cboUsers.Text, txtPassword
+                Else
+                    debugLog "Starting x64 dll with x64Helper.exe"
+                    cx.x64LoadLib txtBinary, xx
+                End If
             Else
-                debugLog "Starting dll with loadlib.exe"
-                Shell App.path & "\loadlib.exe """ & txtBinary & """"
+                If chkRunAsUser.value = 1 Then
+                    debugLog "Starting dll with loadlib.exe runasuser"
+                    If Not RunAsUser(cboUsers.Text, txtPassword, "", App.path & "\loadlib.exe " & txtBinary, fso.GetParentFolder(txtBinary)) Then
+                        Err.Raise "Failed to start as user Error: " & modUserAccounts.RunAsUserError
+                    End If
+                Else
+                    debugLog "Starting dll with loadlib.exe"
+                    Shell App.path & "\loadlib.exe """ & txtBinary & """"
+                End If
             End If
         Else
             debugLog "Starting malware directly"
@@ -1124,13 +1270,25 @@ Private Sub tmrDelayShell_Timer()
             args = txtArgs
             If InStr(args, " ") > 0 Then args = """" & args & """"
              
-            'this will handle word docs, pdfs, cpls, htms etc, not just exes
-            'as long as a handler is registered for extension and extension is
-            'correct for file type.
-            ret = ShellExecute(0, "open", """" & txtBinary & """", args, fso.GetParentFolder(txtBinary), 1)
-            If ret <= 32 Then
-                debugLog "ShellExecute failed, trying VB Shell command.."
-2               Shell txtBinary & " " & txtArgs, vbNormalFocus
+            If chkRunAsUser.value = 1 Then
+                'To utilize shall execute behaviors you can use command /K start filename (but have to be very careful with spaces in paths..)
+                'right now requires an executable file directly...
+                'can handle spaces in file path to binary and in args without problems..
+                debugLog "RunAsUser option chosen.."
+                If Not RunAsUser(cboUsers.Text, txtPassword, "", txtBinary & " " & args, fso.GetParentFolder(txtBinary)) Then
+                    Err.Raise "Failed to start as user Error: " & modUserAccounts.RunAsUserError & vbCrLf & vbCrLf & _
+                              "note this method requires an executable to directly launch, " & _
+                              "does not support file extension handlers like pdf, html, or doc.."
+                End If
+            Else
+                'this will handle word docs, pdfs, cpls, htms etc, not just exes
+                'as long as a handler is registered for extension and extension is
+                'correct for file type.
+                ret = ShellExecute(0, "open", """" & txtBinary & """", args, fso.GetParentFolder(txtBinary), 1)
+                If ret <= 32 Then
+                    debugLog "ShellExecute failed, trying VB Shell command.."
+2                   Shell txtBinary & " " & txtArgs, vbNormalFocus
+                End If
             End If
              
              

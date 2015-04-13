@@ -297,7 +297,7 @@ hell:
     Err.Clear
 End Function
 
-Public Sub x64LoadLib(ByVal dll As String, out_injLog As String)
+Public Sub x64LoadLib(ByVal dll As String, out_injLog As String, Optional userName As String = "", Optional password As String = "")
     
     If Not FileExists(dll) Then
         out_injLog = "dll not found: " & dll
@@ -321,7 +321,14 @@ Public Sub x64LoadLib(ByVal dll As String, out_injLog As String)
     
     
     dll = GetShortName(dll)
-    Shell helperPath & " /loadlib " & dll
+    
+    If Len(userName) > 0 Then
+        If Not RunAsUser(userName, password, "", helperPath & " /loadlib " & dll, fso.GetParentFolder(helperPath)) Then
+            Err.Raise "x64LoadLib Failed to start as user Error: " & modUserAccounts.RunAsUserError
+        End If
+    Else
+        Shell helperPath & " /loadlib " & dll
+    End If
     
 End Sub
 
