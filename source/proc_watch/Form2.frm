@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Begin VB.Form frmMain 
    Caption         =   "Monitoring for new Processes"
    ClientHeight    =   2925
@@ -13,7 +13,7 @@ Begin VB.Form frmMain
    StartUpPosition =   3  'Windows Default
    Begin VB.Timer Timer1 
       Enabled         =   0   'False
-      Interval        =   1200
+      Interval        =   500
       Left            =   10110
       Top             =   2310
    End
@@ -36,7 +36,7 @@ Begin VB.Form frmMain
       BackColor       =   -2147483643
       BorderStyle     =   1
       Appearance      =   1
-      NumItems        =   5
+      NumItems        =   6
       BeginProperty ColumnHeader(1) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
          Text            =   "Start"
          Object.Width           =   2469
@@ -53,11 +53,16 @@ Begin VB.Form frmMain
       EndProperty
       BeginProperty ColumnHeader(4) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
          SubItemIndex    =   3
-         Text            =   "CmdLine"
+         Text            =   "User"
          Object.Width           =   2540
       EndProperty
       BeginProperty ColumnHeader(5) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
          SubItemIndex    =   4
+         Text            =   "CmdLine"
+         Object.Width           =   2540
+      EndProperty
+      BeginProperty ColumnHeader(6) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+         SubItemIndex    =   5
          Text            =   "Path"
          Object.Width           =   2540
       EndProperty
@@ -294,8 +299,9 @@ Function AddPid(p As CProcess)
    
     Set li = lvProc.ListItems.Add(, , Time)
     li.SubItems(2) = Hex(p.pid)
-    li.SubItems(3) = p.CmdLine
-    li.SubItems(4) = cpi.GetProcessPath(p.pid)
+    li.SubItems(3) = p.user
+    li.SubItems(4) = p.CmdLine
+    li.SubItems(5) = cpi.GetProcessPath(p.pid)
     Set li.Tag = p
     procs.Add p
     

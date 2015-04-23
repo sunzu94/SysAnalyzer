@@ -1,7 +1,7 @@
 Type=Exe
 Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\WINDOWS\system32\stdole2.tlb#OLE Automation
-Reference=*\G{DDC88AC2-2723-4C1B-9D61-C4F4D7CF5375}#2.7#0#..\..\..\..\..\..\_ftp_root\__libs\vbKit\vbDevKit.dll#Vb Developers Library From Sandsprite.com
-Object={831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0; mscomctl.ocx
+Reference=*\G{DDC88AC2-2723-4C1B-9D61-C4F4D7CF5375}#2.7#0#..\..\..\..\libs\vbDevKit\vbDevKit.dll#Vb Developers Library From Sandsprite.com
+Object={831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0; MSCOMCTL.OCX
 Form=Form2.frm
 Class=CProcessInfo; ..\sysanalyzer\CProcessInfo.cls
 Class=CProcess; ..\sysanalyzer\CProcess.cls
@@ -18,6 +18,7 @@ Form=..\sysanalyzer\frmDlls.frm
 Form=..\sysanalyzer\frmListProcess.frm
 Module=CmdOutput; ..\sysanalyzer\CmdOutput.bas
 Module=modZLIB; ..\sysanalyzer\modZLIB.bas
+Module=modUserAccounts; ..\sysanalyzer\modUserAccounts.bas
 IconForm="frmMain"
 Startup="frmMain"
 HelpFile=""
@@ -53,3 +54,6 @@ DebugStartupOption=0
 
 [MS Transaction Server]
 AutoRefresh=1
+
+[fastBuild]
+fullPath=D:\_code\iDef\SysAnalyzer\proc_watch.exe

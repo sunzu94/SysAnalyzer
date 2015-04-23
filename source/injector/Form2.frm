@@ -574,10 +574,10 @@ Sub LoadChkSettings(Optional load As Boolean = True)
             defVal = 0
             If cc.Enabled Then
                 If load Then
-                    r = GetSetting("ApiLog", "settings", cc.name, defVal)
-                    cc.Value = r
+                    r = GetSetting("ApiLog", "settings", cc.Name, defVal)
+                    cc.value = r
                 Else
-                    Call SaveSetting("ApiLog", "settings", cc.name, cc.Value)
+                    Call SaveSetting("ApiLog", "settings", cc.Name, cc.value)
                 End If
             End If
         End If
@@ -594,10 +594,10 @@ Function AddPid(hex_pid As String)
     pid = CLng("&h" & hex_pid)
     
     For Each li In lvProc.ListItems
-        If li.Text = hex_pid Then Exit Function
+        If LCase(li.Text) = LCase(hex_pid) Then Exit Function
     Next
     
-    Set li = lvProc.ListItems.Add(, , hex_pid)
+    Set li = lvProc.ListItems.Add(, , LCase(hex_pid))
     li.SubItems(1) = fso.FileNameFromPath(cpi.GetProcessPath(pid))
     li.Tag = pid
     
@@ -773,7 +773,7 @@ Private Sub cmdStart_Click()
     End If
     
     If Not failed Then
-        Set li = lvProc.ListItems.Add(, , Hex(cp.pid))
+        Set li = lvProc.ListItems.Add(, , LCase(Hex(cp.pid)))
         li.SubItems(1) = fso.FileNameFromPath(cp.fullpath)
         li.Tag = cp.pid
     End If
@@ -1010,13 +1010,13 @@ Private Sub HandleConfig(msg As String, spid As String)
     End If
     
     Select Case LCase(cmd(1))
-        Case "nosleep": If chkIgnoreSleep.Value = 1 Then sc.OverRideRetVal 1
-        Case "noregistry": If chkNoRegistry.Value = 1 Then sc.OverRideRetVal 1
-        Case "nogetproc": If chkNoGetProc.Value = 1 Then sc.OverRideRetVal 1
-        Case "querygettick": If chkAdvanceGetTick.Value = 1 Then sc.OverRideRetVal 1
-        Case "blockopenprocess": If chkBlockOpenProcess.Value = 1 Then sc.OverRideRetVal 1
-        Case "blockdebugcontrol": If chkBlockDebugControl.Value = 1 Then sc.OverRideRetVal 1
-        Case "ignoreexitprocess": If chkIgnoreExitProcess.Value = 1 Then sc.OverRideRetVal 1
+        Case "nosleep": If chkIgnoreSleep.value = 1 Then sc.OverRideRetVal 1
+        Case "noregistry": If chkNoRegistry.value = 1 Then sc.OverRideRetVal 1
+        Case "nogetproc": If chkNoGetProc.value = 1 Then sc.OverRideRetVal 1
+        Case "querygettick": If chkAdvanceGetTick.value = 1 Then sc.OverRideRetVal 1
+        Case "blockopenprocess": If chkBlockOpenProcess.value = 1 Then sc.OverRideRetVal 1
+        Case "blockdebugcontrol": If chkBlockDebugControl.value = 1 Then sc.OverRideRetVal 1
+        Case "ignoreexitprocess": If chkIgnoreExitProcess.value = 1 Then sc.OverRideRetVal 1
         Case "hooklibloglevel": sc.OverRideRetVal CLng(cboLogLevel.Text)
         
         Case "handler": 'reconfig handler that can be called with CreateRemoteThread()
@@ -1190,7 +1190,7 @@ Function GetMySetting(key, def)
     GetMySetting = GetSetting(App.EXEName, "General", key, def)
 End Function
 
-Sub SaveMySetting(key, Value)
-    SaveSetting App.EXEName, "General", key, Value
+Sub SaveMySetting(key, value)
+    SaveSetting App.EXEName, "General", key, value
 End Sub
 

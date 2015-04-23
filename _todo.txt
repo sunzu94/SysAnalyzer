@@ -1,6 +1,4 @@
 
- bug: RWE memscan one: works first time, fails subsequent
-
  lock log files exclusive no share so crypto malware cant encrypt them...
 
  apilogger - option to follow injections/new processes
@@ -39,7 +37,7 @@
  make sure CreateProcess Apilogger hook is crash free..should switch over to CreateProcessInternalW, have it somewhere..
 
 --> TEST MORE WITH WIN7 AND WIN7X64
---> ability to runas another user? (explorer injection, screen lockers etc)
+X ability to runas another user? (explorer injection, screen lockers etc)
 
  make sure IE process running at start of test?
  Cstrings - be able to set min match leng
