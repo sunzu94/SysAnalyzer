@@ -1,4 +1,18 @@
 
+ monitor HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\
+ monitor Software\Microsoft\Windows NT\CurrentVersion\Windows\Load,AppInit_DLLs
+ 
+ check all forms to account for BIG win8 title bars..
+
+ diff/enum desktops, screen shot new ones? ref: CmdDesktopSwitch
+ sniffhit make sure run as admin on win7+
+ dirwatch right clk save as
+ dirwatch data in sysanalyzer not saved after report generated..
+ memmap window resize code
+ memmap window base column header sort off
+
+ if new dlls dropped scan processes for them as part of report.
+
  lock log files exclusive no share so crypto malware cant encrypt them...
 
  apilogger - option to follow injections/new processes
@@ -9,10 +23,6 @@
 	   - save button should save process map at top (way to save process map on its own?)
            - each new process should create its own tab and own listview
            - frmdlls right click menu not working (modal issue?)
-
-
-
- monitor Software\Microsoft\Windows NT\CurrentVersion\Windows\Load,AppInit_DLLs
  
  is dirwatch able to capture files created with hidden attrib? 
    if it cant immediatly capture a file, it should add it to a try again list 
@@ -32,12 +42,10 @@
 
  RWE memory scan - save known injections automatically  ?
  rwe mem scan and pause all threads on procwatch ?
+
  always inject a nodelete.dll ?
  test all manner of file deletion against api_log.dll blocks
  make sure CreateProcess Apilogger hook is crash free..should switch over to CreateProcessInternalW, have it somewhere..
-
---> TEST MORE WITH WIN7 AND WIN7X64
-X ability to runas another user? (explorer injection, screen lockers etc)
 
  make sure IE process running at start of test?
  Cstrings - be able to set min match leng

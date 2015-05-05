@@ -34,7 +34,8 @@ BOOL   (__stdcall *Real_CreateProcessA)(LPCSTR a0,LPSTR a1,LPSECURITY_ATTRIBUTES
 BOOL   (__stdcall *Real_CreateProcessInternalW)(DWORD unknown1, LPCSTR a0,LPSTR a1,LPSECURITY_ATTRIBUTES a2,LPSECURITY_ATTRIBUTES a3,BOOL a4,DWORD a5,LPVOID a6,LPCSTR a7,struct _STARTUPINFOA* a8,LPPROCESS_INFORMATION a9, DWORD unknown2) = NULL;
 BOOL  (__stdcall *Real_VirtualFree)( LPVOID lpAddress, SIZE_T dwSize, DWORD dwFreeType) = NULL;
 
- 
+//BOOL WINAPI DebugActiveProcess( _In_  DWORD dwProcessId); 
+BOOL (__stdcall *Real_DebugActiveProcess)( DWORD a0 ) = NULL;
 
 
 

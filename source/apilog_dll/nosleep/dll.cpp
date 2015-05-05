@@ -134,6 +134,12 @@ VOID __stdcall My_Sleep( DWORD a0 )
 	return;
 }
 
+
+BOOL __stdcall My_DebugActiveProcess( DWORD a0 )
+{
+	return FALSE; //umm nope you can f*ck off
+}
+
 DWORD __stdcall My_SleepEx( DWORD a0, BOOL a1 ){
 	if( a0 > minToLog) return 0;
 	Real_SleepEx(a0,a1);
@@ -353,7 +359,8 @@ void InstallHooks(void)
 	ADDHOOK(ExitProcess)
 	ADDHOOK(VirtualAllocEx)
 	ADDHOOK(VirtualFree)
-	
+	ADDHOOK(DebugActiveProcess)
+
 	void* real = GetProcAddress( hKernelBase==0 ? GetModuleHandleA("kernel32.dll") : hKernelBase , "CreateProcessInternalW");
 	if (real==0 || !InstallHook( real, My_CreateProcessInternalW, (int*)&Real_CreateProcessInternalW,"CreateProcessInternalW", ht_jmp ) ){ 
 		msg("Install hook CreateProcessInternalW failed...Error: \r\n");
