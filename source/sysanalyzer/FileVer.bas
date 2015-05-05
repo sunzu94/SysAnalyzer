@@ -167,6 +167,16 @@ Private Declare Sub CopyMemory2 Lib "kernel32" Alias "RtlMoveMemory" (pDst As An
 Private Declare Function WSAStartup Lib "ws2_32.dll" (ByVal wVR As Long, lpWSAD As WSAData) As Long
 Private Declare Function GetShortPathName Lib "kernel32" Alias "GetShortPathNameA" (ByVal lpszLongPath As String, ByVal lpszShortPath As String, ByVal cchBuffer As Long) As Long
 
+Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
+
+Property Get TitleBarHeight(f As Form) As Long
+    Const SM_CYCAPTION = 4
+    TitleBarHeight = GetSystemMetrics(SM_CYCAPTION) 'pixels
+    If f.ScaleMode = ScaleModeConstants.vbTwips Then
+        TitleBarHeight = f.ScaleY(TitleBarHeight, vbPixels, vbTwips)
+    End If
+End Property
+
 Public Sub AlwaysOnTop(f As Form, Optional SetOnTop As Boolean = True)
     Dim lflag As Long, tx As Long, ty As Long
      
@@ -284,7 +294,7 @@ Function LaunchStrings(data As String, Optional isPath As Boolean = False)
 
 End Function
 
-Function LaunchExternalHexViewer(data As String, Optional isPath As Boolean = False, Optional base As String = Empty)
+Function LaunchExternalHexViewer(data As String, Optional isPath As Boolean = False, Optional Base As String = Empty)
 
     Dim b() As Byte
     Dim f As String
@@ -293,7 +303,7 @@ Function LaunchExternalHexViewer(data As String, Optional isPath As Boolean = Fa
     
     On Error Resume Next
     
-    If Len(base) > 0 Then base = "/base=" & base
+    If Len(Base) > 0 Then Base = "/base=" & Base
     
     exe = App.path & IIf(isIde(), "\..\..", "") & "\shellext.exe"
     If Not fso.FileExists(exe) Then
@@ -318,12 +328,12 @@ Function LaunchExternalHexViewer(data As String, Optional isPath As Boolean = Fa
     Put h, , b()
     Close h
     
-    Shell exe & " """ & f & """" & IIf(Len(base) > 0, " " & base, "") & " /hexv"
+    Shell exe & " """ & f & """" & IIf(Len(Base) > 0, " " & Base, "") & " /hexv"
 
 End Function
 
-Sub SaveMySetting(key, Value)
-    SaveSetting "iDefense", App.exename, key, Value
+Sub SaveMySetting(key, value)
+    SaveSetting "iDefense", App.exename, key, value
 End Sub
 
 Function GetMySetting(key, def)
@@ -335,7 +345,7 @@ Sub SaveFormSizeAnPosition(f As Form)
     Dim s As String
     If f.WindowState <> 0 Then Exit Sub 'vbnormal
     s = f.Left & "," & f.top & "," & f.Width & "," & f.Height
-    SaveMySetting f.name & "_pos", s
+    SaveMySetting f.Name & "_pos", s
 End Sub
 
 Function occuranceCount(haystack, match) As Long
@@ -351,7 +361,7 @@ Sub RestoreFormSizeAnPosition(f As Form)
     On Error GoTo hell
     Dim s
     
-    s = GetMySetting(f.name & "_pos", "")
+    s = GetMySetting(f.Name & "_pos", "")
     
     If Len(s) = 0 Then Exit Sub
     If occuranceCount(s, ",") <> 3 Then Exit Sub
@@ -512,7 +522,7 @@ Public Function FileInfo(Optional ByVal PathWithFilename As String) As FILEPROPE
     
     Dim lngBufferlen As Long
     Dim lngDummy As Long
-    Dim lngRc As Long
+    Dim lngRC As Long
     Dim lngVerPointer As Long
     Dim lngHexNumber As Long
     Dim bytBuffer() As Byte
@@ -530,11 +540,11 @@ Public Function FileInfo(Optional ByVal PathWithFilename As String) As FILEPROPE
     If lngBufferlen > 0 Then
     
        ReDim bytBuffer(lngBufferlen)
-       lngRc = GetFileVersionInfo(PathWithFilename, 0&, lngBufferlen, bytBuffer(0))
+       lngRC = GetFileVersionInfo(PathWithFilename, 0&, lngBufferlen, bytBuffer(0))
        
-       If lngRc <> 0 Then
-          lngRc = VerQueryValue(bytBuffer(0), "\VarFileInfo\Translation", lngVerPointer, lngBufferlen)
-          If lngRc <> 0 Then
+       If lngRC <> 0 Then
+          lngRC = VerQueryValue(bytBuffer(0), "\VarFileInfo\Translation", lngVerPointer, lngBufferlen)
+          If lngRC <> 0 Then
              'lngVerPointer is a pointer to four 4 bytes of Hex number,
              'first two bytes are language id, and last two bytes are code
              'page. However, strLangCharset needs a  string of
@@ -583,8 +593,8 @@ Public Function FileInfo(Optional ByVal PathWithFilename As String) As FILEPROPE
              For intTemp = 0 To 7
                 strBuffer = String$(800, 0)
                 strTemp = "\StringFileInfo\" & strLangCharset & "\" & strVersionInfo(intTemp)
-                lngRc = VerQueryValue(bytBuffer(0), strTemp, lngVerPointer, lngBufferlen)
-                If lngRc <> 0 Then
+                lngRC = VerQueryValue(bytBuffer(0), strTemp, lngVerPointer, lngBufferlen)
+                If lngRC <> 0 Then
                    ' get and format data
                    lstrcpy strBuffer, lngVerPointer
                    n = InStr(strBuffer, Chr(0)) - 1
@@ -618,14 +628,14 @@ End Function
 
 
 
-Sub push(ary, Value) 'this modifies parent ary object
+Sub push(ary, value) 'this modifies parent ary object
     On Error GoTo init
     Dim x As Integer
     x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
-    ary(UBound(ary)) = Value
+    ary(UBound(ary)) = value
     Exit Sub
-init:     ReDim ary(0): ary(0) = Value
+init:     ReDim ary(0): ary(0) = value
 End Sub
 
 
@@ -800,7 +810,7 @@ Sub ScanProcsForDll(Optional lblDisplay As Label = Nothing)
                     tmp2 = Empty
                     For Each cm In m
                         If InStr(1, cm.path, find, vbTextCompare) > 0 Then
-                           tmp2 = tmp2 & vbTab & Hex(cm.base) & vbTab & cm.path & vbCrLf
+                           tmp2 = tmp2 & vbTab & Hex(cm.Base) & vbTab & cm.path & vbCrLf
                            hit = True
                         End If
                     Next

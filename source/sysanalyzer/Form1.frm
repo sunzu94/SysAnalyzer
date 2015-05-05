@@ -1037,13 +1037,13 @@ Private Sub Form_Resize()
     Dim o As Object
     Dim lv As ListView
     SSTab1.Width = Me.Width - SSTab1.Left - 100
-    SSTab1.Height = Me.Height - SSTab1.top - 500
+    SSTab1.Height = Me.Height - SSTab1.top - 500 - (TitleBarHeight(Me) - 255)
     For Each o In Me.Controls
         If TypeName(o) = "ListView" Then
             Set lv = o
             lv.Width = SSTab1.Width - 200
             lv.ColumnHeaders(lv.ColumnHeaders.count).Width = lv.Width - lv.ColumnHeaders(lv.ColumnHeaders.count).Left - 200
-            If lv.name = "lvPorts" Or lv.name = "lvDrivers" Or lv.name = "lvRegKeys" Then
+            If lv.Name = "lvPorts" Or lv.Name = "lvDrivers" Or lv.Name = "lvRegKeys" Then
                 With lv
                     .Height = SSTab1.Height - .top - 500
                 End With
@@ -1166,7 +1166,7 @@ Private Sub mnuCopySelected_Click()
                 Next
                 li.Selected = True
                 match = match + 1
-                push ret(), active_lv.name & "> " & tmp
+                push ret(), active_lv.Name & "> " & tmp
             End If
         Next
     Next
@@ -1300,7 +1300,7 @@ Private Sub mnuSearch_Click()
             If InStr(1, tmp, Search, vbTextCompare) > 0 Then
                 li.Selected = True
                 match = match + 1
-                push ret(), active_lv.name & "> " & tmp
+                push ret(), active_lv.Name & "> " & tmp
             Else
                 li.Selected = False
             End If

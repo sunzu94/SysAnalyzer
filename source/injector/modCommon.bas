@@ -7,6 +7,16 @@ Private Declare Function SHGetSpecialFolderLocation Lib "shell32" (ByVal hWndOwn
 Private Declare Sub CoTaskMemFree Lib "ole32" (ByVal pv As Long)
 Public Declare Function ShowWindow Lib "user32" (ByVal hWnd As Long, ByVal nCmdShow As Long) As Long
 
+Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
+
+Property Get TitleBarHeight(f As Form) As Long
+    Const SM_CYCAPTION = 4
+    TitleBarHeight = GetSystemMetrics(SM_CYCAPTION) 'pixels
+    If f.ScaleMode = ScaleModeConstants.vbTwips Then
+        TitleBarHeight = f.ScaleY(TitleBarHeight, vbPixels, vbTwips)
+    End If
+End Property
+
 Public Function UserDeskTopFolder() As String
     Dim idl As Long
     Dim p As String
@@ -146,7 +156,7 @@ Sub RestoreFormSizeAnPosition(f As Form)
     On Error GoTo hell
     Dim s
     
-    s = GetMySetting(f.name & "_pos", "")
+    s = GetMySetting(f.Name & "_pos", "")
     
     If Len(s) = 0 Then Exit Sub
     If occuranceCount(s, ",") <> 3 Then Exit Sub
@@ -166,15 +176,15 @@ Sub SaveFormSizeAnPosition(f As Form)
     Dim s As String
     If f.WindowState <> 0 Then Exit Sub 'vbnormal
     s = f.Left & "," & f.Top & "," & f.Width & "," & f.Height
-    SaveMySetting f.name & "_pos", s
+    SaveMySetting f.Name & "_pos", s
 End Sub
 
 Function GetMySetting(key, def)
     GetMySetting = GetSetting("iDefense", App.EXEName, key, def)
 End Function
 
-Sub SaveMySetting(key, Value)
-    SaveSetting "iDefense", App.EXEName, key, Value
+Sub SaveMySetting(key, value)
+    SaveSetting "iDefense", App.EXEName, key, value
 End Sub
 
 Function occuranceCount(haystack, match) As Long

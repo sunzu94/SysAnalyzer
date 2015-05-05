@@ -188,14 +188,14 @@ Function StealthInjectionScan()
     Me.Visible = True
     Set c = pi.GetRunningProcesses()
     pb.max = c.count
-    pb.Value = 1
+    pb.value = 1
     abort = False
     totalScanned = 0
     totalRWEFound = 0
     multiscanMode = True
     
     For Each cp In c
-        Me.Caption = "Scanning " & pb.Value & "/" & c.count & "  Found: " & lv.ListItems.count & " Processing: " & cp.path & " TotalRWEFound: " & totalRWEFound & " Total Allocs Scanned: " & totalScanned
+        Me.Caption = "Scanning " & pb.value & "/" & c.count & "  Found: " & lv.ListItems.count & " Processing: " & cp.path & " TotalRWEFound: " & totalRWEFound & " Total Allocs Scanned: " & totalScanned
        
         'If diff.CProc.x64.IsProcess_x64(cp.pid) = r_32bit Then
             FindStealthInjections cp.pid, pi.GetProcessPath(cp.pid)
@@ -203,12 +203,12 @@ Function StealthInjectionScan()
         
         DoEvents
         Sleep 20
-        pb.Value = pb.Value + 1
+        pb.value = pb.value + 1
         If abort Then Exit For
     Next
     
     multiscanMode = False
-    pb.Value = 0
+    pb.value = 0
     Me.Caption = "Found " & lv.ListItems.count & " allocations"
     
         
@@ -249,7 +249,7 @@ Sub FindStealthInjections(pid As Long, pName As String)
 
     If multiscanMode = False Then
         pb.max = c.count
-        pb.Value = 0
+        pb.value = 0
     End If
     
     'todo: replace(chr(0) in readmem, if it shrinks by % then its just junk?
@@ -259,8 +259,8 @@ Sub FindStealthInjections(pid As Long, pName As String)
         totalScanned = totalScanned + 1
         
         If multiscanMode = False Then
-            pb.Value = pb.Value + 1
-            Me.Caption = "Scanning " & pb.Value & "/" & c.count & "  Found: " & lv.ListItems.count & " Total Allocs Scanned: " & totalScanned
+            pb.value = pb.value + 1
+            Me.Caption = "Scanning " & pb.value & "/" & c.count & "  Found: " & lv.ListItems.count & " Total Allocs Scanned: " & totalScanned
         End If
          
         If cMem.Protection = PAGE_EXECUTE_READWRITE And cMem.MemType <> MEM_IMAGE Then
@@ -298,7 +298,7 @@ nextone:
         Sleep 5
     Next
     
-    If multiscanMode = False Then pb.Value = 0
+    If multiscanMode = False Then pb.value = 0
     
 End Sub
 
@@ -327,7 +327,7 @@ End Sub
 
 Private Sub Form_Resize()
     On Error Resume Next
-    Frame1.top = Me.Height - 400 - Frame1.Height
+    Frame1.top = Me.Height - 400 - Frame1.Height - (TitleBarHeight(Me) - 255)
     lv.Height = Frame1.top - 600
     lv.Width = Me.Width - lv.Left - 200
     pb.Width = lv.Width
@@ -378,7 +378,7 @@ Private Sub mnuSearchMem_Click()
     
     s2 = StrConv(s, vbUnicode, LANG_US)
     pb.max = lv.ListItems.count
-    pb.Value = 0
+    pb.value = 0
     abort = False
     
     For Each li In lv.ListItems
@@ -393,10 +393,10 @@ Private Sub mnuSearchMem_Click()
         b = InStr(1, m, s2, vbTextCompare)
         If a > 0 Then ret = ret & "pid: " & li.Text & " base: " & li.SubItems(1) & " offset: " & cMem.Base & "+" & a & " ASCII " & li.SubItems(5) & vbCrLf
         If b > 0 Then ret = ret & "pid: " & li.Text & " base: " & li.SubItems(1) & " offset: " & cMem.Base & "+" & b & " UNICODE " & li.SubItems(5) & vbCrLf
-        pb.Value = pb.Value + 1
+        pb.value = pb.value + 1
     Next
             
-    pb.Value = 0
+    pb.value = 0
     
     If Len(ret) > 0 Then
         frmReport.ShowList ret
