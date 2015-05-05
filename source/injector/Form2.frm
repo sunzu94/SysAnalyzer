@@ -79,7 +79,16 @@ Begin VB.Form Form2
       EndProperty
    End
    Begin VB.ListBox List2 
-      Height          =   1425
+      BeginProperty Font 
+         Name            =   "Courier"
+         Size            =   12
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      Height          =   1260
       Left            =   120
       TabIndex        =   34
       Top             =   2160
@@ -620,18 +629,60 @@ Function ignoreit(v) As Boolean
 End Function
 
 
-Private Sub cmdBrowse_Click(Index As Integer)
+Private Sub cmdBrowse_Click(index As Integer)
     Dim f As String
+    
+    
     f = dlg.OpenDialog(AllFiles, , "Open Executable to monitor", Me.hWnd)
+    f = Replace(f, Chr(0), Empty)
     If Len(f) = 0 Then Exit Sub
-    If Index = 0 Then
+    
+    If index = 0 Then
         txtPacked = f
-    ElseIf Index = 1 Then
+    ElseIf index = 1 Then
         txtDll = f
     Else
         txtArgs = f
     End If
+    
+    DeterminePEFileStats f
+    
 End Sub
+
+Sub DeterminePEFileStats(f As String)
+    Dim pe As New CPEEditor
+    Dim r() As String
+    
+    On Error Resume Next
+    
+    If Not pe.LoadFile(f) Then
+        List2.AddItem "Could not load PE information.. for " & fso.FileNameFromPath(f)
+        Exit Sub
+    End If
+    
+    push r, fso.FileNameFromPath(f) & ": "
+    If pe.isDotNet Then push r, ".NET " & pe.dotNetVersion
+    If pe.is64Bit Then push r, "64 bit"
+    If pe.isDotNetAnyCpu Then
+        push r, "AnyCPU"
+    Else
+        If pe.is32Bit Then push r, "32 bit"
+    End If
+    
+    List2.AddItem Join(r, " ")
+    
+End Sub
+
+Sub push(ary, value) 'this modifies parent ary object
+    On Error GoTo init
+    Dim x As Long
+    x = UBound(ary) '<-throws Error If Not initalized
+    ReDim Preserve ary(UBound(ary) + 1)
+    ary(UBound(ary)) = value
+    Exit Sub
+init:     ReDim ary(0): ary(0) = value
+End Sub
+
 
 Private Sub cmdClear_Click()
     lv.ListItems.Clear
@@ -704,7 +755,6 @@ Private Sub cmdStart_Click()
     Dim failed As Boolean
     Dim li As ListItem
     Dim injDll As Boolean
-    
     Dim x As String, tmp, y
     
     On Error GoTo hell
@@ -720,16 +770,18 @@ Private Sub cmdStart_Click()
     End If
     
     If VBA.Left(txtPacked, 4) = "pid:" Then
+        'injecting into a running process...
         isPid = True
         exe = Replace(txtPacked, "pid:", Empty)
         pid = CLng(Trim(exe))
         If cpi.x64.IsProcess_x64(CLng(exe)) = r_64bit Then isx64 = True
     Else
+        'starting a new process with the dll...
         If Not FileExists(txtPacked) Then
             MsgBox "Executable not found"
             Exit Sub
         End If
-        If cpi.x64.isExe_x64(txtPacked) = r_64bit Then isx64 = True
+        If cpi.x64.WillRunAsx64Process(txtPacked) Then isx64 = True
         exe = txtPacked
     End If
     
@@ -748,12 +800,12 @@ Private Sub cmdStart_Click()
     
     If isPid Then
         If injDll Then
-            If Not cpi.InjectDLL(pid, txtDll, x, cp) Then
+            If Not cpi.InjectDLL(pid, txtDll, x, cp) Then 'x64 Safe
                 failed = True
                 MsgBox "Injection failed", vbInformation
             End If
         Else
-            If Not cpi.InjectShellcode(pid, txtDll, x, cp) Then
+            If Not cpi.InjectShellcode(pid, txtDll, x, cp) Then 'x64 Not supported...
                 failed = True
                 MsgBox "Injection failed", vbInformation
             End If
@@ -761,7 +813,7 @@ Private Sub cmdStart_Click()
     Else
         cpi.x64.DisableRedir
         If injDll Then
-            If Not cpi.StartProcessWithDLL(exe, txtDll, x, cp) Then
+            If Not cpi.StartProcessWithDLL(exe, txtDll, x, cp) Then 'x64 Safe
                 failed = True
                 MsgBox "Injection failed", vbInformation
             End If
@@ -1157,23 +1209,26 @@ End Function
  
 
 Private Sub TabStrip1_Click()
-    If TabStrip1.SelectedItem.Index = 1 Then lvProc.Visible = True Else lvProc.Visible = False
+    If TabStrip1.SelectedItem.index = 1 Then lvProc.Visible = True Else lvProc.Visible = False
     List2.Visible = Not lvProc.Visible
 End Sub
 
 Private Sub txtArgs_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, y As Single)
     On Error Resume Next
     txtArgs = data.Files(1)
+    DeterminePEFileStats txtArgs
 End Sub
 
 Private Sub txtDll_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, y As Single)
     On Error Resume Next
     txtDll = data.Files(1)
+    DeterminePEFileStats txtDll
 End Sub
 
 Private Sub txtPacked_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, y As Single)
     On Error Resume Next
     txtPacked = data.Files(1)
+    DeterminePEFileStats txtPacked
 End Sub
 
 

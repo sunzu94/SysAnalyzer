@@ -243,6 +243,19 @@ Function IsProcess_x64(pid As Long) As results
     
 End Function
 
+Function WillRunAsx64Process(fpath As String) As Boolean
+        Dim r As results
+        r = isExe_x64(fpath)
+        If r = r_64bit Then WillRunAsx64Process = True
+        If r = r_32bit Then
+            If isExeDotNetAnyCpu(fpath) And isWindows64Bit Then WillRunAsx64Process = True
+        End If
+End Function
+
+Function isExeDotNetAnyCpu(fpath As String) As Boolean
+    Dim pe As New CPEEditor
+    If pe.LoadFile(fpath) Then isExeDotNetAnyCpu = pe.isDotNetAnyCpu
+End Function
 
 Function isExe_x64(fpath As String) As results
     On Error GoTo hell
@@ -259,7 +272,7 @@ Function isExe_x64(fpath As String) As results
     DisableRedir
     h = FreeFile
     Open fpath For Binary Access Read As h
-    RevertRedir
+    
     
     Get h, , b
     Get h, , b2
@@ -288,7 +301,8 @@ Function isExe_x64(fpath As String) As results
     End If
     
     Close h
-
+    RevertRedir
+    
     Exit Function
 hell:
     On Error Resume Next
@@ -297,7 +311,7 @@ hell:
     Err.Clear
 End Function
 
-Public Sub x64LoadLib(ByVal dll As String, out_injLog As String, Optional userName As String = "", Optional password As String = "")
+Public Sub x64LoadLib(ByVal dll As String, out_injLog As String, Optional UserName As String = "", Optional password As String = "")
     
     If Not FileExists(dll) Then
         out_injLog = "dll not found: " & dll
@@ -322,8 +336,8 @@ Public Sub x64LoadLib(ByVal dll As String, out_injLog As String, Optional userNa
     
     dll = GetShortName(dll)
     
-    If Len(userName) > 0 Then
-        If Not RunAsUser(userName, password, "", helperPath & " /loadlib " & dll, fso.GetParentFolder(helperPath)) Then
+    If Len(UserName) > 0 Then
+        If Not RunAsUser(UserName, password, "", helperPath & " /loadlib " & dll, fso.GetParentFolder(helperPath)) Then
             Err.Raise "x64LoadLib Failed to start as user Error: " & modUserAccounts.RunAsUserError
         End If
     Else
@@ -353,10 +367,14 @@ Public Function x64Inject(pid As Long, ByVal dll As String, out_injLog As String
         out_injLog = "dll not found: " & dll
         Exit Function
     End If
-    
+        
     If isExe_x64(dll) <> r_64bit Then
-        out_injLog = "dll is not 64 bit"
-        Exit Function
+        If isExeDotNetAnyCpu(dll) Then
+            out_injLog = "dll is AnyCpu .NET can load in 64 bit process"
+        Else
+            out_injLog = "dll is not 64 bit"
+            Exit Function
+        End If
     End If
     
     dll = GetShortName(dll)
@@ -394,11 +412,15 @@ Public Function x64StartWithDll(exePath As String, ByVal dll As String, out_injL
     End If
     
     If isExe_x64(dll) <> r_64bit Then
-        out_injLog = "dll is not 64 bit"
-        Exit Function
+        If isExeDotNetAnyCpu(dll) Then
+            out_injLog = "dll is AnyCpu .NET can load in 64 bit process"
+        Else
+            out_injLog = "dll is not 64 bit"
+            Exit Function
+        End If
     End If
     
-    If isExe_x64(exePath) <> r_64bit Then
+    If WillRunAsx64Process(exePath) <> r_64bit Then
         out_injLog = "Executable is not 64 bit"
         Exit Function
     End If

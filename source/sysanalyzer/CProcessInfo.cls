@@ -59,7 +59,7 @@ Private Type SYSTEM_MODULE_INFORMATION
     Base As Long                       'PVOID Base;
     size As Long                       'ULONG Size;
     flags As Long                      'ULONG Flags;
-    Index As Integer                   'USHORT Index;
+    index As Integer                   'USHORT Index;
     unkn As Integer                    'USHORT Unknown;
     lcount As Integer                  'USHORT LoadCount;
     modoffset As Integer               'USHORT ModuleNameOffset;
@@ -201,7 +201,7 @@ Private Declare Function ResumeThread Lib "kernel32" (ByVal hThread As Long) As 
 
 Private Declare Function OpenProcessToken Lib "advapi32.dll" (ByVal ProcessHandle As Long, ByVal DesiredAccess As Long, TokenHandle As Long) As Long
 Private Declare Function GetTokenInformation Lib "advapi32.dll" (ByVal TokenHandle As Long, ByVal TokenInformationClass As Integer, TokenInformation As Any, ByVal TokenInformationLength As Long, ReturnLength As Long) As Long
-Private Declare Function LookupAccountSid Lib "advapi32.dll" Alias "LookupAccountSidA" (ByVal lpSystemName As String, ByVal sID As Long, ByVal name As String, cbName As Long, ByVal ReferencedDomainName As String, cbReferencedDomainName As Long, peUse As Integer) As Long
+Private Declare Function LookupAccountSid Lib "advapi32.dll" Alias "LookupAccountSidA" (ByVal lpSystemName As String, ByVal sID As Long, ByVal Name As String, cbName As Long, ByVal ReferencedDomainName As String, cbReferencedDomainName As Long, peUse As Integer) As Long
 'Private Declare Function VirtualQueryEx Lib "kernel32" (ByVal hProcess As Long, lpAddress As Any, lpBuffer As MEMORY_BASIC_INFORMATION, ByVal dwLength As Long) As Long
 Private Declare Function VirtualQueryEx Lib "kernel32" (ByVal hProcess As Long, ByVal lpAddress As Long, lpBuffer As MEMORY_BASIC_INFORMATION, ByVal dwLength As Long) As Long
 
@@ -1033,7 +1033,7 @@ Public Function InjectShellcode(pid As Long, scPath As String, Optional injLog A
     End If
     
     If cp.is64Bit Then
-        'rv = x64.x64Inject(pid, dllPath, injLog)
+        'rv = x64.x64InjectShellcode(pid, dllPath, injLog)
         injLog = "Injecting shellcode into a 64 bit process is not yet supported..."
         GoTo hell
     End If
@@ -1106,8 +1106,12 @@ Public Function InjectDLL(pid As Long, dllPath As String, Optional injLog As Str
     
     If cp.is64Bit Then
         If x64.isExe_x64(dllPath) <> r_64bit Then
-            injLog = "Can not inject a 32 bit dll into a 64 bit process."
-            GoTo hell
+            If x64.isExeDotNetAnyCpu(dllPath) Then
+                injLog = "inject a dot net AnyCpu dll into 64 bit process."
+            Else
+                injLog = "Can not inject a 32 bit dll into a 64 bit process."
+                GoTo hell 'exit with error..
+            End If
         End If
         rv = x64.x64Inject(pid, dllPath, injLog)
         GoTo hell
@@ -1174,10 +1178,14 @@ Public Function StartProcessWithDLL(exePath As String, dllPath As String, Option
     cp.fullpath = exePath
     cp.path = exePath
     
-    If x64.isExe_x64(exePath) = r_64bit Then
+    If x64.WillRunAsx64Process(exePath) Then
         If x64.isExe_x64(dllPath) <> r_64bit Then
-            injLog = "Can not start a 32 bit dll in a 64 bit executable."
-            GoTo hell
+            If x64.isExeDotNetAnyCpu(dllPath) Then
+                injLog = "starting a 64 bit process with a dot net AnyCpu dll"
+            Else
+                injLog = "Can not start a 32 bit dll in a 64 bit executable."
+                GoTo hell
+            End If
         End If
         rv = x64.x64StartWithDll(exePath, dllPath, injLog)
         If rv Then cp.pid = parsePid(injLog)
