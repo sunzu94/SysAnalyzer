@@ -232,6 +232,18 @@ Private Type Munge2Long
     HiValue As Long
 End Type
 
+Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
+Private Declare Function GetProcAddress Lib "kernel32" (ByVal hModule As Long, ByVal lpProcName As String) As Long
+Private Declare Function FreeLibrary Lib "kernel32" (ByVal hLibModule As Long) As Long
+
+Private Declare Function GetFileVersion Lib "mscoree.dll" ( _
+    ByVal path As Long, _
+    ByVal buf As String, _
+    bufLen As Long, _
+    ByRef cb As Long _
+) As Long
+
+
 Function x64ToHex(v As Double) As String
     Dim c As MungeCurr
     Dim l As Munge2Long
@@ -311,6 +323,27 @@ hell:
     
 End Function
 
+Private Function GetDotNetVersion() As String
+    
+    Dim exe As String
+    Dim buf As String
+    Dim cb As Long
+    Dim ret As Long
+    
+    buf = String(255, 0)
+    exe = LoadedFile & Chr(0)
+    ret = GetFileVersion(StrPtr(exe), buf, Len(buf), cb)
+    
+    If cb > 0 And ret = 0 Then
+        buf = Mid(buf, 1, (cb * 2))
+        buf = StrConv(buf, vbFromUnicode, &H409)
+        GetDotNetVersion = Replace(buf, " ", 0)
+    End If
+    
+    'Debug.Print "ret=" & Hex(ret) & " cb=" & cb & " buf=" & Replace(buf, " ", 0)
+
+End Function
+
 Private Function GetDotNetAttributes(cli As Long)
     
     'ok we are going to need to load it more fully...
@@ -325,6 +358,16 @@ Private Function GetDotNetAttributes(cli As Long)
     
     If cli = 0 Then Exit Function
 
+    Dim hLib As Long
+    
+    hLib = LoadLibrary("mscoree.dll")
+    If hLib <> 0 Then
+        If GetProcAddress(hLib, "GetFileVersion") <> 0 Then
+            dotNetVersion = GetDotNetVersion()
+        End If
+        FreeLibrary hLib
+    End If
+    
     foff_cli = RvaToOffset(cli) + 1
     
     If foff_cli > 1 And foff_cli < FileLen(LoadedFile) Then
@@ -333,9 +376,9 @@ Private Function GetDotNetAttributes(cli As Long)
         f = FreeFile
         Open LoadedFile For Binary As f
         
-        Get f, foff_cli + 4, major
-        Get f, foff_cli + 6, minor
-        dotNetVersion = major & "." & minor
+        'Get f, foff_cli + 4, major            'these must be the .net file format version num?
+        'Get f, foff_cli + 6, minor
+        'dotNetVersion = major & "." & minor
         
         If is32Bit Then 'is it really 32bit or is it AnyCpu?
             Get f, foff_cli + 16, flags
