@@ -115,6 +115,10 @@ Private Declare Function EnableTheming Lib "UxTheme.dll" (ByVal b As Boolean) As
 Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
 Private Declare Function GetProcAddress Lib "kernel32" (ByVal hModule As Long, ByVal lpProcName As String) As Long
 
+Private Declare Function OpenProcess Lib "kernel32" (ByVal dwDesiredAccess As Long, ByVal bInheritHandle As Long, ByVal dwProcessId As Long) As Long
+Private Declare Function WaitForSingleObject Lib "kernel32" (ByVal hHandle As Long, ByVal dwMilliseconds As Long) As Long
+Private Const WAIT_TIMEOUT = &H102
+
 Function ClassicTheme(f As Form)
     Dim h As Long
     h = LoadLibrary("uxtheme.dll")
@@ -203,8 +207,7 @@ Public Function GetCommandOutput( _
         End If
     End With
 
-    If CreateProcess(vbNullString, sCommandLine, ByVal 0&, ByVal 0&, 1, 0&, _
-     ByVal 0&, vbNullString, si, pi) Then
+    If CreateProcess(vbNullString, sCommandLine, ByVal 0&, ByVal 0&, 1, 0&, ByVal 0&, vbNullString, si, pi) Then
 
         ' Close thread handle - we don't need it
         Call CloseHandle(pi.hThread)
@@ -221,7 +224,13 @@ Public Function GetCommandOutput( _
         Do
             ' Add a DoEvents to allow more data to be written to the buffer for each call.
             ' This results in fewer, larger chunks to be read.
-            'DoEvents
+            DoEvents
+
+            'on win7 x64, if the process has exited, a readFile of hPipeRead will cause complete hang..
+            'so we must check is process is still active..
+            If WaitForSingleObject(pi.hProcess, 0) <> WAIT_TIMEOUT Then 'process has terminated..
+                Exit Do
+            End If
 
             If ReadFile(hPipeRead, baOutput(0), BUFSIZE, lBytesRead, ByVal 0&) = 0 Then
                 Exit Do
@@ -238,11 +247,6 @@ Public Function GetCommandOutput( _
 
             GetCommandOutput = GetCommandOutput & sNewOutput
 
-            ' If you are executing an application that outputs data during a long time,
-            ' and don't want to lock up your application, it might be a better idea to
-            ' wrap this code in a class module in an ActiveX EXE and execute it asynchronously.
-            ' Then you can raise an event here each time more data is available.
-            'RaiseEvent OutputAvailabele(sNewOutput)
         Loop
 
         ' When the process terminates successfully, Err.LastDllError will be
@@ -262,3 +266,8 @@ Public Function GetCommandOutput( _
         Call CloseHandle(hPipeWrite2)
     End If
 End Function
+
+'Function isProcessRunning(hProcess As Long) As Boolean
+'
+'
+'End Function

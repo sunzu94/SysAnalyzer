@@ -420,7 +420,7 @@ Public Function x64StartWithDll(exePath As String, ByVal dll As String, out_injL
         End If
     End If
     
-    If WillRunAsx64Process(exePath) <> r_64bit Then
+    If Not WillRunAsx64Process(exePath) Then
         out_injLog = "Executable is not 64 bit"
         Exit Function
     End If
@@ -463,7 +463,7 @@ cleanup:
 End Function
 
 Private Function GetShortName(sFile As String) As String
-    Dim sShortFile As String * 67
+    Dim sShortFile As String * 500
     Dim lResult As Long
     Dim iCreated As Boolean
     
@@ -478,8 +478,12 @@ Private Function GetShortName(sFile As String) As String
     lResult = GetShortPathName(sFile, sShortFile, Len(sShortFile))
     RevertRedir
     
-    'Trim out unused characters from the string.
-    GetShortName = Left$(sShortFile, lResult)
+    If lResult > 500 Then
+        GetShortName = sFile 'we failed return original?
+    Else
+        'Trim out unused characters from the string.
+        GetShortName = Left$(sShortFile, lResult)
+    End If
     
     If iCreated Then Kill GetShortName
     'If Len(GetShortName) = 0 Then GetShortName = sFile
