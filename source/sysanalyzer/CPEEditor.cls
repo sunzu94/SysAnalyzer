@@ -220,7 +220,7 @@ Enum eDATA_DIRECTORY
     Import_Address_Table = 12
     Delay_Import_Descriptor = 13
     CLI_Header = 14
-    Reserved = 15
+    reserved = 15
 End Enum
 
 Private Type MungeCurr
@@ -323,26 +323,27 @@ hell:
     
 End Function
 
-Private Function GetDotNetVersion() As String
-    
-    Dim exe As String
-    Dim buf As String
-    Dim cb As Long
-    Dim ret As Long
-    
-    buf = String(255, 0)
-    exe = LoadedFile & Chr(0)
-    ret = GetFileVersion(StrPtr(exe), buf, Len(buf), cb)
-    
-    If cb > 0 And ret = 0 Then
-        buf = Mid(buf, 1, (cb * 2))
-        buf = StrConv(buf, vbFromUnicode, &H409)
-        GetDotNetVersion = Replace(buf, " ", 0)
-    End If
-    
-    'Debug.Print "ret=" & Hex(ret) & " cb=" & cb & " buf=" & Replace(buf, " ", 0)
-
-End Function
+'this function doesnt return what you think it does...
+'Private Function GetDotNetVersion() As String
+'
+'    Dim exe As String
+'    Dim buf As String
+'    Dim cb As Long
+'    Dim ret As Long
+'
+'    buf = String(255, 0)
+'    exe = LoadedFile & Chr(0)
+'    ret = GetFileVersion(StrPtr(exe), buf, Len(buf), cb)
+'
+'    If cb > 0 And ret = 0 Then
+'        buf = Mid(buf, 1, (cb * 2))
+'        buf = StrConv(buf, vbFromUnicode, &H409)
+'        GetDotNetVersion = Replace(buf, " ", 0)
+'    End If
+'
+'    'Debug.Print "ret=" & Hex(ret) & " cb=" & cb & " buf=" & Replace(buf, " ", 0)
+'
+'End Function
 
 Private Function GetDotNetAttributes(cli As Long)
     
@@ -358,15 +359,15 @@ Private Function GetDotNetAttributes(cli As Long)
     
     If cli = 0 Then Exit Function
 
-    Dim hLib As Long
-    
-    hLib = LoadLibrary("mscoree.dll")
-    If hLib <> 0 Then
-        If GetProcAddress(hLib, "GetFileVersion") <> 0 Then
-            dotNetVersion = GetDotNetVersion()
-        End If
-        FreeLibrary hLib
-    End If
+'    Dim hLib As Long
+'
+'    hLib = LoadLibrary("mscoree.dll")
+'    If hLib <> 0 Then
+'        If GetProcAddress(hLib, "GetFileVersion") <> 0 Then
+'            dotNetVersion = GetDotNetVersion()
+'        End If
+'        FreeLibrary hLib
+'    End If
     
     foff_cli = RvaToOffset(cli) + 1
     

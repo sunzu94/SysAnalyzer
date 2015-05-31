@@ -1,4 +1,6 @@
 
+ - rwe mem scan - option to save with PE header for easy (auto rebased) disassembly?
+
  monitor HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\
  monitor Software\Microsoft\Windows NT\CurrentVersion\Windows\Load,AppInit_DLLs
  

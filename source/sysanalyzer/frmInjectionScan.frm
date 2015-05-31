@@ -4,7 +4,7 @@ Begin VB.Form frmInjectionScan
    Caption         =   "32bit process Injection Scan"
    ClientHeight    =   3720
    ClientLeft      =   60
-   ClientTop       =   345
+   ClientTop       =   630
    ClientWidth     =   11970
    LinkTopic       =   "Form1"
    ScaleHeight     =   3720
@@ -141,12 +141,14 @@ Begin VB.Form frmInjectionScan
    End
    Begin VB.Menu mnuPopup 
       Caption         =   "mnuPopup"
-      Visible         =   0   'False
       Begin VB.Menu mnuView 
          Caption         =   "View"
       End
       Begin VB.Menu mnuSave 
          Caption         =   "Save"
+      End
+      Begin VB.Menu mnuSaveAll 
+         Caption         =   "Save All"
       End
       Begin VB.Menu mnuSearchMem 
          Caption         =   "Search"
@@ -316,6 +318,7 @@ End Sub
 
 Private Sub Form_Load()
 
+     mnuPopup.Visible = False
      Me.Icon = frmMain.Icon
      lv.ColumnHeaders(6).Width = lv.Width - lv.ColumnHeaders(6).Left - 350 - lv.ColumnHeaders(7).Width
      
@@ -355,6 +358,38 @@ Private Sub mnuSave_Click()
     Else
         MsgBox "Error saving file: " & Err.Description
     End If
+End Sub
+
+Private Sub mnuSaveAll_Click()
+
+    If lv.ListItems.count = 0 Then Exit Sub
+    
+    Dim f As String
+    Dim pid As Long
+    On Error Resume Next
+    Dim li As ListItem
+    Dim e As String
+    Dim i As Long
+    Dim saveDir As String
+    
+    saveDir = UserDeskTopFolder
+    
+    For Each li In lv.ListItems
+        pid = CLng(li.Text)
+        f = saveDir & "\" & pid & "_" & li.SubItems(1) & ".mem"
+        If pi.DumpMemory(pid, li.SubItems(1), li.SubItems(2), f) Then
+            i = i + 1
+        Else
+            e = e & "Error dumping " & f & vbCrLf
+        End If
+    Next
+    
+    If Len(e) = 0 Then
+          MsgBox "All Files successfully saved to " & vbCrLf & vbCrLf & saveDir
+    Else
+          MsgBox i & " of " & lv.ListItems.count & " items saved " & vbCrLf & vbCrLf & e
+    End If
+        
 End Sub
 
 Private Sub mnuSearchMem_Click()
