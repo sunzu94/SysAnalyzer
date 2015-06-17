@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Begin VB.Form frmListProcess 
    BorderStyle     =   5  'Sizable ToolWindow
    Caption         =   "Choose Process"
@@ -193,11 +193,11 @@ Private Function LoadProccesses(c As Collection)
     For Each p In c
         Set li = lv.ListItems.Add(, , pad(p.pid))
         Set li.Tag = p
-        cc = InStr(p.user, ":")
+        cc = InStr(p.User, ":")
         If cc > 0 Then
-            li.SubItems(1) = Mid(p.user, cc + 1)
+            li.SubItems(1) = Mid(p.User, cc + 1)
         Else
-            li.SubItems(1) = p.user
+            li.SubItems(1) = p.User
         End If
         li.SubItems(1) = IIf(p.is64Bit, "*64 ", "") & li.SubItems(1)
         'li.SubItems(2) = p.path
@@ -252,19 +252,19 @@ End Function
  
 
 Private Sub Form_Load()
-    Dim user As String
+    Dim User As String
     On Error Resume Next
     
     lv2.Move lv.Left, lv.top, lv.Width, lv.Height
     lv.ColumnHeaders(3).Width = lv.Width - lv.ColumnHeaders(3).Left - 350
     lv2.ColumnHeaders(3).Width = lv.Width - lv.ColumnHeaders(3).Left - 350
     
-    user = cpi.GetProcessUser(GetCurrentProcessId())
-    If InStr(user, ":") > 0 Then
-        user = Mid(user, InStr(user, ":") + 1)
+    User = cpi.GetProcessUser(GetCurrentProcessId())
+    If InStr(User, ":") > 0 Then
+        User = Mid(User, InStr(User, ":") + 1)
     End If
     
-    If Len(user) > 0 Then Me.Caption = Me.Caption & "   -   Running As: " & user
+    If Len(User) > 0 Then Me.Caption = Me.Caption & "   -   Running As: " & User
     Me.Caption = Me.Caption & "   -   SeDebug?: " & cpi.SeDebugEnabled
     baseCaption = Me.Caption
     
@@ -274,10 +274,10 @@ Private Sub Form_Resize()
     On Error Resume Next
     lv.Width = Me.Width - lv.Left - 200
     lv.ColumnHeaders(3).Width = lv.Width - lv.ColumnHeaders(3).Left - 350
-    lv.Height = Me.Height - lv.top - 500 - Command1.Height
+    lv.Height = Me.Height - lv.top - 700 - Command1.Height
     lv2.Move lv.Left, lv.top, lv.Width, lv.Height
     lv2.ColumnHeaders(3).Width = lv.Width - lv.ColumnHeaders(3).Left - 350
-    Command1.top = Me.Height - Command1.Height - 400
+    Command1.top = Me.Height - Command1.Height - 600
     Command1.Left = Me.Width - Command1.Width - 400
     lblRefresh.Left = Command1.Left - lblRefresh.Width - 400
     lblRefresh.top = Command1.top
@@ -371,8 +371,8 @@ End Sub
 Public Sub LV_ColumnSort(ListViewControl As ListView, Column As ColumnHeader)
      On Error Resume Next
     With ListViewControl
-       If .SortKey <> Column.Index - 1 Then
-             .SortKey = Column.Index - 1
+       If .SortKey <> Column.index - 1 Then
+             .SortKey = Column.index - 1
              .SortOrder = lvwAscending
        Else
              If .SortOrder = lvwAscending Then
