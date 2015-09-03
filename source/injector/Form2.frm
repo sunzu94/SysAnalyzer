@@ -335,6 +335,8 @@ Begin VB.Form Form2
       Enabled         =   0   'False
       Height          =   315
       Left            =   6240
+      MaskColor       =   &H00808080&
+      Style           =   1  'Graphical
       TabIndex        =   8
       Top             =   1080
       Width           =   1305
@@ -343,7 +345,7 @@ Begin VB.Form Form2
       Height          =   285
       Left            =   1020
       TabIndex        =   6
-      Top             =   1050
+      Top             =   1035
       Width           =   5145
    End
    Begin VB.TextBox txtDll 
@@ -357,7 +359,7 @@ Begin VB.Form Form2
    Begin VB.CommandButton cmdStart 
       Caption         =   "Inject && Log"
       Height          =   315
-      Left            =   6240
+      Left            =   6210
       TabIndex        =   2
       Top             =   30
       Width           =   1335
@@ -410,7 +412,7 @@ Begin VB.Form Form2
       Left            =   45
       TabIndex        =   4
       Top             =   750
-      Width           =   1065
+      Width           =   1335
    End
    Begin VB.Label Label2 
       Caption         =   "Call Log"
@@ -755,11 +757,14 @@ Private Sub cmdStart_Click()
     Dim failed As Boolean
     Dim li As ListItem
     Dim injDll As Boolean
+    Dim injData As Boolean
+    
     Dim x As String, tmp, y
     
     On Error GoTo hell
     
     injDll = (InStr(lblDll.Caption, "DLL") > 0)
+    injData = (InStr(lblDll.Caption, "Data") > 0)
     
     lv.ListItems.Clear
     List2.Clear
@@ -805,7 +810,7 @@ Private Sub cmdStart_Click()
                 MsgBox "Injection failed", vbInformation
             End If
         Else
-            If Not cpi.InjectShellcode(pid, txtDll, x, cp) Then 'x64 Not supported...
+            If Not cpi.InjectShellcode(pid, txtDll, x, cp, injData) Then 'x64 Not supported...
                 failed = True
                 MsgBox "Injection failed", vbInformation
             End If
@@ -944,7 +949,13 @@ Private Sub Form_Unload(Cancel As Integer)
 End Sub
 
 Private Sub lblDll_Click()
-    lblDll.Caption = IIf(InStr(lblDll.Caption, "DLL") > 0, "Shellcode", "Inject DLL")
+    If lblDll.Caption = "Inject DLL" Then
+        lblDll.Caption = "Inject Shellcode"
+    ElseIf lblDll.Caption = "Inject Shellcode" Then
+        lblDll.Caption = "Inject Data"
+    Else
+        lblDll.Caption = "Inject DLL"
+    End If
 End Sub
 
 Private Sub lv_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
@@ -1112,7 +1123,12 @@ Private Sub RecieveTextMessage(lParam As Long)
     Dim comma As Long
     Dim pid As String
     Dim li As ListItem
+    Dim threadID As String
     
+    On Error Resume Next
+    
+    DoEvents
+    DoEvents
     DoEvents
     Sleep 8
     
@@ -1128,6 +1144,13 @@ Private Sub RecieveTextMessage(lParam As Long)
         If comma > 0 Then
             pid = Mid(temp, 1, comma - 1)
             temp = Mid(temp, comma + 1)
+            
+            comma = InStr(temp, ",")
+            If comma > 0 Then
+                threadID = Mid(temp, 1, comma - 1)
+                temp = Mid(temp, comma + 1)
+            End If
+            
             If lastPid <> pid Then
                 lastPid = pid
                 AddPid pid
@@ -1167,16 +1190,21 @@ Private Sub RecieveTextMessage(lParam As Long)
         li.SubItems(1) = temp
         li.EnsureVisible
         
-        If Len(txtDumpAt) > 0 Then
-            If InStr(1, temp, txtDumpAt, vbTextCompare) > 0 Then
+        If Len(txtDumpAt.Text) > 0 Then
+            If InStr(1, CStr(temp), txtDumpAt.Text, vbTextCompare) > 0 Then
                 'sendMessage is a blocking call so we will sit here till user hits continue
+                'display may continue to show output however if multithreaded
                 cmdContinue.Enabled = True
+                cmdContinue.BackColor = &HFFFF&
+                cmdContinue.Caption = "Continue:" & threadID
                 readyToReturn = False
                 While Not readyToReturn
                     DoEvents
                     Sleep 60
                 Wend
                 cmdContinue.Enabled = False
+                cmdContinue.BackColor = &H8000000F
+                cmdContinue.Caption = "Continue"
             End If
         End If
 

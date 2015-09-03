@@ -1004,7 +1004,7 @@ Function GetProcess(pid As Long, cp As CProcess) As Boolean
 End Function
 
 'x64 NOT supported yet..
-Public Function InjectShellcode(pid As Long, scPath As String, Optional injLog As String, Optional cp As CProcess) As Boolean
+Public Function InjectShellcode(pid As Long, scPath As String, Optional injLog As String, Optional cp As CProcess, Optional dontExecute As Boolean) As Boolean
 
     Dim hProcess As Long
     Dim lpfnLoadLib As Long
@@ -1015,7 +1015,7 @@ Public Function InjectShellcode(pid As Long, scPath As String, Optional injLog A
     Dim hThread As Long
     Dim writeLen As Long
     Dim b() As Byte
-    Dim buflen As Long
+    Dim bufLen As Long
     Dim li As ListItem
     Dim c As Collection
     Dim found As Boolean
@@ -1045,24 +1045,28 @@ Public Function InjectShellcode(pid As Long, scPath As String, Optional injLog A
     Get f, , b()
     Close f
     
-    buflen = UBound(b) + 1
+    bufLen = UBound(b) + 1
  
     hProcess = OpenProcess(PROCESS_ALL_ACCESS, False, pid)
     injLog = injLog & "Opening PID: " & pid & " Process Handle=" & hProcess & vbCrLf
     If hProcess = -1 Then GoTo hell
      
-    lpMem = VirtualAllocEx(hProcess, ByVal 0, buflen, MEM_COMMIT, ByVal PAGE_EXECUTE_READWRITE)
+    lpMem = VirtualAllocEx(hProcess, ByVal 0, bufLen, MEM_COMMIT, ByVal PAGE_EXECUTE_READWRITE)
     injLog = injLog & "Remote Allocation base: " & Hex(lpMem) & vbCrLf
     If lpMem = 0 Then GoTo hell
     
-    ret = WriteProcessBytes(hProcess, ByVal lpMem, b(0), buflen, writeLen)
-    injLog = injLog & "WriteProcessMemory=" & ret & " BufLen=" & buflen & " Bytes Written: " & writeLen & vbCrLf
+    ret = WriteProcessBytes(hProcess, ByVal lpMem, b(0), bufLen, writeLen)
+    injLog = injLog & "WriteProcessMemory=" & ret & " BufLen=" & bufLen & " Bytes Written: " & writeLen & vbCrLf
     If ret = 0 Then GoTo hell
          
     'DebugBreak
-    ret = CreateRemoteThread(hProcess, ByVal 0, 0, lpMem, lpMem, 0, hThread)
-    injLog = injLog & "CreateRemoteThread = " & ret & " ThreadID: " & Hex(hThread) & vbCrLf
-    If ret = -1 Then GoTo hell
+    If dontExecute Then
+        injLog = injLog & "Skipping CreateRemoteThread (injecting as Data only)" & vbCrLf
+    Else
+        ret = CreateRemoteThread(hProcess, ByVal 0, 0, lpMem, lpMem, 0, hThread)
+        injLog = injLog & "CreateRemoteThread = " & ret & " ThreadID: " & Hex(hThread) & vbCrLf
+        If ret = -1 Then GoTo hell
+    End If
     
     Sleep 300
     rv = True
@@ -1087,7 +1091,7 @@ Public Function InjectDLL(pid As Long, dllPath As String, Optional injLog As Str
     Dim hThread As Long
     Dim writeLen As Long
     Dim b() As Byte
-    Dim buflen As Long
+    Dim bufLen As Long
     Dim li As ListItem
     Dim c As Collection
     Dim found As Boolean
@@ -1123,18 +1127,18 @@ Public Function InjectDLL(pid As Long, dllPath As String, Optional injLog As Str
     End If
     
     b() = StrConv(dllPath & Chr(0), vbFromUnicode)
-    buflen = UBound(b) + 1
+    bufLen = UBound(b) + 1
  
     hProcess = OpenProcess(PROCESS_ALL_ACCESS, False, pid)
     injLog = injLog & "Opening PID: " & pid & " Process Handle=" & hProcess & vbCrLf
     If hProcess = -1 Then GoTo hell
      
-    lpdllPath = VirtualAllocEx(hProcess, ByVal 0, buflen, MEM_COMMIT, ByVal PAGE_READWRITE)
+    lpdllPath = VirtualAllocEx(hProcess, ByVal 0, bufLen, MEM_COMMIT, ByVal PAGE_READWRITE)
     injLog = injLog & "Remote Allocation base: " & Hex(lpdllPath) & vbCrLf
     If lpdllPath = 0 Then GoTo hell
     
-    ret = WriteProcessBytes(hProcess, ByVal lpdllPath, b(0), buflen, writeLen)
-    injLog = injLog & "WriteProcessMemory=" & ret & " BufLen=" & buflen & " Bytes Written: " & writeLen & vbCrLf
+    ret = WriteProcessBytes(hProcess, ByVal lpdllPath, b(0), bufLen, writeLen)
+    injLog = injLog & "WriteProcessMemory=" & ret & " BufLen=" & bufLen & " Bytes Written: " & writeLen & vbCrLf
     If ret = 0 Then GoTo hell
      
     lpfnLoadLib = GetProcAddress(GetModuleHandle("kernel32.dll"), "LoadLibraryA")
@@ -1166,7 +1170,7 @@ Public Function StartProcessWithDLL(exePath As String, dllPath As String, Option
     Dim hThread As Long
     Dim writeLen As Long
     Dim b() As Byte
-    Dim buflen As Long
+    Dim bufLen As Long
     Dim rv As Boolean
     
     Const PAGE_READWRITE = 4
@@ -1198,7 +1202,7 @@ Public Function StartProcessWithDLL(exePath As String, dllPath As String, Option
     End If
         
     b() = StrConv(dllPath & Chr(0), vbFromUnicode)
-    buflen = UBound(b) + 1
+    bufLen = UBound(b) + 1
 
     ret = CreateProcess(0&, exePath, 0&, 0&, 1&, CREATE_SUSPENDED, 0&, 0&, si, pi)
     injLog = injLog & "Create Process Suspended: " & ret & IIf(ret = 0, " Failed", " PID: " & pi.dwProcessId) & vbCrLf
@@ -1209,12 +1213,12 @@ Public Function StartProcessWithDLL(exePath As String, dllPath As String, Option
     injLog = injLog & "OpenProcess Handle=" & hProcess & vbCrLf
     If hProcess = -1 Then GoTo hell
     
-    lpdllPath = VirtualAllocEx(hProcess, ByVal 0, buflen, MEM_COMMIT, ByVal PAGE_READWRITE)
+    lpdllPath = VirtualAllocEx(hProcess, ByVal 0, bufLen, MEM_COMMIT, ByVal PAGE_READWRITE)
     injLog = injLog & "Remote Allocation base: " & Hex(lpdllPath) & vbCrLf
     If lpdllPath = 0 Then GoTo hell
     
-    ret = WriteProcessBytes(hProcess, ByVal lpdllPath, b(0), buflen, writeLen)
-    injLog = injLog & "WriteProcessMemory=" & ret & " BufLen=" & buflen & " Bytes Written: " & writeLen & vbCrLf
+    ret = WriteProcessBytes(hProcess, ByVal lpdllPath, b(0), bufLen, writeLen)
+    injLog = injLog & "WriteProcessMemory=" & ret & " BufLen=" & bufLen & " Bytes Written: " & writeLen & vbCrLf
     If ret = 0 Then GoTo hell
      
     lpfnLoadLib = GetProcAddress(GetModuleHandle("kernel32.dll"), "LoadLibraryA")

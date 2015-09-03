@@ -1,4 +1,6 @@
 
+ - apilog does not work with .net exes
+ - tools - edit hosts file
  - rwe mem scan - option to save with PE header for easy (auto rebased) disassembly?
 
  monitor HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\

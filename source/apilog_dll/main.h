@@ -490,7 +490,7 @@ int msg(char *Buffer){
   COPYDATASTRUCT cpStructData;
   memset(&cpStructData,0, sizeof(struct tagCOPYDATASTRUCT )) ;
   
-  _snprintf(msgbuf, 0x1000, "%x,%s", myPID, Buffer);
+  _snprintf(msgbuf, 0x1000, "%x,%x,%s", myPID, GetCurrentThreadId(), Buffer);
 
   cpStructData.dwData = 3;
   cpStructData.cbData = strlen(msgbuf) ;
