@@ -1124,6 +1124,7 @@ Private Sub RecieveTextMessage(lParam As Long)
     Dim pid As String
     Dim li As ListItem
     Dim threadID As String
+    Dim paran As Long
     
     On Error Resume Next
     
@@ -1145,8 +1146,9 @@ Private Sub RecieveTextMessage(lParam As Long)
             pid = Mid(temp, 1, comma - 1)
             temp = Mid(temp, comma + 1)
             
+            paran = InStr(temp, "(") 'still support older dlls which dont include threadid..
             comma = InStr(temp, ",")
-            If comma > 0 Then
+            If comma > 0 And comma < paran Then
                 threadID = Mid(temp, 1, comma - 1)
                 temp = Mid(temp, comma + 1)
             End If
