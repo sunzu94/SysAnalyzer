@@ -1,8 +1,8 @@
 Type=Exe
-Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\WINNT\system32\stdole2.tlb#OLE Automation
-Reference=*\G{DDC88AC2-2723-4C1B-9D61-C4F4D7CF5375}#2.4#0#C:\WINNT\vbDevKit.dll#Vb Developers Library From Sandsprite.com
-Reference=*\G{3F4DACA7-160D-11D2-A8E9-00104B365C9F}#1.0#0#C:\WINNT\system32\vbscript.dll\2#Microsoft VBScript Regular Expressions 1.0
-Object={831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0; mscomctl.ocx
+Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\WINDOWS\system32\stdole2.tlb#OLE Automation
+Reference=*\G{DDC88AC2-2723-4C1B-9D61-C4F4D7CF5375}#2.4#0#..\..\..\..\libs\vbDevKit\vbDevKit.dll#Vb Developers Library From Sandsprite.com
+Reference=*\G{3F4DACA7-160D-11D2-A8E9-00104B365C9F}#1.0#0#C:\WINDOWS\system32\vbscript.dll\2#Microsoft VBScript Regular Expressions 1.0
+Object={831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0; MSCOMCTL.OCX
 Form=Form1.frm
 Class=CProcessInfo; ..\sysanalyzer\CProcessInfo.cls
 Class=CProcess; ..\sysanalyzer\CProcess.cls
@@ -13,6 +13,15 @@ Module=Module1; Module1.bas
 Module=FileProps; ..\sysanalyzer\FileVer.bas
 Class=CStrings; CStrings.cls
 Class=CExploitScanner; CExploitScanner.cls
+Class=Cx64; ..\sysanalyzer\Cx64.cls
+Form=..\sysanalyzer\frmListProcess.frm
+Form=..\sysanalyzer\frmDlls.frm
+Class=CMemory; ..\sysanalyzer\CMemory.cls
+Module=modZLIB; ..\sysanalyzer\modZLIB.bas
+Class=CPEEditor; ..\sysanalyzer\CPEEditor.cls
+Class=CSection; ..\sysanalyzer\CSection.cls
+Module=modUserAccounts; ..\sysanalyzer\modUserAccounts.bas
+Module=CmdOutput; ..\sysanalyzer\CmdOutput.bas
 IconForm="frmMain"
 Startup="frmMain"
 HelpFile=""
@@ -49,3 +58,6 @@ DebugStartupOption=0
 
 [MS Transaction Server]
 AutoRefresh=1
+
+[fastBuild]
+fullPath=D:\_code\iDef\SysAnalyzer\proc_analyzer.exe

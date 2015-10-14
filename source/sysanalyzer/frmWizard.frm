@@ -693,7 +693,7 @@ Private Sub lblFilterHelp_Click()
     MsgBox "generally you will always want this checked unless you are looking at a ddos tool which spoofs the sender's address", vbInformation
 End Sub
 
-Private Sub lblInterfaces_Click(Index As Integer)
+Private Sub lblInterfaces_Click(index As Integer)
     On Error Resume Next
     Dim f As String
     If isIde() Then
@@ -735,19 +735,19 @@ Private Sub lblSkip_Click()
     
 End Sub
 
-Private Sub mnuExt_Click(Index As Integer)
+Private Sub mnuExt_Click(index As Integer)
     Dim ext(), f As String, ff As String
     
     ext = Array("sniff_hit", "proc_watch", "api_logger", "dirwatch_ui", "cmd")
     
     If isIde() Then
-        f = App.path & "\..\..\" & ext(Index) & ".exe"
+        f = App.path & "\..\..\" & ext(index) & ".exe"
     Else
-        f = App.path & "\" & ext(Index) & ".exe"
+        f = App.path & "\" & ext(index) & ".exe"
     End If
     
     If Not fso.FileExists(f) Then
-        ff = Environ("windir") & "\system32\" & ext(Index) & ".exe"
+        ff = Environ("windir") & "\system32\" & ext(index) & ".exe"
         If fso.FileExists(ff) Then
             f = ff
         Else
@@ -914,11 +914,11 @@ Private Sub cmdReadme_Click()
 End Sub
 
  
-Private Sub cmdBrowse_Click(Index As Integer)
+Private Sub cmdBrowse_Click(index As Integer)
     Dim x
     x = dlg.OpenDialog(AllFiles, , "Open file for analysis", Me.hwnd)
     If Len(x) = 0 Then Exit Sub
-    If Index = 0 Then
+    If index = 0 Then
         txtBinary = x
         lblBStats.Caption = GetCompileDateOrType(txtBinary, , , True)
     Else
@@ -954,7 +954,7 @@ Private Sub Form_Load()
     START_TIME = Now
     DebugLogFile = UserDeskTopFolder & "\debug.log"
     If fso.FileExists(DebugLogFile) Then fso.DeleteFile DebugLogFile
-    fso.writeFile DebugLogFile, "-------[ SysAnalyzer v" & App.Major & "." & App.Minor & "." & App.Revision & "  " & START_TIME & " ]-------" & vbCrLf
+    fso.writeFile DebugLogFile, "-------[ SysAnalyzer v" & App.major & "." & App.minor & "." & App.Revision & "  " & START_TIME & " ]-------" & vbCrLf
     
     mnuScanForUnknownMods.Enabled = False
     
@@ -1108,7 +1108,7 @@ Sub cmdStart_Click()
     
     'must be last external process to launch as it monitors others...
     If fso.FileExists(procWatch) Then
-        procWatchPID = Shell(procWatch & " /log=" & UserDeskTopFolder & "\ProcWatch.txt", vbMinimizedNoFocus)
+        procWatchPID = Shell(procWatch & " /log=" & UserDeskTopFolder & "\ProcWatch.log", vbMinimizedNoFocus)
     End If
 
     Dim baseName As String 'save a copy of the main malware executable for analysis folder..

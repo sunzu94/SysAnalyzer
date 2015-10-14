@@ -1,6 +1,6 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
-Object = "{9A143468-B450-48DD-930D-925078198E4D}#1.0#0"; "hexed.ocx"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
+Object = "{9A143468-B450-48DD-930D-925078198E4D}#1.1#0"; "hexed.ocx"
 Begin VB.Form frmReportViewer 
    Caption         =   "Report File Viewer"
    ClientHeight    =   7290
@@ -375,22 +375,22 @@ Private Sub cmdSaveChanges_Click()
     If fso.FileExists(fpath) Then
         fso.writeFile fpath, txtFile.Text
     Else
-        fpath = dlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save As", , Me.hWnd)
+        fpath = dlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save As", , Me.hwnd)
         If Len(fpath) > 0 Then
             fso.writeFile fpath, txtFile
         End If
     End If
 End Sub
 
-Private Sub mnuExt_Click(Index As Integer)
+Private Sub mnuExt_Click(index As Integer)
     On Error GoTo hell
     Dim cmd As String
     
-    If Index = 0 Then
-        cmd = App.path & IIf(isIde(), "\..\..\", "") & "\shellext.external.txt"
+    If index = 0 Then
+        cmd = App.path & IIf(isIde(), "\..\..\", "") & "\shellext.external.log"
         Shell "notepad.exe " & GetShortName(cmd), vbNormalFocus
     Else
-        cmd = mnuExt(Index).Tag
+        cmd = mnuExt(index).Tag
         cmd = Replace(cmd, "%1", """" & tv.SelectedItem.Tag & """")
         cmd = Replace(cmd, "%app_path%", App.path & IIf(isIde(), "\..\..\", "\"))
         Shell cmd, vbNormalFocus
@@ -588,7 +588,7 @@ Private Sub Form_Load()
     lv.Move txtFile.Left, tv.top
     
     Dim ext As String
-    ext = App.path & IIf(isIde(), "\..\..", "") & "\shellext.external.txt"
+    ext = App.path & IIf(isIde(), "\..\..", "") & "\shellext.external.log"
     If fso.FileExists(ext) Then
         ext = fso.ReadFile(ext)
         tmp = Split(ext, vbCrLf)
@@ -695,7 +695,7 @@ nextone:
             If fso.FileExists(f) Then
                 Kill f
             End If
-            lv.ListItems.Remove li.Index
+            lv.ListItems.Remove li.index
             GoTo nextone
         End If
     Next
@@ -721,7 +721,7 @@ End Sub
 Private Sub mnuLoadSaved_Click()
     
     Dim f As String
-    f = dlg.FolderDialog(, Me.hWnd)
+    f = dlg.FolderDialog(, Me.hwnd)
     If Len(f) > 0 Then
         OpenAnalysisFolder f
     End If
@@ -848,7 +848,7 @@ Private Sub tv_DblClick()
     Dim fpath As String
     fpath = tv.SelectedItem.Tag
     If InStr(1, fpath, ".pcap", vbTextCompare) > 0 Then
-        ShellExecute Me.hWnd, "open", fpath, "", "", 1
+        ShellExecute Me.hwnd, "open", fpath, "", "", 1
     End If
     
 End Sub

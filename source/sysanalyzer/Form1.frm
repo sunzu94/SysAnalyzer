@@ -91,12 +91,12 @@ Begin VB.Form frmMain
       TabCaption(2)   =   "Process Dlls"
       TabPicture(2)   =   "Form1.frx":5C4A
       Tab(2).ControlEnabled=   0   'False
-      Tab(2).Control(0)=   "lblIEDlls"
-      Tab(2).Control(1)=   "Label1(0)"
-      Tab(2).Control(2)=   "lvIE"
-      Tab(2).Control(3)=   "lvExplorer"
-      Tab(2).Control(4)=   "fraDlls"
-      Tab(2).Control(5)=   "splitterDlls"
+      Tab(2).Control(0)=   "splitterDlls"
+      Tab(2).Control(1)=   "fraDlls"
+      Tab(2).Control(2)=   "lvExplorer"
+      Tab(2).Control(3)=   "lvIE"
+      Tab(2).Control(4)=   "Label1(0)"
+      Tab(2).Control(5)=   "lblIEDlls"
       Tab(2).ControlCount=   6
       TabCaption(3)   =   "Loaded Drivers"
       TabPicture(3)   =   "Form1.frx":5C66
@@ -111,14 +111,14 @@ Begin VB.Form frmMain
       TabCaption(5)   =   "Api Log"
       TabPicture(5)   =   "Form1.frx":5C9E
       Tab(5).ControlEnabled=   0   'False
-      Tab(5).Control(0)=   "fraAPILog"
-      Tab(5).Control(1)=   "lvAPILog"
+      Tab(5).Control(0)=   "lvAPILog"
+      Tab(5).Control(1)=   "fraAPILog"
       Tab(5).ControlCount=   2
       TabCaption(6)   =   "Directory Watch Data"
       TabPicture(6)   =   "Form1.frx":5CBA
       Tab(6).ControlEnabled=   0   'False
-      Tab(6).Control(0)=   "fraDirWatch"
-      Tab(6).Control(1)=   "lvDirWatch"
+      Tab(6).Control(0)=   "lvDirWatch"
+      Tab(6).Control(1)=   "fraDirWatch"
       Tab(6).ControlCount=   2
       Begin VB.Frame fraAPILog 
          BorderStyle     =   0  'None
@@ -1308,18 +1308,18 @@ Private Sub mnuSearch_Click()
     Next
     
     If match > 0 Then
-        frmReport.ShowList ret, , "search_result.txt", False
+        frmReport.ShowList ret, , "search_result.log", False
     End If
     
 End Sub
 
-Function GetActiveLV(Optional Index As Long = -1) As ListView
+Function GetActiveLV(Optional index As Long = -1) As ListView
 
     Dim active_lv As ListView
     
-    If Index = -1 Then Index = SSTab1.TabIndex
+    If index = -1 Then index = SSTab1.TabIndex
     
-    Select Case Index
+    Select Case index
         Case 0: Set active_lv = lvProcesses
         Case 1: Set active_lv = lvPorts
         Case 2: Set active_lv = lvExplorer ' , lvIE
@@ -1385,7 +1385,7 @@ Private Sub tmrCountDown_Timer()
             ret(0) = ret(0) & "No new processes detected look at the dlls or it may have exited" & vbCrLf & vbCrLf
         End If
         
-        fso.writeFile UserDeskTopFolder & "\Report_" & Format(Now(), "h.nam/pm") & ".txt", Join(ret, vbCrLf)
+        fso.writeFile UserDeskTopFolder & "\Report_" & Format(Now(), "h.nam/pm") & ".log", Join(ret, vbCrLf)
         frmReportViewer.OpenAnalysisFolder UserDeskTopFolder
         
         
@@ -1623,14 +1623,14 @@ End Sub
  
 
 
-Public Sub mnuToolItem_Click(Index As Integer)
+Public Sub mnuToolItem_Click(index As Integer)
     
     'show1, show2, diff, - , take1, take2, - , startover, report
     
     Dim c As String
     
     With diff
-        Select Case Index
+        Select Case index
             Case 0: .ShowBaseSnap
             Case 1: .ShowSnap2
             Case 2: .ShowDiffReport
@@ -1655,7 +1655,7 @@ Public Sub mnuToolItem_Click(Index As Integer)
         End Select
     End With
     
-    Select Case Index
+    Select Case index
         Case 0: c = "Showing base snapshot"
         Case 1: c = "Showing snapshot 2"
         Case 2: c = "Showing snapshot diff"
@@ -1664,7 +1664,7 @@ Public Sub mnuToolItem_Click(Index As Integer)
     End Select
     
     If lastViewMode <= 5 Then
-        lastViewMode = Index
+        lastViewMode = index
     Else
         lastViewMode = -1
     End If
@@ -1875,7 +1875,7 @@ Private Sub mnuKillProcess_Click()
     On Error Resume Next
     If liProc Is Nothing Then Exit Sub
     If diff.CProc.TerminateProces(CLng(liProc.Tag)) Then
-        lvProcesses.ListItems.Remove liProc.Index
+        lvProcesses.ListItems.Remove liProc.index
         MsgBox "Process Killed", vbInformation
     Else
         MsgBox "Unable to kill Process", vbInformation

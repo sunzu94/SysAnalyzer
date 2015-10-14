@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Begin VB.Form frmMain 
    BorderStyle     =   1  'Fixed Single
    Caption         =   "Process Analyzer - right click on a process to access menu"
@@ -116,13 +116,15 @@ Attribute VB_Exposed = False
 '         You should have received a copy of the GNU General Public License along with
 '         this program; if not, write to the Free Software Foundation, Inc., 59 Temple
 '         Place, Suite 330, Boston, MA 02111-1307 USA
-Private Declare Function SHGetPathFromIDList Lib "Shell32" Alias "SHGetPathFromIDListA" (ByVal pidl As Long, ByVal pszPath As String) As Long
-Private Declare Function SHGetSpecialFolderLocation Lib "Shell32" (ByVal hwndOwner As Long, ByVal nFolder As Long, pidl As Long) As Long
+Private Declare Function SHGetPathFromIDList Lib "shell32" Alias "SHGetPathFromIDListA" (ByVal pidl As Long, ByVal pszPath As String) As Long
+Private Declare Function SHGetSpecialFolderLocation Lib "shell32" (ByVal hWndOwner As Long, ByVal nFolder As Long, pidl As Long) As Long
 Private Declare Sub CoTaskMemFree Lib "ole32" (ByVal pv As Long)
 Private Declare Function FindWindow Lib "user32" Alias "FindWindowA" (ByVal lpClassName As String, ByVal lpWindowName As String) As Long
-Private Declare Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal Hwnd As Long, ByVal wMsg As Long, ByVal wParam As Long, lParam As Any) As Long
+Private Declare Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, lParam As Any) As Long
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (hpvDest As Any, hpvSource As Any, ByVal cbCopy As Long)
-
+Public Enum matchModes      'for bs in modfileprops
+    dummy = 0
+End Enum
 
 Dim proc As New CProcessInfo
 Dim p As New Collection
@@ -133,7 +135,7 @@ Dim cst As New CStrings
 Dim scanner As New CExploitScanner
 
 Dim rep()
-Dim base As String
+Dim Base As String
 Dim isCopy As Boolean
 
 Public samplePath As String
@@ -148,11 +150,11 @@ Private Const WM_COPYDATA = &H4A
 
 
 
-Private Sub List2_MouseUp(Button As Integer, Shift As Integer, x As Single, Y As Single)
+Private Sub List2_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     If Button = 2 Then PopupMenu mnuPopup2
 End Sub
 
-Private Sub lv_MouseUp(Button As Integer, Shift As Integer, x As Single, Y As Single)
+Private Sub lv_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     If Button = 2 Then PopupMenu mnuPopup
 End Sub
 
@@ -174,11 +176,11 @@ Private Sub mnuAnalyze_Click()
     
     pid = CLng(liProc.Tag)
     f = proc.GetProcessPath(pid)
-    base = fso.GetBaseName(f)
-    samplePath = base
+    Base = fso.GetBaseName(f)
+    samplePath = Base
     
-    FileCopy f, UserDeskTopFolder & "\" & base & "_sample.exe_"
-    pth = UserDeskTopFolder & "\" & base & "_dmp.exe_"
+    FileCopy f, UserDeskTopFolder & "\" & Base & "_sample.exe_"
+    pth = UserDeskTopFolder & "\" & Base & "_dmp.exe_"
      
     push rep, "File: " & fso.FileNameFromPath(f)
     push rep, "Size: " & FileLen(f) & " Bytes"
@@ -188,7 +190,7 @@ Private Sub mnuAnalyze_Click()
         
     Set col = proc.GetProcessModules(pid)
     Set cmod = col(1)
-    Call proc.DumpProcessMemory(pid, cmod.base, cmod.size, pth)
+    Call proc.DumpProcessMemory(pid, cmod.Base, cmod.size, pth)
     
     If Not fso.FileExists(pth) Then
         MsgBox "Dump file not found?"
@@ -232,8 +234,8 @@ Sub doStringDump(dmpPath As String)
     
     x = cst.ExtractStrings(dmpPath)
       
-    pth2 = UserDeskTopFolder & "\" & base & "_strings.txt"
-    fso.WriteFile pth2, x
+    pth2 = UserDeskTopFolder & "\" & Base & "_strings.log"
+    fso.writeFile pth2, x
     rawStrings = x
     buf = Split(rawStrings, vbCrLf)
     
@@ -275,10 +277,10 @@ nextone:
         Clipboard.SetText Join(rep, vbCrLf)
         
         On Error Resume Next
-        Dim Hwnd As Long
+        Dim hWnd As Long
         
-        Hwnd = FindWindow("ThunderRT6FormDC", "SysAnalyzer")
-        SendData Hwnd, "analyzer_report"
+        hWnd = FindWindow("ThunderRT6FormDC", "SysAnalyzer")
+        SendData hWnd, "analyzer_report"
         End
         
     Else
@@ -378,7 +380,7 @@ Sub push(ary, value) 'this modifies parent ary object
 init:     ReDim ary(0): ary(0) = value
 End Sub
 
-Private Sub SendData(Hwnd As Long, data As String)
+Private Sub SendData(hWnd As Long, data As String)
     'On Error Resume Next
     
     Dim Buffer(1 To 2048) As Byte
@@ -388,7 +390,7 @@ Private Sub SendData(Hwnd As Long, data As String)
     CopyData.dwFlag = 3
     CopyData.cbSize = Len(data) + 1
     CopyData.lpData = VarPtr(Buffer(1))
-    SendMessage Hwnd, WM_COPYDATA, Hwnd, CopyData
+    SendMessage hWnd, WM_COPYDATA, hWnd, CopyData
 End Sub
 
 
@@ -403,7 +405,7 @@ End Function
 
 Private Sub mnuSignatureScanner_Click()
     Dim f As String
-    f = dlg.OpenDialog(AllFiles, , "Open a file to scan", Me.Hwnd)
+    f = dlg.OpenDialog(AllFiles, , "Open a file to scan", Me.hWnd)
     If Len(f) = 0 Then Exit Sub
     frmReport.ShowList ExploitScanner(f)
 End Sub

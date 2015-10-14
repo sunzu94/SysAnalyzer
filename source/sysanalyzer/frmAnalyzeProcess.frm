@@ -181,7 +181,7 @@ Public Function AnalyzeProcess(pid As Long) ', Optional memoryMapOnly As Boolean
     'push rep, "File Properties: " & QuickInfo(f) & vbCrLf
     
         
-    pb.Value = pb.Value + 1
+    pb.value = pb.value + 1
     AddLine "Enumerating loaded dlls.."
     
     Set col = proc.GetProcessModules(pid)
@@ -221,12 +221,12 @@ Public Function AnalyzeProcess(pid As Long) ', Optional memoryMapOnly As Boolean
     
     'If known.Loaded And known.Ready Then ado.CloseConnection
     
-    pb.Value = pb.Value + 1
+    pb.value = pb.value + 1
     
     AddLine "Dumping main process memory"
     Set cmod = col(1)
     Call proc.DumpProcessMemory(pid, cmod.Base, cmod.size, pth)
-    pb.Value = pb.Value + 1
+    pb.value = pb.value + 1
 
     If Not fso.FileExists(pth) Then
         AddLine "Memory dump failed, file not found."
@@ -241,11 +241,11 @@ Public Function AnalyzeProcess(pid As Long) ', Optional memoryMapOnly As Boolean
         doStringDump Base, pth
     End If
     
-    pb.Value = pb.Value + 1
+    pb.value = pb.value + 1
     AddLine "Scanning for RWE memory sections.."
     ScanForRWE pid
 
-    pb.Value = 0
+    pb.value = 0
     'report = pFolder & "\" & Base & "_report.txt"
     'fso.writeFile report, Join(rep, vbCrLf)
     'AddLine  "Process Analysis Complete saving report as: " & Replace(report, UserDeskTopFolder, Empty)
@@ -309,7 +309,7 @@ nextone:
     push extracts, String(50, "-")
     push extracts, rawStrings
     
-    pth2 = pFolder & "\" & baseFileName & "_strings.txt"
+    pth2 = pFolder & "\" & baseFileName & "_strings.log"
     fso.writeFile pth2, Join(extracts, vbCrLf)
     
 End Sub
@@ -336,7 +336,7 @@ Private Sub ScanForRWE(pid As Long, Optional prefix As String = "") 'not x64 com
         Exit Sub
     End If
     
-    pb2.Value = 0
+    pb2.value = 0
     pb2.max = c.count
     
     Dim s As String
@@ -386,14 +386,14 @@ Private Sub ScanForRWE(pid As Long, Optional prefix As String = "") 'not x64 com
          
         End If
          
-        pb2.Value = pb2.Value + 1
+        pb2.value = pb2.value + 1
         pb2.Refresh
         Me.Refresh
         DoEvents
         
     Next
         
-    pb2.Value = 0
+    pb2.value = 0
     cmdAbort.Visible = False
     
 End Sub

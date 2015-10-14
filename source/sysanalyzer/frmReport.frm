@@ -72,7 +72,7 @@ Option Explicit
 
 'Used in several projects do not change interface!
 
-Private Declare Sub SetWindowPos Lib "user32" (ByVal hWnd As Long, ByVal _
+Private Declare Sub SetWindowPos Lib "user32" (ByVal hwnd As Long, ByVal _
     hWndInsertAfter As Long, ByVal x As Long, ByVal y As Long, ByVal cx _
     As Long, ByVal cy As Long, ByVal wFlags As Long)
     
@@ -86,7 +86,7 @@ Function ShowList(list, Optional modal As Boolean = False, Optional saveName As 
     filesaveName = saveName
     
     If topMost Then
-        SetWindowPos Me.hWnd, HWND_TOPMOST, Me.Left / 15, _
+        SetWindowPos Me.hwnd, HWND_TOPMOST, Me.Left / 15, _
             Me.top / 15, Me.Width / 15, _
             Me.Height / 15, 0
     End If
@@ -117,7 +117,7 @@ Private Sub Command2_Click()
     
     If Len(filesaveName) = 0 Then
         Base = fso.GetBaseName(frmMain.samplePath)
-        Base = UserDeskTopFolder & "\" & Base & "_" & Format(Now(), "h.nam/pm") & ".txt"
+        Base = UserDeskTopFolder & "\" & Base & "_" & Format(Now(), "h.nam/pm") & ".log"
     Else
         Base = UserDeskTopFolder & "\" & filesaveName
     End If
