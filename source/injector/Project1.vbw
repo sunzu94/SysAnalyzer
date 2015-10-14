@@ -1,6 +1,6 @@
-Form2 = 25, 5, 1328, 882, , 60, 8, 1052, 620, C
+Form2 = 25, 5, 1328, 882, , 60, 8, 1062, 827, C
 frmListProcess = 51, 40, 1102, 735, , 88, 88, 1040, 654, C
-CProcessInfo = 291, 92, 1093, 497, C
+CProcessInfo = 291, 92, 1093, 497, 
 CProcess = 154, 154, 835, 569, 
 CModule = 220, 220, 1120, 755, 
 CProcessPorts = 88, 88, 834, 493, 
@@ -20,3 +20,4 @@ frmReport = 66, 66, 869, 642, , 44, 44, 847, 620, C
 modUserAccounts = 0, 0, 0, 0, C
 CPEEditor = 228, 228, 949, 784, 
 CSection = 0, 0, 0, 0, C
+CAlloc = 198, 198, 1001, 835, C

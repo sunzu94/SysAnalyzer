@@ -342,6 +342,24 @@ BOOL __stdcall My_HttpSendRequestW(
 }
 */
 
+BOOL __stdcall My_VirtualFree( LPVOID a1, SIZE_T a2, DWORD  a3 )
+{
+	/*BOOL WINAPI VirtualFree(
+		  _In_ LPVOID lpAddress,
+		  _In_ SIZE_T dwSize,
+		  _In_ DWORD  dwFreeType
+		);*/
+
+	LogAPI("%x     VirtualFree(addr=%x, sz=%x, type=%x)",CalledFrom(),a1,a2,a3);
+
+	BOOL  ret = 0;
+	try{
+		ret = Real_VirtualFree(a1,a2,a3);
+	}
+	catch(...){}
+
+	return ret;
+}
 
 LPVOID __stdcall My_VirtualAllocEx( HANDLE a0, LPVOID a1, DWORD a2, DWORD a3, DWORD a4 )
 {
@@ -354,13 +372,13 @@ LPVOID __stdcall My_VirtualAllocEx( HANDLE a0, LPVOID a1, DWORD a2, DWORD a3, DW
 		DWORD flProtect
     );*/
 
-	LogAPI("%x     VirtualAllocEx(h=%x, addr=%x, sz=%x,type=%x, prot=%x)", CalledFrom(),a0,a1,a2,a3,a4 );
-
 	LPVOID  ret = 0;
 	try{
 		ret = Real_VirtualAllocEx(a0,a1,a2,a3,a4);
 	}
 	catch(...){}
+
+	LogAPI("%x     VirtualAllocEx(h=%x, addr=%x, sz=%x,type=%x, prot=%x) = %x", CalledFrom(),a0,a1,a2,a3,a4, ret );
 
 	return ret;
 }
@@ -1914,6 +1932,7 @@ void InstallHooks(void)
 	ADDHOOK(OpenProcess);
 	ADDHOOK(WriteProcessMemory);
 	ADDHOOK(VirtualAllocEx);
+	ADDHOOK(VirtualFree);
 	ADDHOOK(IsDebuggerPresent);
 	//ADDHOOK(GetVersionExA);
 	//ADDHOOK(GlobalAlloc)

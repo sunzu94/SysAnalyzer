@@ -2,13 +2,13 @@ VERSION 5.00
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Begin VB.Form Form2 
    Caption         =   "ApiLogger"
-   ClientHeight    =   7665
+   ClientHeight    =   8055
    ClientLeft      =   165
    ClientTop       =   450
    ClientWidth     =   10335
    Icon            =   "Form2.frx":0000
    LinkTopic       =   "Form2"
-   ScaleHeight     =   7665
+   ScaleHeight     =   8055
    ScaleWidth      =   10335
    StartUpPosition =   2  'CenterScreen
    Begin VB.CommandButton cmdBrowse 
@@ -34,7 +34,7 @@ Begin VB.Form Form2
       Height          =   375
       Left            =   2400
       TabIndex        =   35
-      Top             =   3900
+      Top             =   4170
       Width           =   1005
    End
    Begin MSComctlLib.ListView lvProc 
@@ -88,20 +88,20 @@ Begin VB.Form Form2
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      Height          =   1260
+      Height          =   1740
       Left            =   120
       TabIndex        =   34
       Top             =   2160
       Width           =   7335
    End
    Begin MSComctlLib.TabStrip TabStrip1 
-      Height          =   1875
+      Height          =   2280
       Left            =   30
       TabIndex        =   33
       Top             =   1830
       Width           =   7515
       _ExtentX        =   13256
-      _ExtentY        =   3307
+      _ExtentY        =   4022
       _Version        =   393216
       BeginProperty Tabs {1EFB6598-857C-11D1-B16A-00C0F0283628} 
          NumTabs         =   2
@@ -120,14 +120,14 @@ Begin VB.Form Form2
       Height          =   375
       Left            =   4950
       TabIndex        =   32
-      Top             =   3900
+      Top             =   4170
       Width           =   1335
    End
    Begin MSComctlLib.ListView lv 
       Height          =   3225
-      Left            =   60
+      Left            =   90
       TabIndex        =   30
-      Top             =   4380
+      Top             =   4725
       Width           =   10185
       _ExtentX        =   17965
       _ExtentY        =   5689
@@ -163,7 +163,7 @@ Begin VB.Form Form2
       Height          =   375
       Left            =   3510
       TabIndex        =   29
-      Top             =   3900
+      Top             =   4170
       Width           =   1305
    End
    Begin VB.CommandButton cmdClear 
@@ -171,7 +171,7 @@ Begin VB.Form Form2
       Height          =   375
       Left            =   6420
       TabIndex        =   27
-      Top             =   3900
+      Top             =   4170
       Width           =   1215
    End
    Begin VB.CommandButton cmdBrowse 
@@ -201,17 +201,25 @@ Begin VB.Form Form2
    End
    Begin VB.Frame Frame1 
       Caption         =   " Api Startup Logging Options "
-      Height          =   4245
+      Height          =   4560
       Left            =   7680
       TabIndex        =   14
       Top             =   60
       Width           =   2565
+      Begin VB.CheckBox chkCaptureVirtualFree 
+         Caption         =   "Capture VirtualFree"
+         Height          =   240
+         Left            =   180
+         TabIndex        =   40
+         Top             =   3915
+         Width           =   2220
+      End
       Begin VB.ComboBox cboLogLevel 
          Height          =   315
-         Left            =   1620
+         Left            =   1755
          Style           =   2  'Dropdown List
          TabIndex        =   38
-         Top             =   3840
+         Top             =   4185
          Width           =   735
       End
       Begin VB.CheckBox chkIgnoreExitProcess 
@@ -302,7 +310,7 @@ Begin VB.Form Form2
          Height          =   255
          Left            =   120
          TabIndex        =   37
-         Top             =   3900
+         Top             =   4230
          Width           =   1395
       End
    End
@@ -327,7 +335,7 @@ Begin VB.Form Form2
       Height          =   375
       Left            =   765
       TabIndex        =   9
-      Top             =   3900
+      Top             =   4170
       Width           =   1560
    End
    Begin VB.CommandButton cmdContinue 
@@ -419,7 +427,7 @@ Begin VB.Form Form2
       Height          =   255
       Left            =   45
       TabIndex        =   3
-      Top             =   4050
+      Top             =   4320
       Width           =   1035
    End
    Begin VB.Label Label1 
@@ -524,8 +532,8 @@ Private Declare Sub DebugBreak Lib "kernel32" ()
 Private Declare Function CloseHandle Lib "kernel32" (ByVal hObject As Long) As Long
 Private Declare Function GetTickCount Lib "kernel32" () As Long
 Private Declare Function TerminateProcess Lib "kernel32" (ByVal hProcess As Long, ByVal uExitCode As Long) As Long
-Private Declare Function NtSuspendProcess Lib "ntdll.dll" (ByVal hProc As Long) As Long
-Private Declare Function NtResumeProcess Lib "ntdll.dll" (ByVal hProc As Long) As Long
+Private Declare Function NtSuspendProcess Lib "ntdll.dll" (ByVal hproc As Long) As Long
+Private Declare Function NtResumeProcess Lib "ntdll.dll" (ByVal hproc As Long) As Long
 
 
 
@@ -555,6 +563,8 @@ Dim getTickIncrements As Long
 Dim liProc As ListItem
 Dim lastPid As String
 Dim lastMsg As String
+
+Dim allocs As New Collection
 
 'todo: parse incoming api to: handles -> process/file/socket mapping..,
 '                             capture downloads
@@ -769,6 +779,7 @@ Private Sub cmdStart_Click()
     lv.ListItems.Clear
     List2.Clear
     Erase ignored
+    Set allocs = New Collection
     
     If Len(txtIgnore) > 0 Then
         ignored = Split(txtIgnore, ",")
@@ -1176,6 +1187,18 @@ Private Sub RecieveTextMessage(lParam As Long)
         'todo: parse api log and do captures here...
         'dm.HandleApiMessage temp
         
+        If InStr(temp, "VirtualAllocEx(h=") > 0 Then
+            If chkCaptureVirtualFree.value = 1 Then
+                LogAlloc pid, temp
+            End If
+        End If
+        
+        If InStr(temp, "VirtualFree(addr=") > 0 Then
+            If chkCaptureVirtualFree.value = 1 Then
+                captureVirtFree pid, temp
+            End If
+        End If
+        
         If InStr(temp, "CloseHandle") > 0 Then Exit Sub 'to much spam
 
         If lastMsg = temp Then
@@ -1223,8 +1246,85 @@ Private Sub IncrementLastCount()
     lv.ListItems(i).SubItems(2) = v + 1
 End Sub
 
+Function LogAlloc(pid, temp)
+    'LogAPI("%x     VirtualAllocEx(h=%x, addr=%x, sz=%x,type=%x, prot=%x) = %x", CalledFrom(),a0,a1,a2,a3,a4, ret );
+    Dim f As String
+    Dim d As String
+    Dim a, b, addr, sz, h
+    
+    On Error Resume Next
+    
+    a = InStr(temp, "h=") + 2
+    b = InStr(a, temp, ",")
+    h = Mid(temp, a, b - a)
+    If Len(h) = 0 Then Exit Function
+    
+    a = InStr(temp, "sz=") + 3
+    b = InStr(a, temp, ",")
+    sz = Mid(temp, a, b - a)
+    If Len(sz) = 0 Then Exit Function
+    
+    'a = InStr(temp, "addr=") + 5
+    'b = InStr(a, temp, ",")
+    a = InStrRev(temp, "=") + 1
+    addr = Trim(Mid(temp, a))
+    If Len(addr) = 0 Then Exit Function
+    
+    Dim al As CAlloc
+    Set al = New CAlloc
+    
+    al.pid = pid
+    al.addr = addr
+    al.sz = sz
+    al.hproc = h
+    
+    allocs.Add al
+    
+    
+End Function
 
-
+Function captureVirtFree(pid, temp) As Boolean
+    Dim f As String
+    Dim d As String
+    Dim a, b, addr, i, sz
+    
+    On Error Resume Next
+    
+    'LogAPI("%x     VirtualFree(addr=%x, sz=%x, type=%x)",CalledFrom(),a0,a1,a2,a3);
+    a = InStr(temp, "addr=") + 5
+    b = InStr(a, temp, ",")
+    addr = Mid(temp, a, b - a)
+    If Len(addr) = 0 Then Exit Function
+    
+    'size will be 0 for some..lookup from allocs collection..
+'    a = InStr(temp, "sz=") + 3
+'    b = InStr(a, temp, ",")
+'    sz = Mid(temp, a, b - a)
+'    If Len(sz) = 0 Then Exit Function
+    
+    Dim al As CAlloc
+    For i = 1 To allocs.count
+        Set al = allocs(i)
+        If al.pid = pid And al.addr = addr Then
+            sz = al.sz
+            allocs.Remove i
+        End If
+    Next
+    
+    i = 0
+    If Len(sz) = 0 Then Exit Function
+    
+    d = "c:\virtualFree"
+    If Not fso.FolderExists(d) Then MkDir d
+    
+    Do
+        f = d & "\" & pid & "_" & addr & "_" & i & ".bin"
+        i = i + 1
+    Loop While fso.FileExists(f)
+    
+    captureVirtFree = cpi.DumpProcessMemory(CLng("&h" & pid), CLng("&h" & addr), CLng("&h" & sz), f)
+    
+End Function
 
 
 

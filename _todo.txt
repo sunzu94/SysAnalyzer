@@ -1,4 +1,6 @@
 
+ - search all process memory maps for string (will take really long but can be necessary..)
+ - dirwatch make last column rteally really wide by default
  - apilog does not work with .net exes
  - tools - edit hosts file
  - rwe mem scan - option to save with PE header for easy (auto rebased) disassembly?

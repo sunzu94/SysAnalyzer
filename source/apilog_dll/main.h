@@ -116,6 +116,8 @@ HINTERNET (__stdcall *Real_HttpOpenRequestA)(HINTERNET hConnect,LPCSTR lpszVerb,
 //BOOL      (__stdcall *Real_HttpSendRequestA)(HINTERNET hRequest,LPCTSTR lpszHeaders,DWORD dwHeadersLength,LPVOID lpOptional, DWORD dwOptionalLength) = NULL;
 //BOOL      (__stdcall *Real_InternetCrackUrlA)(LPCTSTR lpszUrl, DWORD dwUrlLength,DWORD dwFlags,LPURL_COMPONENTS lpUrlComponents) = NULL;
 
+BOOL (__stdcall *Real_VirtualFree)(LPVOID lpAddress, SIZE_T dwSize, DWORD dwFreeType ) = NULL;
+
 
 void msg(char);
 void LogAPI(const char*, ...);
