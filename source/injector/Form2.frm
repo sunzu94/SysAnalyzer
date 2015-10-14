@@ -564,7 +564,7 @@ Dim liProc As ListItem
 Dim lastPid As String
 Dim lastMsg As String
 
-Dim allocs As New Collection
+'Dim allocs As New Collection
 
 'todo: parse incoming api to: handles -> process/file/socket mapping..,
 '                             capture downloads
@@ -779,7 +779,7 @@ Private Sub cmdStart_Click()
     lv.ListItems.Clear
     List2.Clear
     Erase ignored
-    Set allocs = New Collection
+    'Set allocs = New Collection
     
     If Len(txtIgnore) > 0 Then
         ignored = Split(txtIgnore, ",")
@@ -1187,11 +1187,11 @@ Private Sub RecieveTextMessage(lParam As Long)
         'todo: parse api log and do captures here...
         'dm.HandleApiMessage temp
         
-        If InStr(temp, "VirtualAllocEx(h=") > 0 Then
-            If chkCaptureVirtualFree.value = 1 Then
-                LogAlloc pid, temp
-            End If
-        End If
+'        If InStr(temp, "VirtualAllocEx(h=") > 0 Then
+'            If chkCaptureVirtualFree.value = 1 Then
+'                LogAlloc pid, temp
+'            End If
+'        End If
         
         If InStr(temp, "VirtualFree(addr=") > 0 Then
             If chkCaptureVirtualFree.value = 1 Then
@@ -1246,42 +1246,42 @@ Private Sub IncrementLastCount()
     lv.ListItems(i).SubItems(2) = v + 1
 End Sub
 
-Function LogAlloc(pid, temp)
-    'LogAPI("%x     VirtualAllocEx(h=%x, addr=%x, sz=%x,type=%x, prot=%x) = %x", CalledFrom(),a0,a1,a2,a3,a4, ret );
-    Dim f As String
-    Dim d As String
-    Dim a, b, addr, sz, h
-    
-    On Error Resume Next
-    
-    a = InStr(temp, "h=") + 2
-    b = InStr(a, temp, ",")
-    h = Mid(temp, a, b - a)
-    If Len(h) = 0 Then Exit Function
-    
-    a = InStr(temp, "sz=") + 3
-    b = InStr(a, temp, ",")
-    sz = Mid(temp, a, b - a)
-    If Len(sz) = 0 Then Exit Function
-    
-    'a = InStr(temp, "addr=") + 5
-    'b = InStr(a, temp, ",")
-    a = InStrRev(temp, "=") + 1
-    addr = Trim(Mid(temp, a))
-    If Len(addr) = 0 Then Exit Function
-    
-    Dim al As CAlloc
-    Set al = New CAlloc
-    
-    al.pid = pid
-    al.addr = addr
-    al.sz = sz
-    al.hproc = h
-    
-    allocs.Add al
-    
-    
-End Function
+'Function LogAlloc(pid, temp)
+'    'LogAPI("%x     VirtualAllocEx(h=%x, addr=%x, sz=%x,type=%x, prot=%x) = %x", CalledFrom(),a0,a1,a2,a3,a4, ret );
+'    Dim f As String
+'    Dim d As String
+'    Dim a, b, addr, sz, h
+'
+'    On Error Resume Next
+'
+'    a = InStr(temp, "h=") + 2
+'    b = InStr(a, temp, ",")
+'    h = Mid(temp, a, b - a)
+'    If Len(h) = 0 Then Exit Function
+'
+'    a = InStr(temp, "sz=") + 3
+'    b = InStr(a, temp, ",")
+'    sz = Mid(temp, a, b - a)
+'    If Len(sz) = 0 Then Exit Function
+'
+'    'a = InStr(temp, "addr=") + 5
+'    'b = InStr(a, temp, ",")
+'    a = InStrRev(temp, "=") + 1
+'    addr = Trim(Mid(temp, a))
+'    If Len(addr) = 0 Then Exit Function
+'
+'    Dim al As CAlloc
+'    Set al = New CAlloc
+'
+'    al.pid = pid
+'    al.addr = addr
+'    al.sz = sz
+'    al.hproc = h
+'
+'    allocs.Add al
+'
+'
+'End Function
 
 Function captureVirtFree(pid, temp) As Boolean
     Dim f As String
@@ -1290,35 +1290,35 @@ Function captureVirtFree(pid, temp) As Boolean
     
     On Error Resume Next
     
-    'LogAPI("%x     VirtualFree(addr=%x, sz=%x, type=%x)",CalledFrom(),a0,a1,a2,a3);
+    'LogAPI("%x     VirtualFree(addr=%x, sz=%x, type=%x) (region_sz=%x)",CalledFrom(),a1,a2,a3, mbi.RegionSize);
     a = InStr(temp, "addr=") + 5
     b = InStr(a, temp, ",")
     addr = Mid(temp, a, b - a)
     If Len(addr) = 0 Then Exit Function
     
     'size will be 0 for some..lookup from allocs collection..
-'    a = InStr(temp, "sz=") + 3
-'    b = InStr(a, temp, ",")
-'    sz = Mid(temp, a, b - a)
-'    If Len(sz) = 0 Then Exit Function
+    a = InStrRev(temp, "=") + 1
+    sz = Mid(temp, a)
+    sz = Trim(Replace(sz, ")", Empty))
+    If Len(sz) = 0 Then Exit Function
     
-    Dim al As CAlloc
-    For i = 1 To allocs.count
-        Set al = allocs(i)
-        If al.pid = pid And al.addr = addr Then
-            sz = al.sz
-            allocs.Remove i
-        End If
-    Next
+'    Dim al As CAlloc
+'    For i = 1 To allocs.count
+'        Set al = allocs(i)
+'        If al.pid = pid And al.addr = addr Then
+'            sz = al.sz
+'            allocs.Remove i
+'        End If
+'    Next
     
-    i = 0
+    i = Empty
     If Len(sz) = 0 Then Exit Function
     
     d = "c:\virtualFree"
     If Not fso.FolderExists(d) Then MkDir d
     
     Do
-        f = d & "\" & pid & "_" & addr & "_" & i & ".bin"
+        f = d & "\" & pid & "_" & addr & "_" & sz & "_" & i & ".bin"
         i = i + 1
     Loop While fso.FileExists(f)
     

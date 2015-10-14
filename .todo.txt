@@ -1,4 +1,5 @@
 
+ - api_log: x64 VirtualAlloc no longer flows to VirtualAllocEx apparently...
  - search all process memory maps for string (will take really long but can be necessary..)
  - dirwatch make last column rteally really wide by default
  - apilog does not work with .net exes

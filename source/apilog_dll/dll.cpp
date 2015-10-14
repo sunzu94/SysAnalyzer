@@ -350,7 +350,13 @@ BOOL __stdcall My_VirtualFree( LPVOID a1, SIZE_T a2, DWORD  a3 )
 		  _In_ DWORD  dwFreeType
 		);*/
 
-	LogAPI("%x     VirtualFree(addr=%x, sz=%x, type=%x)",CalledFrom(),a1,a2,a3);
+	//this extra data inclusion is necessary for win8 x64 since virtualAlloc no longer flows
+	//into our VirtualAllocEx hook. This will also simplify our extraction code to not have to log
+	//allocs on alloc to know size on free..
+	MEMORY_BASIC_INFORMATION mbi;
+	int sz = VirtualQuery(a1,&mbi, sizeof(MEMORY_BASIC_INFORMATION));
+
+	LogAPI("%x     VirtualFree(addr=%x, sz=%x, type=%x) (region_sz=%x)",CalledFrom(),a1,a2,a3, mbi.RegionSize);
 
 	BOOL  ret = 0;
 	try{
