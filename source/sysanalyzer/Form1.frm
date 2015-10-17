@@ -91,12 +91,12 @@ Begin VB.Form frmMain
       TabCaption(2)   =   "Process Dlls"
       TabPicture(2)   =   "Form1.frx":5C4A
       Tab(2).ControlEnabled=   0   'False
-      Tab(2).Control(0)=   "splitterDlls"
-      Tab(2).Control(1)=   "fraDlls"
-      Tab(2).Control(2)=   "lvExplorer"
-      Tab(2).Control(3)=   "lvIE"
-      Tab(2).Control(4)=   "Label1(0)"
-      Tab(2).Control(5)=   "lblIEDlls"
+      Tab(2).Control(0)=   "lblIEDlls"
+      Tab(2).Control(1)=   "Label1(0)"
+      Tab(2).Control(2)=   "lvIE"
+      Tab(2).Control(3)=   "lvExplorer"
+      Tab(2).Control(4)=   "fraDlls"
+      Tab(2).Control(5)=   "splitterDlls"
       Tab(2).ControlCount=   6
       TabCaption(3)   =   "Loaded Drivers"
       TabPicture(3)   =   "Form1.frx":5C66
@@ -111,14 +111,14 @@ Begin VB.Form frmMain
       TabCaption(5)   =   "Api Log"
       TabPicture(5)   =   "Form1.frx":5C9E
       Tab(5).ControlEnabled=   0   'False
-      Tab(5).Control(0)=   "lvAPILog"
-      Tab(5).Control(1)=   "fraAPILog"
+      Tab(5).Control(0)=   "fraAPILog"
+      Tab(5).Control(1)=   "lvAPILog"
       Tab(5).ControlCount=   2
       TabCaption(6)   =   "Directory Watch Data"
       TabPicture(6)   =   "Form1.frx":5CBA
       Tab(6).ControlEnabled=   0   'False
-      Tab(6).Control(0)=   "lvDirWatch"
-      Tab(6).Control(1)=   "fraDirWatch"
+      Tab(6).Control(0)=   "fraDirWatch"
+      Tab(6).Control(1)=   "lvDirWatch"
       Tab(6).ControlCount=   2
       Begin VB.Frame fraAPILog 
          BorderStyle     =   0  'None
@@ -721,6 +721,9 @@ Begin VB.Form frmMain
       Begin VB.Menu mnuLaunchStrings 
          Caption         =   "Strings"
       End
+      Begin VB.Menu mnuProcCmdLine 
+         Caption         =   "Command Line"
+      End
       Begin VB.Menu mnuCopyProcessPath 
          Caption         =   "Copy File Path"
       End
@@ -1201,6 +1204,14 @@ Private Sub mnuLaunchStrings_Click()
     On Error Resume Next
     f = liProc.SubItems(3)
     LaunchStrings f, True
+End Sub
+
+Private Sub mnuProcCmdLine_Click()
+    On Error Resume Next
+    If liProc Is Nothing Then Exit Sub
+    Dim c As String
+    c = diff.CProc.GetProcessCmdLine(CLng(liProc.Tag))
+    MsgBox c, vbInformation
 End Sub
 
 Private Sub mnuRegMonCopyLine_Click()

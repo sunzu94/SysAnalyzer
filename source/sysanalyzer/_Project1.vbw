@@ -1,7 +1,7 @@
-frmMain = 112, 192, 920, 768, , 22, 22, 812, 598, C
+frmMain = 112, 192, 920, 768, , 294, 132, 1084, 708, C
 CProcessPorts = 88, 88, 1150, 757, 
 CProcessPort = 0, 0, 0, 0, C
-CProcessInfo = 242, 242, 1135, 818, Z
+CProcessInfo = 242, 242, 1334, 945, C
 CProcess = 0, 0, 0, 0, C
 frmReport = 132, 132, 940, 708, , 66, 66, 856, 642, C
 CModule = 0, 0, 0, 0, C
