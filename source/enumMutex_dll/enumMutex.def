@@ -1,0 +1,5 @@
+LIBRARY EnumMutex
+      DESCRIPTION 'EnumMutex DLL for VB'
+      EXPORTS
+		EnumMutex
+        
