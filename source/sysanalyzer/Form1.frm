@@ -6,18 +6,18 @@ Begin VB.Form frmMain
    ClientHeight    =   5400
    ClientLeft      =   60
    ClientTop       =   630
-   ClientWidth     =   10830
+   ClientWidth     =   10905
    Icon            =   "Form1.frx":0000
    LinkMode        =   1  'Source
    LinkTopic       =   "frmMain"
    ScaleHeight     =   5400
-   ScaleWidth      =   10830
+   ScaleWidth      =   10905
    StartUpPosition =   2  'CenterScreen
    Visible         =   0   'False
    Begin VB.PictureBox fraTools 
       BorderStyle     =   0  'None
       Height          =   255
-      Left            =   8940
+      Left            =   9540
       ScaleHeight     =   255
       ScaleWidth      =   1275
       TabIndex        =   12
@@ -65,13 +65,13 @@ Begin VB.Form frmMain
       Left            =   0
       TabIndex        =   0
       Top             =   0
-      Width           =   10365
-      _ExtentX        =   18283
+      Width           =   10860
+      _ExtentX        =   19156
       _ExtentY        =   9446
       _Version        =   393216
       TabOrientation  =   1
       Style           =   1
-      Tabs            =   7
+      Tabs            =   8
       TabsPerRow      =   10
       TabHeight       =   520
       ShowFocusRect   =   0   'False
@@ -111,15 +111,21 @@ Begin VB.Form frmMain
       TabCaption(5)   =   "Api Log"
       TabPicture(5)   =   "Form1.frx":5C9E
       Tab(5).ControlEnabled=   0   'False
-      Tab(5).Control(0)=   "fraAPILog"
-      Tab(5).Control(1)=   "lvAPILog"
+      Tab(5).Control(0)=   "lvAPILog"
+      Tab(5).Control(1)=   "fraAPILog"
       Tab(5).ControlCount=   2
       TabCaption(6)   =   "Directory Watch Data"
       TabPicture(6)   =   "Form1.frx":5CBA
       Tab(6).ControlEnabled=   0   'False
-      Tab(6).Control(0)=   "fraDirWatch"
-      Tab(6).Control(1)=   "lvDirWatch"
+      Tab(6).Control(0)=   "lvDirWatch"
+      Tab(6).Control(1)=   "fraDirWatch"
       Tab(6).ControlCount=   2
+      TabCaption(7)   =   "Mutexes"
+      TabPicture(7)   =   "Form1.frx":5CD6
+      Tab(7).ControlEnabled=   0   'False
+      Tab(7).Control(0)=   "lvMutex"
+      Tab(7).Control(0).Enabled=   0   'False
+      Tab(7).ControlCount=   1
       Begin VB.Frame fraAPILog 
          BorderStyle     =   0  'None
          Caption         =   "Frame1"
@@ -673,6 +679,36 @@ Begin VB.Form frmMain
             Object.Width           =   2540
          EndProperty
       End
+      Begin MSComctlLib.ListView lvMutex 
+         Height          =   4755
+         Left            =   -74910
+         TabIndex        =   44
+         Top             =   90
+         Width           =   10155
+         _ExtentX        =   17912
+         _ExtentY        =   8387
+         View            =   3
+         LabelEdit       =   1
+         LabelWrap       =   -1  'True
+         HideSelection   =   -1  'True
+         FullRowSelect   =   -1  'True
+         GridLines       =   -1  'True
+         _Version        =   393217
+         ForeColor       =   -2147483640
+         BackColor       =   -2147483643
+         BorderStyle     =   1
+         Appearance      =   1
+         NumItems        =   2
+         BeginProperty ColumnHeader(1) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+            Text            =   "PID"
+            Object.Width           =   1058
+         EndProperty
+         BeginProperty ColumnHeader(2) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+            SubItemIndex    =   1
+            Text            =   "Name"
+            Object.Width           =   12347
+         EndProperty
+      End
       Begin VB.Label Label1 
          Caption         =   "Explorer Dlls :"
          Height          =   255
@@ -1046,7 +1082,7 @@ Private Sub Form_Resize()
             Set lv = o
             lv.Width = SSTab1.Width - 200
             lv.ColumnHeaders(lv.ColumnHeaders.count).Width = lv.Width - lv.ColumnHeaders(lv.ColumnHeaders.count).Left - 200
-            If lv.Name = "lvPorts" Or lv.Name = "lvDrivers" Or lv.Name = "lvRegKeys" Then
+            If lv.name = "lvPorts" Or lv.name = "lvDrivers" Or lv.name = "lvRegKeys" Or lv.name = "lvMutex" Then
                 With lv
                     .Height = SSTab1.Height - .top - 500
                 End With
@@ -1078,7 +1114,7 @@ Private Sub Form_Resize()
         .Height = SSTab1.Height - .top - fraAPILog.Height - 500
         fraAPILog.top = .top + .Height + 100
     End With
-    
+        
     splitterDlls.Width = lvIE.Width
     
     Me.Refresh
@@ -1169,7 +1205,7 @@ Private Sub mnuCopySelected_Click()
                 Next
                 li.Selected = True
                 match = match + 1
-                push ret(), active_lv.Name & "> " & tmp
+                push ret(), active_lv.name & "> " & tmp
             End If
         Next
     Next
@@ -1301,7 +1337,7 @@ Private Sub mnuSearch_Click()
     Search = InputBox("Enter text to search for")
     If Len(Search) = 0 Then Exit Sub
     
-    For j = 0 To 6
+    For j = 0 To 7
         Set active_lv = GetActiveLV(j)
         For Each li In active_lv.ListItems
             tmp = li.Text & vbTab
@@ -1311,7 +1347,7 @@ Private Sub mnuSearch_Click()
             If InStr(1, tmp, Search, vbTextCompare) > 0 Then
                 li.Selected = True
                 match = match + 1
-                push ret(), active_lv.Name & "> " & tmp
+                push ret(), active_lv.name & "> " & tmp
             Else
                 li.Selected = False
             End If
@@ -1338,6 +1374,7 @@ Function GetActiveLV(Optional index As Long = -1) As ListView
         Case 4: Set active_lv = lvRegKeys
         Case 5: Set active_lv = lvAPILog
         Case 6: Set active_lv = lvDirWatch
+        Case 7: Set active_lv = lvMutex
     End Select
     
     Set GetActiveLV = active_lv
@@ -1530,6 +1567,9 @@ Function GetSystemDataReport(Optional appendClipboard As Boolean = False) As Str
     
     push ret, vbCrLf & "Ports:"
     push ret, GetAllElements(lvPorts)
+    
+    push ret, vbCrLf & "Mutexes:"
+    push ret, GetAllElements(lvMutex)
     
     push ret, vbCrLf & "Explorer Dlls:"
     push ret, GetAllElements(lvExplorer)

@@ -55,7 +55,7 @@ Private Declare Function NtQuerySystemInformation Lib "ntdll.dll" ( _
     dwReserved As Long) As Long
 
 Private Type SYSTEM_MODULE_INFORMATION
-    Reserved(1) As Long                'ULONG reserved[2];
+    reserved(1) As Long                'ULONG reserved[2];
     Base As Long                       'PVOID Base;
     size As Long                       'ULONG Size;
     flags As Long                      'ULONG Flags;
@@ -201,7 +201,7 @@ Private Declare Function ResumeThread Lib "kernel32" (ByVal hThread As Long) As 
 
 Private Declare Function OpenProcessToken Lib "advapi32.dll" (ByVal ProcessHandle As Long, ByVal DesiredAccess As Long, TokenHandle As Long) As Long
 Private Declare Function GetTokenInformation Lib "advapi32.dll" (ByVal TokenHandle As Long, ByVal TokenInformationClass As Integer, TokenInformation As Any, ByVal TokenInformationLength As Long, ReturnLength As Long) As Long
-Private Declare Function LookupAccountSid Lib "advapi32.dll" Alias "LookupAccountSidA" (ByVal lpSystemName As String, ByVal sID As Long, ByVal Name As String, cbName As Long, ByVal ReferencedDomainName As String, cbReferencedDomainName As Long, peUse As Integer) As Long
+Private Declare Function LookupAccountSid Lib "advapi32.dll" Alias "LookupAccountSidA" (ByVal lpSystemName As String, ByVal sID As Long, ByVal name As String, cbName As Long, ByVal ReferencedDomainName As String, cbReferencedDomainName As Long, peUse As Integer) As Long
 'Private Declare Function VirtualQueryEx Lib "kernel32" (ByVal hProcess As Long, lpAddress As Any, lpBuffer As MEMORY_BASIC_INFORMATION, ByVal dwLength As Long) As Long
 Private Declare Function VirtualQueryEx Lib "kernel32" (ByVal hProcess As Long, ByVal lpAddress As Long, lpBuffer As MEMORY_BASIC_INFORMATION, ByVal dwLength As Long) As Long
 
@@ -273,13 +273,15 @@ End Type
 
 Private Declare Function WTSEnumerateProcesses _
    Lib "wtsapi32.dll" Alias "WTSEnumerateProcessesA" _
-   (ByVal hServer As Long, ByVal Reserved As Long, _
+   (ByVal hServer As Long, ByVal reserved As Long, _
    ByVal version As Long, ByRef ppProcessInfo As Long, _
    ByRef pCount As Long _
    ) As Long
 
 Private Declare Sub WTSFreeMemory Lib "wtsapi32.dll" _
    (ByVal pMemory As Long)
+
+Private Declare Function EnumMutex Lib "EnumMutex.dll" (ByVal dirPath As String) As Long
 
 'Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" _
 '   (Destination As Any, Source As Any, ByVal length As Long)
@@ -1239,6 +1241,57 @@ Public Function StartProcessWithDLL(exePath As String, dllPath As String, Option
 hell:
     CloseHandle hProcess
     StartProcessWithDLL = rv
+    
+End Function
+
+Public Function EnumMutexes() As Collection
+    
+    Dim c As New Collection
+    Dim m As CMutexElem
+    Dim dups As Long, cnt As Long
+    Dim pth As String
+    Dim tmp() As String
+    Dim x
+    Dim dllPath As String
+    
+    'this is a dll to run in process so we dont have to elevate an external exe
+    Const dllName As String = "\enumMutex.dll"
+    On Error Resume Next
+    
+    dllPath = App.path
+    If Not fso.FileExists(dllPath & dllName) Then dllPath = fso.GetParentFolder(dllPath)
+    If Not fso.FileExists(dllPath & dllName) Then dllPath = fso.GetParentFolder(dllPath)
+    If Not fso.FileExists(dllPath & dllName) Then dllPath = fso.GetParentFolder(dllPath)
+    If Not fso.FileExists(dllPath & dllName) Then dllPath = fso.GetParentFolder(dllPath)
+    
+    dllPath = dllPath & dllName
+    If Not fso.FileExists(dllPath) Then GoTo retNow
+    If LoadLibrary(dllPath) = 0 Then GoTo retNow
+    
+    pth = Environ("temp") & "\enumMutex.txt"
+    pth = Replace(pth, "\\", "\")
+    
+    If FileExists(pth) Then Kill pth
+    
+    cnt = EnumMutex(pth)
+    'If cnt < 1 Then 'it had an error...
+        
+    If Not FileExists(pth) Then GoTo retNow
+        
+    tmp = Split(ReadFile(pth), vbCrLf)
+    For Each x In tmp
+        Set m = New CMutexElem
+        If m.parseEntry(x) Then
+            If Not objKeyExistsInCollection(c, m.getKey()) Then
+                c.Add m, m.getKey()
+            Else
+                dups = dups + 1 'pid+name duplicate..
+            End If
+        End If
+    Next
+    
+retNow:
+    Set EnumMutexes = c
     
 End Function
 

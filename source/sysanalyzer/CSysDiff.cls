@@ -60,6 +60,10 @@ Dim Drivers1 As Collection
 Dim Drivers2 As Collection
 Dim ChangedDrivers As Collection
 
+Dim Mutex1 As Collection
+Dim Mutex2 As Collection
+Dim ChangedMutexes As Collection
+
 Dim liProc As ListItem
 Dim liExplorer As ListItem
 Dim liIE As ListItem
@@ -73,7 +77,7 @@ Sub ShowBaseSnap(Optional FirstTabOnly = False)
         MsgBox "You must first take the base snapshot", vbInformation
         Exit Sub
     End If
-    ShowSnapShot Processes1, Ports1, Services1, ExplorerDlls1, IEDlls1, False, Drivers1, CReg.Snap1, FirstTabOnly
+    ShowSnapShot Processes1, Ports1, Services1, ExplorerDlls1, IEDlls1, Mutex1, False, Drivers1, CReg.Snap1, FirstTabOnly
 End Sub
 
 Sub ShowSnap2()
@@ -81,7 +85,7 @@ Sub ShowSnap2()
         MsgBox "You must first take second snapshot", vbInformation
         Exit Sub
     End If
-    ShowSnapShot Processes2, ports2, Services2, Explorerdlls2, IEDlls2, False, Drivers2, CReg.Snap2
+    ShowSnapShot Processes2, ports2, Services2, Explorerdlls2, IEDlls2, Mutex2, False, Drivers2, CReg.Snap2
 End Sub
 
 
@@ -99,36 +103,43 @@ Sub DoSnap1()
     frmMain.lvRegKeys.ListItems.Clear
     
     frmMain.Display = "Taking SnapShot 1"
-    frmMain.pb.max = 5
-    frmMain.pb.Value = 0
+    frmMain.pb.max = 6
+    frmMain.pb.value = 0
     
     Sleep 100
     DoEvents
     
     frmMain.Display = "Enumerating processes..."
     Set Processes1 = CProc.GetRunningProcesses()
-    frmMain.pb.Value = frmMain.pb.Value + 1
+    frmMain.pb.value = frmMain.pb.value + 1
     If shutDown Then Exit Sub
     
     Sleep 100
     DoEvents
     frmMain.Display = "Enumerating open ports..."
     Set Ports1 = CPorts.TakePortProcSnapshot()
-    frmMain.pb.Value = frmMain.pb.Value + 1
+    frmMain.pb.value = frmMain.pb.value + 1
     If shutDown Then Exit Sub
     
     Sleep 100
     DoEvents
     frmMain.Display = "Enumerating loaded drivers..."
     Set Drivers1 = CProc.EnumDrivers()
-    frmMain.pb.Value = frmMain.pb.Value + 1
+    frmMain.pb.value = frmMain.pb.value + 1
     If shutDown Then Exit Sub
      
+    Sleep 100
+    DoEvents
+    frmMain.Display = "Enumerating mutexes..."
+    Set Mutex1 = CProc.EnumMutexes()
+    frmMain.pb.value = frmMain.pb.value + 1
+    If shutDown Then Exit Sub
+    
     frmMain.Display = "Enumerating registry keys..."
     DoEvents
     CReg.Reset
     CReg.DoSnap1
-    frmMain.pb.Value = frmMain.pb.Value + 1
+    frmMain.pb.value = frmMain.pb.value + 1
     If shutDown Then Exit Sub
     
     Dim explorerPID As Long
@@ -144,7 +155,7 @@ Sub DoSnap1()
     Else
         Set ExplorerDlls1 = CProc.GetProcessModules(explorerPID)
     End If
-    frmMain.pb.Value = frmMain.pb.Value + 1
+    frmMain.pb.value = frmMain.pb.value + 1
     If shutDown Then Exit Sub
     
     frmMain.Display = "Scanning IE loaded dlls..."
@@ -155,7 +166,7 @@ Sub DoSnap1()
         Set IEDlls1 = CProc.GetProcessModules(IEPID)
     End If
     
-    frmMain.pb.Value = 0
+    frmMain.pb.value = 0
     frmMain.Display = Empty
     
 End Sub
@@ -168,37 +179,45 @@ Sub DoSnap2()
     
     On Error Resume Next
     
-    frmMain.pb.max = 6
-    frmMain.pb.Value = 0
+    frmMain.pb.max = 7
+    frmMain.pb.value = 0
     frmMain.Display = "Taking Snapshot 2"
     
     Sleep 100
     DoEvents
     frmMain.Display = "Enumerating processes..."
     Set Processes2 = CProc.GetRunningProcesses()
-    frmMain.pb.Value = frmMain.pb.Value + 1
+    frmMain.pb.value = frmMain.pb.value + 1
     If shutDown Then Exit Sub
     
     Sleep 100
     DoEvents
     frmMain.Display = "Enumerating open ports..."
     Set ports2 = CPorts.TakePortProcSnapshot()
-    frmMain.pb.Value = frmMain.pb.Value + 1
+    frmMain.pb.value = frmMain.pb.value + 1
     If shutDown Then Exit Sub
     
     Sleep 100
     DoEvents
     frmMain.Display = "Enumerating loaded drivers..."
     Set Drivers2 = CProc.EnumDrivers()
-    frmMain.pb.Value = frmMain.pb.Value + 1
+    frmMain.pb.value = frmMain.pb.value + 1
     If shutDown Then Exit Sub
      
+    Sleep 100
+    DoEvents
+    frmMain.Display = "Enumerating mutexes..."
+    Set Mutex2 = CProc.EnumMutexes()
+    frmMain.pb.value = frmMain.pb.value + 1
+    If shutDown Then Exit Sub
+ 
+ 
     frmMain.Display = "Enumerating registry keys..."
     DoEvents
     
     CReg.DoSnap2
     If shutDown Then Exit Sub
-    frmMain.pb.Value = frmMain.pb.Value + 1
+    frmMain.pb.value = frmMain.pb.value + 1
     
     Dim explorerPID As Long
     Dim IEPID As Long
@@ -216,7 +235,7 @@ Sub DoSnap2()
     End If
     
     If shutDown Then Exit Sub
-    frmMain.pb.Value = frmMain.pb.Value + 1
+    frmMain.pb.value = frmMain.pb.value + 1
     
     frmMain.Display = "Scanning IE loaded dlls..."
     DoEvents
@@ -227,7 +246,7 @@ Sub DoSnap2()
         Set IEDlls2 = CProc.GetProcessModules(IEPID)
     End If
    
-    frmMain.pb.Value = 0
+    frmMain.pb.value = 0
     
 End Sub
 
@@ -264,7 +283,9 @@ Sub ShowDiffReport()
     Set ChangedExplorerDlls = New Collection
     Set ChangedIEDlls = New Collection
     Set ChangedDrivers = New Collection
+    Set ChangedMutexes = New Collection
     
+    Dim m As CMutexElem
     Dim proc As CProcess
     Dim Port As CProcessPort
     Dim cmod As CModule
@@ -310,14 +331,38 @@ Sub ShowDiffReport()
         If shutDown Then Exit Sub
     Next
         
-     ShowSnapShot ChangedProcesses, ChangedPorts, ChangedServices, ChangedExplorerDlls, ChangedIEDlls, True, ChangedDrivers, CReg.GetDifferences
+    Dim c1 As Collection
+    Dim c2 As Collection
+    
+    'because we delete elements from them in the diff to track..
+    Set c1 = CloneMutexCollection(Mutex1)
+    Set c2 = CloneMutexCollection(Mutex2)
+    
+    For Each m In c2
+        If objKeyExistsInCollection(c1, m.getKey()) Then
+            c1.Remove m.getKey()
+            c2.Remove m.getKey()
+            Set m = Nothing
+        Else
+            m.isNew = True
+            ChangedMutexes.Add m, m.getKey()
+        End If
+    Next
+    
+    'these original mutexes no longer exist
+    For Each m In c1
+        ChangedMutexes.Add m, m.getKey()
+    Next
+    
+    
+    ShowSnapShot ChangedProcesses, ChangedPorts, ChangedServices, ChangedExplorerDlls, ChangedIEDlls, ChangedMutexes, True, ChangedDrivers, CReg.GetDifferences
 
 
 End Sub
 
 
 Private Sub ShowSnapShot(procs As Collection, ports As Collection, servcs As Collection, expdlls As Collection, _
-                        iedlls As Collection, Optional isCompare As Boolean = False, Optional drivers As Collection, _
+                        iedlls As Collection, mutexes As Collection, Optional isCompare As Boolean = False, Optional drivers As Collection, _
                         Optional regSnap As Collection, Optional FirstTabOnly = False)
    
     Dim proc As CProcess
@@ -326,6 +371,7 @@ Private Sub ShowSnapShot(procs As Collection, ports As Collection, servcs As Col
     Dim n As CModule
     Dim d
     Dim mm As matchModes
+    Dim cme As CMutexElem
     
     Dim li As ListItem
     Dim fp As FILEPROPERTIE
@@ -338,8 +384,8 @@ Private Sub ShowSnapShot(procs As Collection, ports As Collection, servcs As Col
     'If known.Loaded And known.Ready Then ado.OpenConnection
     
     frmMain.Display = "Showing ShapShot"
-    frmMain.pb.Value = 0
-    frmMain.pb.max = 6
+    frmMain.pb.value = 0
+    frmMain.pb.max = 7
     
     frmMain.lvProcesses.ListItems.Clear
     frmMain.lvPorts.ListItems.Clear
@@ -348,7 +394,9 @@ Private Sub ShowSnapShot(procs As Collection, ports As Collection, servcs As Col
     frmMain.lvIE.ListItems.Clear
     frmMain.lvDrivers.ListItems.Clear
     frmMain.lvRegKeys.ListItems.Clear
+    frmMain.lvMutex.ListItems.Clear
     
+    frmMain.Display = "Loading processes.."
     For Each proc In procs
         mm = not_found
         If known.Ready And known.Loaded And Not FirstTabOnly Then
@@ -367,8 +415,9 @@ next_proc:
         DoEvents
         If shutDown Then Exit Sub
     Next
-    frmMain.pb.Value = frmMain.pb.Value + 1
+    frmMain.pb.value = frmMain.pb.value + 1
     
+    frmMain.Display = "Loading open ports.."
     For Each Port In ports
         mm = not_found
         If known.Ready And known.Loaded And Not FirstTabOnly Then
@@ -387,17 +436,18 @@ next_port:
     Next
 
     If FirstTabOnly Then
-        frmMain.pb.Value = 0
+        frmMain.pb.value = 0
         Exit Sub
     End If
     
-    frmMain.pb.Value = frmMain.pb.Value + 1
+    frmMain.pb.value = frmMain.pb.value + 1
     'For Each servc In servcs
     '    Set li = frmMain.lvServices.ListItems.Add(, , servc.State)
     '    li.SubItems(1) = servc.DisplayName
     '    li.SubItems(2) = servc.ServiceName
     'Next
    
+    frmMain.Display = "Loading explorer dlls.."
     For Each n In expdlls
         mm = not_found
         If known.Ready And known.Loaded Then
@@ -415,8 +465,9 @@ next_expdll:
         If shutDown Then Exit Sub
     Next
    
-    frmMain.pb.Value = frmMain.pb.Value + 1
+    frmMain.pb.value = frmMain.pb.value + 1
        
+    frmMain.Display = "Loading ie dlls.."
     For Each n In iedlls
         mm = not_found
         If known.Ready And known.Loaded Then
@@ -434,8 +485,9 @@ next_iedll:
         If shutDown Then Exit Sub
     Next
     
-    frmMain.pb.Value = frmMain.pb.Value + 1
+    frmMain.pb.value = frmMain.pb.value + 1
         
+    frmMain.Display = "Loading drivers.."
     For Each d In drivers
         root = Environ("WINDIR") & "\"
         If Len(root) = 1 Then
@@ -484,8 +536,9 @@ next_driver:
         
     Next
     
-    frmMain.pb.Value = frmMain.pb.Value + 1
-        
+    frmMain.pb.value = frmMain.pb.value + 1
+    frmMain.Display = "Loading registry entries.."
+    
     For Each d In regSnap
         Dim s As String
         s = CReg.GetValForKey(d)
@@ -494,12 +547,25 @@ next_driver:
         If shutDown Then Exit Sub
     Next
     
-    frmMain.pb.Value = frmMain.pb.Value + 1
+    frmMain.pb.value = frmMain.pb.value + 1
+    frmMain.Display = "Loading mutexes.."
+    
+    For Each cme In mutexes
+        Set li = frmMain.lvMutex.ListItems.Add(, , cme.pid)
+        If isCompare Then
+            li.SubItems(1) = IIf(cme.isNew, "", "- ") & cme.name
+        Else
+            li.SubItems(1) = cme.name
+        End If
+        If shutDown Then Exit Sub
+    Next
+    
+    frmMain.pb.value = frmMain.pb.value + 1
         
     If iedlls.count = 0 Then frmMain.lvIE.ListItems.Add , , IIf(isCompare, "No changes Found", "IE PID Not found")
     If expdlls.count = 0 Then frmMain.lvExplorer.ListItems.Add , , IIf(isCompare, "No changes Found", "Explorer PID Not found?")
     
-    frmMain.pb.Value = 0
+    frmMain.pb.value = 0
     'If known.Loaded And known.Ready Then ado.CloseConnection
 End Sub
 

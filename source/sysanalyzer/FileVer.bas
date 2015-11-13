@@ -224,8 +224,8 @@ End Function
 Public Sub LV_ColumnSort(ListViewControl As ListView, Column As ColumnHeader)
      On Error Resume Next
     With ListViewControl
-       If .SortKey <> Column.Index - 1 Then
-             .SortKey = Column.Index - 1
+       If .SortKey <> Column.index - 1 Then
+             .SortKey = Column.index - 1
              .SortOrder = lvwAscending
        Else
              If .SortOrder = lvwAscending Then
@@ -345,7 +345,7 @@ Sub SaveFormSizeAnPosition(f As Form)
     Dim s As String
     If f.WindowState <> 0 Then Exit Sub 'vbnormal
     s = f.Left & "," & f.top & "," & f.Width & "," & f.Height
-    SaveMySetting f.Name & "_pos", s
+    SaveMySetting f.name & "_pos", s
 End Sub
 
 Function occuranceCount(haystack, match) As Long
@@ -361,7 +361,7 @@ Sub RestoreFormSizeAnPosition(f As Form)
     On Error GoTo hell
     Dim s
     
-    s = GetMySetting(f.Name & "_pos", "")
+    s = GetMySetting(f.name & "_pos", "")
     
     If Len(s) = 0 Then Exit Sub
     If occuranceCount(s, ",") <> 3 Then Exit Sub
@@ -649,7 +649,18 @@ Function objKeyExistsInCollection(c As Collection, val As String) As Boolean
 nope: objKeyExistsInCollection = False
 End Function
 
-
+Function CloneMutexCollection(master As Collection) As Collection
+    
+    Dim m As CMutexElem
+    Dim clone As New Collection
+    
+    For Each m In master
+        clone.Add m, m.getKey()
+    Next
+    
+    Set CloneMutexCollection = clone
+    
+End Function
 
 Function KeyExistsInCollection(c As Collection, val As String) As Boolean
     On Error GoTo nope
