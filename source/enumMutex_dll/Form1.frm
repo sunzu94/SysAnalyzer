@@ -1,46 +1,54 @@
 VERSION 5.00
 Begin VB.Form Form1 
    Caption         =   "Form1"
-   ClientHeight    =   7440
+   ClientHeight    =   7875
    ClientLeft      =   60
    ClientTop       =   345
    ClientWidth     =   12705
    LinkTopic       =   "Form1"
-   ScaleHeight     =   7440
+   ScaleHeight     =   7875
    ScaleWidth      =   12705
    StartUpPosition =   3  'Windows Default
+   Begin VB.CommandButton cmdEnumTasks 
+      Caption         =   "EnumTasks"
+      Height          =   420
+      Left            =   2655
+      TabIndex        =   7
+      Top             =   7065
+      Width           =   1365
+   End
    Begin VB.CommandButton Command3 
       Caption         =   "Diff Snaps"
       Height          =   420
-      Left            =   6570
+      Left            =   8325
       TabIndex        =   4
-      Top             =   6345
+      Top             =   6300
       Width           =   1590
    End
    Begin VB.CommandButton Command2 
       Caption         =   "Load Snap 2"
       Height          =   420
       Index           =   2
-      Left            =   4860
+      Left            =   6615
       TabIndex        =   3
-      Top             =   6345
+      Top             =   6300
       Width           =   1365
    End
    Begin VB.CommandButton Command2 
       Caption         =   "Load Snap 1"
       Height          =   420
       Index           =   1
-      Left            =   3150
+      Left            =   4905
       TabIndex        =   2
-      Top             =   6345
+      Top             =   6300
       Width           =   1365
    End
    Begin VB.CommandButton Command1 
       Caption         =   "test api"
       Height          =   465
-      Left            =   855
+      Left            =   2610
       TabIndex        =   1
-      Top             =   6345
+      Top             =   6300
       Width           =   1410
    End
    Begin VB.TextBox Text1 
@@ -52,6 +60,28 @@ Begin VB.Form Form1
       Top             =   135
       Width           =   11985
    End
+   Begin VB.Label Label2 
+      Caption         =   "Tasks"
+      Height          =   330
+      Left            =   495
+      TabIndex        =   6
+      Top             =   7200
+      Width           =   735
+   End
+   Begin VB.Line Line1 
+      X1              =   180
+      X2              =   12285
+      Y1              =   6885
+      Y2              =   6885
+   End
+   Begin VB.Label Label1 
+      Caption         =   "Mutex"
+      Height          =   330
+      Left            =   495
+      TabIndex        =   5
+      Top             =   6390
+      Width           =   510
+   End
 End
 Attribute VB_Name = "Form1"
 Attribute VB_GlobalNameSpace = False
@@ -59,9 +89,29 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Private Declare Function EnumMutex Lib "EnumMutex.dll" (ByVal dirPath As String) As Long
+Private Declare Function EnumTasks Lib "EnumMutex.dll" (ByVal dirPath As String) As Long
+Private Declare Function GetVersion Lib "kernel32" () As Long
 
 Dim c1 As Collection
 Dim c2 As Collection
+
+Private Sub cmdEnumTasks_Click()
+
+    Dim tasks As Collection
+    Dim t As CTaskElem
+    Dim tmp() As String
+    
+    Set tasks = StdEnumTasks()
+    Me.Caption = tasks.Count & " tasks found - " & Now
+    
+    For Each t In tasks
+        push tmp, t.getDump()
+    Next
+    
+    Text1 = Join(tmp, vbCrLf)
+    
+    
+End Sub
 
 Private Sub Command1_Click()
 
@@ -71,7 +121,7 @@ Private Sub Command1_Click()
     If FileExists(pth) Then Kill pth
     
     cnt = EnumMutex(pth)
-    Me.Caption = cnt & " mutexes found - " & Now
+    
     Text1 = ReadFile(pth)
     
 End Sub
@@ -167,9 +217,6 @@ Private Sub Command3_Click()
             
 End Sub
 
-
-
-
 Sub push(ary, value) 'this modifies parent ary object
     On Error GoTo init
     x = UBound(ary) '<-throws Error If Not initalized
@@ -210,4 +257,93 @@ End Function
 
 
 
+Function StdEnumTasks() As Collection
+    
+    Dim c As New Collection
+    
+    If (GetVersion() And &HFF&) >= 6 Then 'isVista+ use Scheduled Tasks API v2
+    
+        Set objTaskService = CreateObject("Schedule.Service")
+        Call objTaskService.Connect
+        Set objTaskFolder = objTaskService.GetFolder("\")
+        VistaEnumTasks objTaskFolder, c
+
+    Else
+    
+        Const pth = "c:\test.txt"
+        If FileExists(pth) Then Kill pth
+        cnt = EnumTasks(pth)
+        XPEnumTasks ReadFile(pth), c
+    
+    End If
+    
+    Set StdEnumTasks = c
+    
+End Function
+
+Function XPEnumTasks(data As String, ByRef c As Collection)
+    
+    Dim t As CTaskElem
+    Dim tmp() As String
+    Dim x
+    
+    'data = Replace(data, vbLf, vbCrLf)
+    tmp = Split(data, Chr(5))
+    
+    For Each x In tmp
+        If Len(x) > 0 Then
+            y = Split(x, vbCrLf)
+            If UBound(y) >= 2 Then
+                Set t = New CTaskElem
+                t.name = y(0)
+                t.path = y(0)
+                t.exe = Replace(y(1), vbTab & "-Exe: ", Empty)
+                t.args = Replace(y(2), vbTab & "-Params: ", Empty)
+                c.Add t
+            End If
+        End If
+    Next
+    
+End Function
+
+Function VistaEnumTasks(objTaskFolder, ByRef c As Collection)
+
+    Dim t As CTaskElem
+    Set colTasks = objTaskFolder.GetTasks(0) 'shows all including Hidden
+    
+    If colTasks.Count > 0 Then
+    
+        For Each objTask In colTasks
+                        
+            Set t = New CTaskElem
+            t.name = objTask.name
+            t.path = objTask.path
+
+            For Each objTaskAction In objTask.Definition.Actions
+
+                Select Case objTaskAction.Type
+                    Case 0:
+                            t.args = objTaskAction.Arguments
+                            t.exe = objTaskAction.path
+                    Case 5:
+                            t.args = objTaskAction.data
+                            t.exe = objTaskAction.ClassId
+                    Case Default:
+                            t.exe = "UnkType: " & objTaskAction.Type
+                End Select
+ 
+            Next
+            
+            c.Add t
+ 
+        Next
+        
+    End If
+    
+    Set subfolders = objTaskFolder.GetFolders(0)
+    For Each sf In subfolders
+        VistaEnumTasks sf, c
+    Next
+
+End Function
 

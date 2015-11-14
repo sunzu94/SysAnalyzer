@@ -757,7 +757,11 @@ Private Sub mnuExt_Click(index As Integer)
     End If
     
     On Error Resume Next
-    Shell f, vbNormalFocus
+    If IsVistaPlus() Then
+        RunElevated f, essSW_SHOWNORMAL
+    Else
+        Shell f, vbNormalFocus
+    End If
     
 End Sub
 
@@ -946,6 +950,7 @@ Private Sub Form_Load()
                 End If
             'End If
         End If
+        mnuExt(4).Caption = "Command Prompt (32bit Elevated)"
     End If
     
     mnuPopup.Visible = False

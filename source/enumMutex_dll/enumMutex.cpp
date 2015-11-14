@@ -1,20 +1,115 @@
 #include <windows.h>
 #include <stdio.h>
 #include "main.h"
-								  
-/*cheesy unicode to ascii conversion 
-void Convert(char* buf, char* wBuf, int wLen, int bLen=255){
-	
-	for(int i=0,j=0; i<wLen;i++){
-		if(i>bLen) return;
-		if(wBuf[i] != 0) buf[j++] =  wBuf[i];
-	}
-	
-}*/
-		
+
+//for Scheduled Tasks 1.0 API (win 95, NT4, 2k, XP)
+//https://msdn.microsoft.com/en-us/library/windows/desktop/aa446831(v=vs.85).aspx
+#include <initguid.h>
+#include <ole2.h>
+#include <mstask.h>
+#include <msterr.h>
+#include <wchar.h>
+
+#define TASKS_TO_RETRIEVE          5
+
+
 BOOL APIENTRY DllMain( HANDLE hModule, DWORD  ul_reason_for_call,  LPVOID lpReserved){ 
 	//if(ul_reason_for_call==1){
 	return TRUE;
+}
+
+
+void GetTaskDetails(FILE* f, ITaskScheduler *pITS, LPCWSTR lpcwszTaskName)
+{
+  
+  HRESULT hr = S_OK;
+  ITask *pITask = 0;
+
+  hr = pITS->Activate(lpcwszTaskName, IID_ITask, (IUnknown**) &pITask);
+  
+  if (FAILED(hr))
+  {
+     fwprintf(f, L"Failed calling ITaskScheduler::Activate; error = 0x%x\n",hr);
+     return;
+  }
+
+  LPWSTR lpwszApplicationName;
+  hr = pITask->GetApplicationName(&lpwszApplicationName);
+
+  if (FAILED(hr))
+  {
+     fwprintf(f, L"Failed calling ITask::GetApplicationName error = 0x%x\n", hr);
+     lpwszApplicationName = 0;
+  }
+
+  LPWSTR lpwszParameters;
+  hr = pITask->GetParameters(&lpwszParameters);
+
+  if (FAILED(hr))
+  {
+     fwprintf(f, L"Failed calling ITask::GetApplicationName error = 0x%x\n", hr);
+	 lpwszParameters = 0;
+  }
+
+  pITask->Release();
+
+  if(lpwszApplicationName){
+	  fwprintf(f, L"\t-Exe: %s\n", lpwszApplicationName);
+	  CoTaskMemFree(lpwszApplicationName);
+  }
+
+  if(lpwszParameters){
+	  fwprintf(f, L"\t-Params: %s\n", lpwszParameters);
+	  CoTaskMemFree(lpwszParameters);
+  }
+
+}
+
+int __stdcall EnumTasks(char* outPath){
+  
+  int cnt=0;
+  HRESULT hr = S_OK;
+  ITaskScheduler *pITS;
+ 
+  //dont call this from a vb utilized dll no need..
+  //hr = CoInitialize(NULL); 
+  //if (FAILED(hr)) return hr;
+
+  hr = CoCreateInstance(CLSID_CTaskScheduler,
+						  NULL,
+						  CLSCTX_INPROC_SERVER,
+						  IID_ITaskScheduler,
+						  (void **) &pITS);
+
+  if (FAILED(hr)) return 0;
+  
+  IEnumWorkItems *pIEnum;
+  hr = pITS->Enum(&pIEnum);
+  if (FAILED(hr)) return 0;
+  
+  FILE *f = fopen(outPath,"w");
+  if(f == NULL) return 0;
+
+  LPWSTR *lpwszNames;
+  DWORD dwFetchedTasks = 0;
+  while (SUCCEEDED(pIEnum->Next(TASKS_TO_RETRIEVE, &lpwszNames, &dwFetchedTasks)) && (dwFetchedTasks != 0))
+  {
+
+	while (dwFetchedTasks)
+    {
+       fwprintf(f, L"%s\n", lpwszNames[--dwFetchedTasks]);
+	   GetTaskDetails(f, pITS, lpwszNames[dwFetchedTasks]);
+       CoTaskMemFree(lpwszNames[dwFetchedTasks]);
+	   fputc(5,f); //parsing marker..
+	   cnt++;
+    }
+    CoTaskMemFree(lpwszNames);
+  }
+  
+  fclose(f);
+  pITS->Release();
+  pIEnum->Release();
+  return cnt;
 }
 
 
