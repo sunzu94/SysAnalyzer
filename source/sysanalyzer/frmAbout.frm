@@ -49,7 +49,15 @@ Private Sub Form_Load()
     On Error Resume Next
     Me.Icon = frmMain.Icon
     
-    Text1 = vbCrLf & "SysAnalyzer - Version:" & App.major & "." & App.minor & "." & App.Revision & vbCrLf & _
+    Dim compiled As String
+    Dim exe As String
+    
+    compiled = "Exe not found?"
+    exe = App.path & IIf(isIde(), "\..\..\", Empty) & "\sysanalyzer.exe"
+    If fso.FileExists(exe) Then compiled = Trim(GetCompileDateOrType(exe, , , , True))
+
+    
+    Text1 = vbCrLf & "SysAnalyzer - v" & App.major & "." & App.minor & "." & App.Revision & " (" & compiled & ")" & vbCrLf & _
             "" & vbCrLf & _
             "Author:     David Zimmer <dzzie@yahoo.com>" & vbCrLf & _
             "Copyright:  2005 iDefense a Verisign Company - http://idefense.com" & vbCrLf & _

@@ -134,7 +134,7 @@ Private Function CompiledDate(stamp As Double) As String
 
 End Function
 
-Function GetCompileDateOrType(fpath As String, Optional ByRef out_isType As Boolean, Optional ByRef out_isPE As Boolean, Optional typeOnly As Boolean = False) As String
+Function GetCompileDateOrType(fpath As String, Optional ByRef out_isType As Boolean, Optional ByRef out_isPE As Boolean, Optional typeOnly As Boolean = False, Optional compiledTimeOnly As Boolean = False) As String
     On Error GoTo hell
         
         Dim i As Long
@@ -180,8 +180,9 @@ Function GetCompileDateOrType(fpath As String, Optional ByRef out_isType As Bool
         
         Close f
         
-        If Not typeOnly Then
+        If Not typeOnly Or compiledTimeOnly Then
             GetCompileDateOrType = CompiledDate(CDbl(NTHEADER.FileHeader.TimeDateStamp))
+            If compiledTimeOnly Then Exit Function
         End If
         
         out_isPE = True
