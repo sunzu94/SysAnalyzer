@@ -49,7 +49,7 @@ Private Sub Form_Load()
     On Error Resume Next
     Me.Icon = frmMain.Icon
     
-    Text1 = vbCrLf & "SysAnalyzer - Version:" & App.Major & "." & App.Minor & "." & App.Revision & vbCrLf & _
+    Text1 = vbCrLf & "SysAnalyzer - Version:" & App.major & "." & App.minor & "." & App.Revision & vbCrLf & _
             "" & vbCrLf & _
             "Author:     David Zimmer <dzzie@yahoo.com>" & vbCrLf & _
             "Copyright:  2005 iDefense a Verisign Company - http://idefense.com" & vbCrLf & _
@@ -66,8 +66,8 @@ Private Sub Form_Load()
             "so I have picked the project back up again and continue to do maintenance" & vbCrLf & _
             "and updates on it in my spare time." & vbCrLf & _
             " " & vbCrLf & _
-            "As time permits I am slowly working to bring in updated support" & vbCrLf & _
-            "for Win7 and x64 systems. It has been primarily developed on WinXP machines" & vbCrLf
+            "SysAnalyzer should run without problem on Win2k - Win8 and includes" & vbCrLf & _
+            "support for 64 bit systems. Win10 support is still in testing."
             
             
 End Sub

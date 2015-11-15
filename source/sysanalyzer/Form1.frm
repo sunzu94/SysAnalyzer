@@ -6,22 +6,22 @@ Begin VB.Form frmMain
    ClientHeight    =   5400
    ClientLeft      =   60
    ClientTop       =   630
-   ClientWidth     =   10905
+   ClientWidth     =   11565
    Icon            =   "Form1.frx":0000
    LinkMode        =   1  'Source
    LinkTopic       =   "frmMain"
    ScaleHeight     =   5400
-   ScaleWidth      =   10905
+   ScaleWidth      =   11565
    StartUpPosition =   2  'CenterScreen
    Visible         =   0   'False
    Begin VB.PictureBox fraTools 
       BorderStyle     =   0  'None
       Height          =   255
-      Left            =   9540
+      Left            =   10170
       ScaleHeight     =   255
       ScaleWidth      =   1275
       TabIndex        =   12
-      Top             =   5100
+      Top             =   5085
       Width           =   1275
       Begin VB.Label lblTools 
          Caption         =   "Tools"
@@ -65,13 +65,13 @@ Begin VB.Form frmMain
       Left            =   0
       TabIndex        =   0
       Top             =   0
-      Width           =   10860
-      _ExtentX        =   19156
+      Width           =   11490
+      _ExtentX        =   20267
       _ExtentY        =   9446
       _Version        =   393216
       TabOrientation  =   1
       Style           =   1
-      Tabs            =   8
+      Tabs            =   9
       TabsPerRow      =   10
       TabHeight       =   520
       ShowFocusRect   =   0   'False
@@ -124,8 +124,12 @@ Begin VB.Form frmMain
       TabPicture(7)   =   "Form1.frx":5CD6
       Tab(7).ControlEnabled=   0   'False
       Tab(7).Control(0)=   "lvMutex"
-      Tab(7).Control(0).Enabled=   0   'False
       Tab(7).ControlCount=   1
+      TabCaption(8)   =   "Tasks"
+      TabPicture(8)   =   "Form1.frx":5CF2
+      Tab(8).ControlEnabled=   0   'False
+      Tab(8).Control(0)=   "lvTasks"
+      Tab(8).ControlCount=   1
       Begin VB.Frame fraAPILog 
          BorderStyle     =   0  'None
          Caption         =   "Frame1"
@@ -709,6 +713,36 @@ Begin VB.Form frmMain
             Object.Width           =   12347
          EndProperty
       End
+      Begin MSComctlLib.ListView lvTasks 
+         Height          =   4755
+         Left            =   -74910
+         TabIndex        =   45
+         Top             =   90
+         Width           =   10155
+         _ExtentX        =   17912
+         _ExtentY        =   8387
+         View            =   3
+         LabelEdit       =   1
+         LabelWrap       =   -1  'True
+         HideSelection   =   -1  'True
+         FullRowSelect   =   -1  'True
+         GridLines       =   -1  'True
+         _Version        =   393217
+         ForeColor       =   -2147483640
+         BackColor       =   -2147483643
+         BorderStyle     =   1
+         Appearance      =   1
+         NumItems        =   2
+         BeginProperty ColumnHeader(1) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+            Text            =   "Name"
+            Object.Width           =   8819
+         EndProperty
+         BeginProperty ColumnHeader(2) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+            SubItemIndex    =   1
+            Text            =   "Executable"
+            Object.Width           =   2540
+         EndProperty
+      End
       Begin VB.Label Label1 
          Caption         =   "Explorer Dlls :"
          Height          =   255
@@ -930,6 +964,7 @@ Dim liProc As ListItem
 Dim liDirWatch As ListItem
 Dim liDriver As ListItem
 Dim liRegMon As ListItem
+Dim liTask As ListItem
 
 Dim tickCount As Long
 Dim seconds As Long
@@ -1082,7 +1117,7 @@ Private Sub Form_Resize()
             Set lv = o
             lv.Width = SSTab1.Width - 200
             lv.ColumnHeaders(lv.ColumnHeaders.count).Width = lv.Width - lv.ColumnHeaders(lv.ColumnHeaders.count).Left - 200
-            If lv.name = "lvPorts" Or lv.name = "lvDrivers" Or lv.name = "lvRegKeys" Or lv.name = "lvMutex" Then
+            If lv.name = "lvPorts" Or lv.name = "lvDrivers" Or lv.name = "lvRegKeys" Or lv.name = "lvMutex" Or lv.name = "lvTasks" Then
                 With lv
                     .Height = SSTab1.Height - .top - 500
                 End With
@@ -1090,7 +1125,7 @@ Private Sub Form_Resize()
         End If
     Next
     
-    fraTools.top = SSTab1.Height - 200
+    fraTools.top = SSTab1.Height - 250
     fraTools.Left = SSTab1.Width - 200 - fraTools.Width
     
     With lvProcesses
@@ -1152,6 +1187,21 @@ Private Sub lvRegKeys_MouseUp(Button As Integer, Shift As Integer, x As Single, 
     If Button = 2 Then PopupMenu mnuRegMonitor
 End Sub
 
+
+Private Sub lvTasks_DblClick()
+    If Not liTask Is Nothing Then
+        Dim t As CTaskElem
+        Set t = liTask.Tag
+        If Not t Is Nothing Then
+            frmReport.ShowList t.getDump
+        End If
+    End If
+End Sub
+
+Private Sub lvTasks_ItemClick(ByVal Item As MSComctlLib.ListItem)
+    Set liTask = Item
+End Sub
+
 Private Sub mnuAbout_Click()
     frmAbout.Show 1, Me
 End Sub
@@ -1195,7 +1245,7 @@ Private Sub mnuCopySelected_Click()
     Dim i As Integer, tmp As String, match As Long, j As Long
     Dim li As ListItem, Search As String, ret() As String
     
-    For j = 0 To 6
+    For j = 0 To 8
         Set active_lv = GetActiveLV(j)
         For Each li In active_lv.ListItems
             If li.Selected Then
@@ -1337,7 +1387,7 @@ Private Sub mnuSearch_Click()
     Search = InputBox("Enter text to search for")
     If Len(Search) = 0 Then Exit Sub
     
-    For j = 0 To 7
+    For j = 0 To 8
         Set active_lv = GetActiveLV(j)
         For Each li In active_lv.ListItems
             tmp = li.Text & vbTab
@@ -1375,6 +1425,7 @@ Function GetActiveLV(Optional index As Long = -1) As ListView
         Case 5: Set active_lv = lvAPILog
         Case 6: Set active_lv = lvDirWatch
         Case 7: Set active_lv = lvMutex
+        Case 8: Set active_lv = lvTasks
     End Select
     
     Set GetActiveLV = active_lv
@@ -1570,6 +1621,9 @@ Function GetSystemDataReport(Optional appendClipboard As Boolean = False) As Str
     
     push ret, vbCrLf & "Mutexes:"
     push ret, GetAllElements(lvMutex)
+    
+    push ret, vbCrLf & "Tasks:"
+    push ret, GetAllElements(lvTasks)
     
     push ret, vbCrLf & "Explorer Dlls:"
     push ret, GetAllElements(lvExplorer)

@@ -141,9 +141,32 @@ Public Function IsVistaPlus() As Boolean
     IsVistaPlus = True
 End Function
 
+'Declare Function RtlGetVersion Lib "NTDLL" (ByRef lpVersionInformation As Long) As Long
+'
+'Public Function NativeGetVersion() As String
+'Dim tOSVw(&H54) As Long
+'    tOSVw(0) = &H54 * &H4
+'    Call RtlGetVersion(tOSVw(0))
+'    NativeGetVersion = Join(Array(tOSVw(1), tOSVw(2), tOSVw(3)), ".")
+'    MsgBox VersionToName(Join(Array(tOSVw(1), tOSVw(2)), "."))
+'End Function
+'
+'Public Function VersionToName(ByRef sVersion As String) As String
+'    Select Case sVersion
+'        Case "5.1": VersionToName = "Windows XP"
+'        Case "5.3": VersionToName = "Windows 2003 (SERVER)"
+'        Case "6.0": VersionToName = "Windows Vista"
+'        Case "6.1": VersionToName = "Windows 7"
+'        Case "6.2": VersionToName = "Windows 8"
+'        Case "6.3": VersionToName = "Windows 8.1"
+'        Case "10.0": VersionToName = "Windows 10"
+'        Case Else: VersionToName = "Unknown"
+'    End Select
+'End Function
+
 Public Function IsUserAnAdministrator() As Boolean
     'http://www.davidmoore.info/2011/06/20/how-to-check-if-the-current-user-is-an-administrator-even-if-uac-is-on/
-    Dim result As Long
+    Dim Result As Long
     Dim hProcessID As Long
     Dim hToken As Long
     Dim lReturnLength As Long
@@ -173,8 +196,8 @@ Public Function IsUserAnAdministrator() As Boolean
     If hProcessID = 0 Then Exit Function
     
     If OpenProcessToken(hProcessID, TOKEN_READ, hToken) = 1 Then
-        result = GetTokenInformation(hToken, TOKEN_ELEVATION_TYPE, tokenElevationType, 4, lReturnLength)
-        If result <> 0 Then
+        Result = GetTokenInformation(hToken, TOKEN_ELEVATION_TYPE, tokenElevationType, 4, lReturnLength)
+        If Result <> 0 Then
              If tokenElevationType <> 1 Then IsUserAnAdministrator = True
         End If
         CloseHandle hToken

@@ -662,6 +662,19 @@ Function CloneMutexCollection(master As Collection) As Collection
     
 End Function
 
+'Function CloneTaskCollection(master As Collection) As Collection
+'
+'    Dim m As CTaskElem
+'    Dim clone As New Collection
+'
+'    For Each m In master
+'        clone.Add m, m.hashCode
+'    Next
+'
+'    Set CloneMutexCollection = clone
+'
+'End Function
+
 Function KeyExistsInCollection(c As Collection, val As String) As Boolean
     On Error GoTo nope
     Dim t

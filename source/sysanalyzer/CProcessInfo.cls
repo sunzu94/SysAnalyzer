@@ -225,7 +225,7 @@ Private Declare Function GetProcessImageFileNameA Lib "PSAPI.DLL" _
          ByVal lpImageName As String, _
          ByVal nSize As Long) As Long
 
-Private Declare Function NtQueryInformationProcess Lib "ntdll" ( _
+Private Declare Function NtQueryInformationProcess Lib "NTDLL" ( _
     ByVal ProcessHandle As Long, ByVal InformationClass As Long, _
     ByRef ProcessInformation As Any, ByVal ProcessInformationLength As Long, _
     ByRef ReturnLength As Any) As Long
@@ -282,6 +282,8 @@ Private Declare Sub WTSFreeMemory Lib "wtsapi32.dll" _
    (ByVal pMemory As Long)
 
 Private Declare Function EnumMutex Lib "EnumMutex.dll" (ByVal dirPath As String) As Long
+Private Declare Function EnumTasksDll Lib "EnumMutex.dll" Alias "EnumTasks" (ByVal dirPath As String) As Long
+Private Declare Function GetVersion Lib "kernel32" () As Long
 
 'Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" _
 '   (Destination As Any, Source As Any, ByVal length As Long)
@@ -1244,19 +1246,17 @@ hell:
     
 End Function
 
-Public Function EnumMutexes() As Collection
-    
-    Dim c As New Collection
-    Dim m As CMutexElem
-    Dim dups As Long, cnt As Long
-    Dim pth As String
-    Dim tmp() As String
-    Dim x
-    Dim dllPath As String
-    
+Private Function FindEnumMutexDll() As Boolean
     'this is a dll to run in process so we dont have to elevate an external exe
-    Const dllName As String = "\enumMutex.dll"
     On Error Resume Next
+    
+    Dim dllPath As String
+    Const dllName As String = "\enumMutex.dll"
+
+    If GetModuleHandle("enumMutex.dll") <> 0 Then
+        FindEnumMutexDll = True
+        Exit Function
+    End If
     
     dllPath = App.path
     If Not fso.FileExists(dllPath & dllName) Then dllPath = fso.GetParentFolder(dllPath)
@@ -1265,8 +1265,27 @@ Public Function EnumMutexes() As Collection
     If Not fso.FileExists(dllPath & dllName) Then dllPath = fso.GetParentFolder(dllPath)
     
     dllPath = dllPath & dllName
-    If Not fso.FileExists(dllPath) Then GoTo retNow
-    If LoadLibrary(dllPath) = 0 Then GoTo retNow
+    If Not fso.FileExists(dllPath) Then Exit Function
+    If LoadLibrary(dllPath) = 0 Then Exit Function
+    
+    FindEnumMutexDll = True
+    
+End Function
+
+Public Function EnumMutexes() As Collection
+    
+    Dim c As New Collection
+    Dim m As CMutexElem
+    Dim dups As Long, cnt As Long
+    Dim pth As String
+    Dim tmp() As String
+    Dim x
+     
+    On Error Resume Next
+    If Not FindEnumMutexDll() Then
+        c.Add "Could not find enumMutex.dll"
+        GoTo retNow
+    End If
     
     pth = Environ("temp") & "\enumMutex.txt"
     pth = Replace(pth, "\\", "\")
@@ -1294,6 +1313,94 @@ retNow:
     Set EnumMutexes = c
     
 End Function
+
+Function EnumTasks() As Collection
+    
+    Dim c As New Collection
+    Dim pth As String, cnt As Long
+    Dim objTaskService, objTaskFolder
+
+    'Vista+ use Scheduled Tasks API v2
+    Set objTaskService = CreateObject("Schedule.Service")
+    If Not objTaskService Is Nothing Then
+        Call objTaskService.Connect
+        Set objTaskFolder = objTaskService.GetFolder("\")
+        VistaEnumTasks objTaskFolder, c
+    Else
+        'xp and lower use use Scheduled Tasks API v1
+        If FindEnumMutexDll() Then
+            pth = fso.GetFreeFileName(Environ("temp"))
+            cnt = EnumTasksDll(pth)
+            XPEnumTasks fso.ReadFile(pth), c
+            Kill pth
+        End If
+    End If
+    
+    Set EnumTasks = c
+    
+End Function
+
+Private Function XPEnumTasks(data As String, ByRef c As Collection)
+    
+    Dim t As CTaskElem
+    Dim tmp() As String
+    Dim x, y
+    
+    'data = Replace(data, vbLf, vbCrLf)
+    tmp = Split(data, Chr(5))
+    
+    For Each x In tmp
+        If Len(x) > 0 Then
+            y = Split(x, vbCrLf)
+            If UBound(y) >= 2 Then
+                Set t = New CTaskElem
+                t.name = y(0)
+                t.path = y(0)
+                t.exe = Replace(y(1), vbTab & "-Exe: ", Empty)
+                t.args = Replace(y(2), vbTab & "-Params: ", Empty)
+                t.genHashCode
+                If Not objKeyExistsInCollection(c, t.hashCode) Then c.Add t, t.hashCode
+            End If
+        End If
+    Next
+    
+End Function
+
+Private Function VistaEnumTasks(objTaskFolder, ByRef c As Collection)
+
+    Dim t As CTaskElem
+    Dim colTasks, subFolders, sf, objTask, objTaskAction
+    
+    Set colTasks = objTaskFolder.GetTasks(0) 'all including hidden
+    
+    If colTasks.count > 0 Then
+        For Each objTask In colTasks
+            Set t = New CTaskElem
+            t.name = objTask.name
+            t.path = objTask.path
+            For Each objTaskAction In objTask.Definition.Actions
+                Select Case objTaskAction.Type
+                    Case 0: t.args = objTaskAction.Arguments
+                            t.exe = objTaskAction.path
+                    Case 5: t.args = objTaskAction.data
+                            t.exe = objTaskAction.ClassId
+                    Case Default:
+                            t.exe = "UnkType: " & objTaskAction.Type
+                End Select
+            Next
+            t.genHashCode
+            If Not objKeyExistsInCollection(c, t.hashCode) Then c.Add t, t.hashCode
+        Next
+    End If
+    
+    Set subFolders = objTaskFolder.GetFolders(0)
+    For Each sf In subFolders
+        VistaEnumTasks sf, c
+    Next
+
+End Function
+
+
 
 Private Function parsePid(injLog As String) As Long
     On Error Resume Next

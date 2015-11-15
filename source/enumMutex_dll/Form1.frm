@@ -94,6 +94,7 @@ Private Declare Function GetVersion Lib "kernel32" () As Long
 
 Dim c1 As Collection
 Dim c2 As Collection
+Dim hash As New CWinHash
 
 Private Sub cmdEnumTasks_Click()
 
@@ -261,20 +262,18 @@ Function StdEnumTasks() As Collection
     
     Dim c As New Collection
     
-    If (GetVersion() And &HFF&) >= 6 Then 'isVista+ use Scheduled Tasks API v2
-    
+    If (GetVersion() And &HFF&) >= 6 Then
+        'Vista+ use Scheduled Tasks API v2
         Set objTaskService = CreateObject("Schedule.Service")
         Call objTaskService.Connect
         Set objTaskFolder = objTaskService.GetFolder("\")
         VistaEnumTasks objTaskFolder, c
-
     Else
-    
+        'xp and lower use use Scheduled Tasks API v1
         Const pth = "c:\test.txt"
         If FileExists(pth) Then Kill pth
         cnt = EnumTasks(pth)
         XPEnumTasks ReadFile(pth), c
-    
     End If
     
     Set StdEnumTasks = c
@@ -299,6 +298,7 @@ Function XPEnumTasks(data As String, ByRef c As Collection)
                 t.path = y(0)
                 t.exe = Replace(y(1), vbTab & "-Exe: ", Empty)
                 t.args = Replace(y(2), vbTab & "-Params: ", Empty)
+                t.genHashCode hash
                 c.Add t
             End If
         End If
@@ -309,35 +309,26 @@ End Function
 Function VistaEnumTasks(objTaskFolder, ByRef c As Collection)
 
     Dim t As CTaskElem
-    Set colTasks = objTaskFolder.GetTasks(0) 'shows all including Hidden
+    Set colTasks = objTaskFolder.GetTasks(0) 'all including hidden
     
     If colTasks.Count > 0 Then
-    
         For Each objTask In colTasks
-                        
             Set t = New CTaskElem
             t.name = objTask.name
             t.path = objTask.path
-
             For Each objTaskAction In objTask.Definition.Actions
-
                 Select Case objTaskAction.Type
-                    Case 0:
-                            t.args = objTaskAction.Arguments
+                    Case 0: t.args = objTaskAction.Arguments
                             t.exe = objTaskAction.path
-                    Case 5:
-                            t.args = objTaskAction.data
+                    Case 5: t.args = objTaskAction.data
                             t.exe = objTaskAction.ClassId
                     Case Default:
                             t.exe = "UnkType: " & objTaskAction.Type
                 End Select
- 
             Next
-            
+            t.genHashCode hash
             c.Add t
- 
         Next
-        
     End If
     
     Set subfolders = objTaskFolder.GetFolders(0)

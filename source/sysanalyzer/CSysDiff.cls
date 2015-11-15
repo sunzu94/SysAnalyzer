@@ -64,6 +64,10 @@ Dim Mutex1 As Collection
 Dim Mutex2 As Collection
 Dim ChangedMutexes As Collection
 
+Dim Tasks1 As Collection
+Dim Tasks2 As Collection
+Dim ChangedTasks As Collection
+
 Dim liProc As ListItem
 Dim liExplorer As ListItem
 Dim liIE As ListItem
@@ -77,7 +81,7 @@ Sub ShowBaseSnap(Optional FirstTabOnly = False)
         MsgBox "You must first take the base snapshot", vbInformation
         Exit Sub
     End If
-    ShowSnapShot Processes1, Ports1, Services1, ExplorerDlls1, IEDlls1, Mutex1, False, Drivers1, CReg.Snap1, FirstTabOnly
+    ShowSnapShot Processes1, Ports1, Services1, ExplorerDlls1, IEDlls1, Mutex1, Tasks1, False, Drivers1, CReg.Snap1, FirstTabOnly
 End Sub
 
 Sub ShowSnap2()
@@ -85,7 +89,7 @@ Sub ShowSnap2()
         MsgBox "You must first take second snapshot", vbInformation
         Exit Sub
     End If
-    ShowSnapShot Processes2, ports2, Services2, Explorerdlls2, IEDlls2, Mutex2, False, Drivers2, CReg.Snap2
+    ShowSnapShot Processes2, ports2, Services2, Explorerdlls2, IEDlls2, Mutex2, Tasks2, False, Drivers2, CReg.Snap2
 End Sub
 
 
@@ -101,9 +105,11 @@ Sub DoSnap1()
     frmMain.lvIE.ListItems.Clear
     frmMain.lvDrivers.ListItems.Clear
     frmMain.lvRegKeys.ListItems.Clear
+    frmMain.lvTasks.ListItems.Clear
+    frmMain.lvMutex.ListItems.Clear
     
     frmMain.Display = "Taking SnapShot 1"
-    frmMain.pb.max = 6
+    frmMain.pb.max = 7
     frmMain.pb.value = 0
     
     Sleep 100
@@ -132,6 +138,13 @@ Sub DoSnap1()
     DoEvents
     frmMain.Display = "Enumerating mutexes..."
     Set Mutex1 = CProc.EnumMutexes()
+    frmMain.pb.value = frmMain.pb.value + 1
+    If shutDown Then Exit Sub
+    
+    Sleep 100
+    DoEvents
+    frmMain.Display = "Enumerating tasks..."
+    Set Tasks1 = CProc.EnumTasks()
     frmMain.pb.value = frmMain.pb.value + 1
     If shutDown Then Exit Sub
     
@@ -179,7 +192,7 @@ Sub DoSnap2()
     
     On Error Resume Next
     
-    frmMain.pb.max = 7
+    frmMain.pb.max = 8
     frmMain.pb.value = 0
     frmMain.Display = "Taking Snapshot 2"
     
@@ -211,7 +224,13 @@ Sub DoSnap2()
     frmMain.pb.value = frmMain.pb.value + 1
     If shutDown Then Exit Sub
  
- 
+    Sleep 100
+    DoEvents
+    frmMain.Display = "Enumerating tasks..."
+    Set Tasks2 = CProc.EnumTasks()
+    frmMain.pb.value = frmMain.pb.value + 1
+    If shutDown Then Exit Sub
+
     frmMain.Display = "Enumerating registry keys..."
     DoEvents
     
@@ -284,7 +303,9 @@ Sub ShowDiffReport()
     Set ChangedIEDlls = New Collection
     Set ChangedDrivers = New Collection
     Set ChangedMutexes = New Collection
+    Set ChangedTasks = New Collection
     
+    Dim t As CTaskElem
     Dim m As CMutexElem
     Dim proc As CProcess
     Dim Port As CProcessPort
@@ -349,20 +370,25 @@ Sub ShowDiffReport()
         End If
     Next
     
-    'these original mutexes no longer exist
-    For Each m In c1
-        ChangedMutexes.Add m, m.getKey()
+    'these original mutexes no longer exist (does this even matter?)
+    'For Each m In c1
+    '    ChangedMutexes.Add m, m.getKey()
+    'Next
+        
+    For Each t In Tasks2
+        If Not objKeyExistsInCollection(Tasks1, t.hashCode) Then
+            ChangedTasks.Add t, t.hashCode
+        End If
     Next
-    
-    
-    ShowSnapShot ChangedProcesses, ChangedPorts, ChangedServices, ChangedExplorerDlls, ChangedIEDlls, ChangedMutexes, True, ChangedDrivers, CReg.GetDifferences
+
+    ShowSnapShot ChangedProcesses, ChangedPorts, ChangedServices, ChangedExplorerDlls, ChangedIEDlls, ChangedMutexes, ChangedTasks, True, ChangedDrivers, CReg.GetDifferences
 
 
 End Sub
 
 
 Private Sub ShowSnapShot(procs As Collection, ports As Collection, servcs As Collection, expdlls As Collection, _
-                        iedlls As Collection, mutexes As Collection, Optional isCompare As Boolean = False, Optional drivers As Collection, _
+                        iedlls As Collection, mutexes As Collection, tasks As Collection, Optional isCompare As Boolean = False, Optional drivers As Collection, _
                         Optional regSnap As Collection, Optional FirstTabOnly = False)
    
     Dim proc As CProcess
@@ -385,7 +411,7 @@ Private Sub ShowSnapShot(procs As Collection, ports As Collection, servcs As Col
     
     frmMain.Display = "Showing ShapShot"
     frmMain.pb.value = 0
-    frmMain.pb.max = 7
+    frmMain.pb.max = 8
     
     frmMain.lvProcesses.ListItems.Clear
     frmMain.lvPorts.ListItems.Clear
@@ -395,6 +421,7 @@ Private Sub ShowSnapShot(procs As Collection, ports As Collection, servcs As Col
     frmMain.lvDrivers.ListItems.Clear
     frmMain.lvRegKeys.ListItems.Clear
     frmMain.lvMutex.ListItems.Clear
+    frmMain.lvTasks.ListItems.Clear
     
     frmMain.Display = "Loading processes.."
     For Each proc In procs
@@ -557,6 +584,17 @@ next_driver:
         Else
             li.SubItems(1) = cme.name
         End If
+        If shutDown Then Exit Sub
+    Next
+    
+    frmMain.pb.value = frmMain.pb.value + 1
+    frmMain.Display = "Loading tasks.."
+    
+    Dim cte As CTaskElem
+    For Each cte In tasks
+        Set li = frmMain.lvTasks.ListItems.Add(, , cte.name)
+        li.SubItems(1) = cte.exe
+        Set li.Tag = cte
         If shutDown Then Exit Sub
     Next
     

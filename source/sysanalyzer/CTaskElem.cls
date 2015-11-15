@@ -29,7 +29,7 @@ Function getDump() As String
     
 End Function
 
-Sub genHashCode(hash As CWinHash)
+Sub genHashCode()
     hashCode = hash.HashString(Me.getDump())
 End Sub
 
