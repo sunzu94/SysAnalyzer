@@ -38,6 +38,7 @@ Dim ret() As String
 
 Dim filtered() As String
 Public FilterResults As Boolean
+Private OffsetsOnly As Boolean
 
 Public Function FilteredCount() As Long
     On Error Resume Next
@@ -49,6 +50,63 @@ Public Function GetFiltered() As String
     GetFiltered = Join(filtered, vbCrLf)
 End Function
 
+'searchs for the string specified, returns csv list of offsets found at
+Function SearchOffsetsToCSV(fpath As String, ByVal find As String) As String
+    On Error GoTo hell
+    
+    Dim f As Long, pointer As Long
+    Dim buf()  As Byte
+    Dim x As Long
+    Dim unicode_string As String
+    
+    OffsetsOnly = True
+    f = FreeFile
+    Erase filtered
+    Erase ret
+    
+    If Not fso.FileExists(fpath) Then GoTo hell
+    
+    d.Pattern = find
+    d.Global = True
+    d.IgnoreCase = True
+    
+    ReDim buf(9000)
+    Open fpath For Binary Access Read As f
+    
+    Do While pointer < LOF(f)
+        pointer = Seek(f)
+        x = LOF(f) - pointer
+        If x < 1 Then Exit Do
+        If x < 9000 Then ReDim buf(x)
+        Get f, , buf()
+        Search buf
+    Loop
+    
+    unicode_string = StrConv(find, vbUnicode, LANG_US)
+    d.Pattern = unicode_string
+
+    ReDim buf(9000)
+    pointer = 1
+    Seek f, 1
+
+    Do While pointer < LOF(f)
+        pointer = Seek(f)
+        x = LOF(f) - pointer
+        If x < 1 Then Exit Do
+        If x < 9000 Then ReDim buf(x)
+        Get f, , buf()
+        Search buf
+    Loop
+    
+hell:
+    On Error Resume Next
+    Close f
+    SearchOffsetsToCSV = Join(ret, ",")
+    Erase ret
+      
+End Function
+
+
 Function ExtractStrings(fpath As String) As String
     On Error GoTo hell
     
@@ -56,7 +114,9 @@ Function ExtractStrings(fpath As String) As String
     Dim buf()  As Byte
     Dim x As Long
     
+    OffsetsOnly = False
     Erase filtered
+    Erase ret
     
     f = FreeFile
     
@@ -128,12 +188,16 @@ Private Sub Search(buf() As Byte)
     
     For Each m In mc
     
-        If FilterResults Then
-            If Not Filter(m.Value) Then
-                push ret(), Replace(m.Value, Chr(0), Empty)
-            End If
+        If OffsetsOnly Then
+            push ret(), m.FirstIndex
         Else
-            push ret(), Replace(m.Value, Chr(0), Empty)
+            If FilterResults Then
+                If Not Filter(m.value) Then
+                    push ret(), Replace(m.value, Chr(0), Empty)
+                End If
+            Else
+                push ret(), Replace(m.value, Chr(0), Empty)
+            End If
         End If
         
     Next

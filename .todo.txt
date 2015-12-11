@@ -1,4 +1,6 @@
 
+ - memory map - search - chokes on large allocs..must use regex search from strings command
+ - hexed strings search window - filter textbox at top..
  - api_log hook CryptGenKey,CryptDeriveKey, CryptImportKey 
  - api_log: x64 VirtualAlloc no longer flows to VirtualAllocEx apparently...
  - search all process memory maps for string (will take really long but can be necessary..)

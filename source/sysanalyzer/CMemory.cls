@@ -24,6 +24,7 @@ Public state As MemoryTypes
 Public Protection As MemAccess
 Public InitialProtection As MemAccess
 Public ModuleName As String
+Public SearchOffsetCSV As String 'set in frmMemoryMap and used by frmMemSearchResults
 
 Public Function BaseAsHexString()
     If isx64 Then BaseAsHexString = Base Else BaseAsHexString = Hex(Base)

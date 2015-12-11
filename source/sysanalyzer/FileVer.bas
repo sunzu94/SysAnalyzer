@@ -177,6 +177,14 @@ Property Get TitleBarHeight(f As Form) As Long
     End If
 End Property
 
+
+Function CountOccurances(it, find) As Integer
+    Dim tmp() As String
+    If InStr(1, it, find, vbTextCompare) < 1 Then CountOccurances = 0: Exit Function
+    tmp = Split(it, find, , vbTextCompare)
+    CountOccurances = UBound(tmp)
+End Function
+
 Public Sub AlwaysOnTop(f As Form, Optional SetOnTop As Boolean = True)
     Dim lflag As Long, tx As Long, ty As Long
      

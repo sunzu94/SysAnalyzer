@@ -135,7 +135,7 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Dim pi As New CProcessInfo
 Dim active_pid As Long
-Dim selli As ListItem
+Dim selLi As ListItem
 
 Public Sub ShowDlls(pid As Long) 'x64 ok.
 
@@ -208,6 +208,7 @@ Public Sub ShowMemoryMap(pid As Long) 'now x64 compatiabled...
         li.SubItems(2) = cMem.MemTypeAsString()
         li.SubItems(3) = cMem.ProtectionAsString()
         li.SubItems(4) = cMem.ModuleName
+        Set li.Tag = cMem
         
         #If isSysanalyzer = 1 Then
             If known.Loaded And known.Ready Then
@@ -227,7 +228,7 @@ Public Sub ShowMemoryMap(pid As Long) 'now x64 compatiabled...
         Then
             If cMem.Protection = PAGE_EXECUTE_READWRITE And cMem.MemType <> MEM_IMAGE Then
                 SetLiColor li, vbRed
-                If VBA.Left(pi.ReadMemory2(cMem.pid, cMem.base, 2), 2) = "MZ" Then
+                If VBA.Left(pi.ReadMemory2(cMem.pid, cMem.Base, 2), 2) = "MZ" Then
                     List1.AddItem cMem.BaseAsHexString & " is RWE but not part of an image (CONFIRMED INJECTION)"
                 Else
                     List1.AddItem cMem.BaseAsHexString & " is RWE but not part of an image..possible injection"
@@ -258,7 +259,7 @@ Private Sub Form_Load()
     mnuPopup2.Visible = False
     Me.Icon = frmMain.Icon
     lv.ColumnHeaders(5).Width = lv.Width - lv.ColumnHeaders(5).Left - 350
-    lv2.Move lv.Left, lv.Top, lv.Width, lv.Height
+    lv2.Move lv.Left, lv.top, lv.Width, lv.Height
     lv2.ColumnHeaders(3).Width = lv2.Width - lv2.ColumnHeaders(3).Left - 350
 End Sub
 
@@ -271,7 +272,7 @@ Private Sub lv_DblClick()
 End Sub
 
 Private Sub lv_ItemClick(ByVal Item As MSComctlLib.ListItem)
-    Set selli = Item
+    Set selLi = Item
 End Sub
 
 Private Sub lv_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
@@ -283,7 +284,7 @@ Private Sub lv2_ColumnClick(ByVal ColumnHeader As MSComctlLib.ColumnHeader)
 End Sub
 
 Private Sub lv2_ItemClick(ByVal Item As MSComctlLib.ListItem)
-    Set selli = Item
+    Set selLi = Item
 End Sub
 
 Private Sub lv2_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
@@ -291,7 +292,7 @@ Private Sub lv2_MouseUp(Button As Integer, Shift As Integer, x As Single, y As S
 End Sub
 
 Private Sub mnuDumpDll_Click()
-    If selli Is Nothing Then Exit Sub
+    If selLi Is Nothing Then Exit Sub
     Dim f As String
     Dim n As String
     Dim orgPath As String
@@ -299,7 +300,7 @@ Private Sub mnuDumpDll_Click()
     
     'MsgBox dlg.SaveDialog(AllFiles)
      
-    orgPath = selli.SubItems(2)
+    orgPath = selLi.SubItems(2)
     n = fso.FileNameFromPath(orgPath) & ".dmp"
     'f = InputBox("Save file as: ", , UserDeskTopFolder & "\" & n)
     f = frmDlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save Dll Dump as:", , Me, n)
@@ -307,7 +308,7 @@ Private Sub mnuDumpDll_Click()
     
     'If pi.DumpProcessMemory(active_pid, CLng("&h" & selli.Text), CLng("&h" & selli.SubItems(1)), f) Then
     
-    If pi.DumpMemory(active_pid, selli.Text, selli.SubItems(1), f) Then    'x64 enabled version...
+    If pi.DumpMemory(active_pid, selLi.Text, selLi.SubItems(1), f) Then    'x64 enabled version...
         MsgBox "File successfully saved"
     Else
         MsgBox "Error saving file: " & Err.Description
@@ -316,13 +317,13 @@ Private Sub mnuDumpDll_Click()
 End Sub
 
 Private Sub mnuSaveDll_Click()
-    If selli Is Nothing Then Exit Sub
+    If selLi Is Nothing Then Exit Sub
     Dim f As String
     Dim n As String
     Dim orgPath As String
     
     On Error Resume Next
-    orgPath = selli.SubItems(2)
+    orgPath = selLi.SubItems(2)
     
     If Not fso.FileExists(orgPath) Then
         List1.AddItem "Error: Could not find: " & orgPath
@@ -343,13 +344,13 @@ Private Sub mnuSaveDll_Click()
 End Sub
 
 Private Sub mnuSaveMemory_Click()
-    If selli Is Nothing Then Exit Sub
+    If selLi Is Nothing Then Exit Sub
     Dim f As String
     On Error Resume Next
     'f = InputBox("Save file as: ", , UserDeskTopFolder & "\" & selli.Text & ".mem")
-    f = frmDlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save Memory as:", , Me, selli.Text & ".mem")
+    f = frmDlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save Memory as:", , Me, selLi.Text & ".mem")
     If Len(f) = 0 Then Exit Sub
-    If pi.DumpMemory(active_pid, selli.Text, selli.SubItems(1), f) Then
+    If pi.DumpMemory(active_pid, selLi.Text, selLi.SubItems(1), f) Then
         MsgBox "File successfully saved"
     Else
         MsgBox "Error saving file: " & Err.Description
@@ -357,13 +358,14 @@ Private Sub mnuSaveMemory_Click()
 End Sub
 
 Private Sub mnuSearchMemory_Click()
+    
     Dim li As ListItem
     Dim s As String
-    Dim s2 As String
-    Dim ret As String
-    Dim a As Long
-    Dim b As Long
-    Dim m As String
+    Dim cs As New CStrings
+    Dim tmp As String
+    Dim c As New Collection
+    Dim csv As String
+    Dim m As CMemory
     
     If lv.ListItems.count = 0 Then
         MsgBox "Nothing to search"
@@ -373,41 +375,45 @@ Private Sub mnuSearchMemory_Click()
     s = InputBox("Enter string to search for:")
     If Len(s) = 0 Then Exit Sub
     
-    s2 = StrConv(s, vbUnicode, LANG_US)
     'abort = False
     
-    Dim base As Long
-    Dim size As Long
+    tmp = fso.GetFreeFileName(Environ("temp"), ".bin")
     
     For Each li In lv.ListItems
         'If abort = True Then Exit For
+        
+        Set m = li.Tag
         li.Selected = True
         li.EnsureVisible
         DoEvents
         lv.Refresh
-        'Base = CLng("&h" & li.Text)
-        size = CLng("&h" & li.SubItems(1))
-        m = pi.ReadMemory2(active_pid, li.Text, size)
-        a = InStr(1, m, s, vbTextCompare)
-        b = InStr(1, m, s2, vbTextCompare)
-        If a > 0 Then ret = ret & "pid: " & li.Text & " base: " & li.SubItems(1) & " offset: " & Hex(base + a) & " ASCII " & li.SubItems(5) & vbCrLf
-        If b > 0 Then ret = ret & "pid: " & li.Text & " base: " & li.SubItems(1) & " offset: " & Hex(base + b) & " UNICODE " & li.SubItems(5) & vbCrLf
+
+        If fso.FileExists(tmp) Then fso.DeleteFile tmp
+        
+        If pi.DumpMemory(active_pid, m.BaseAsHexString, Hex(m.size), tmp) Then
+            csv = cs.SearchOffsetsToCSV(tmp, s) 'fast ascii and uni search using regex
+            If Len(csv) > 0 Then
+                m.SearchOffsetCSV = csv
+                c.Add m
+            End If
+        End If
+         
     Next
     
-    If Len(ret) > 0 Then
-        frmReport.ShowList ret
-    Else
+    If c.count = 0 Then
         MsgBox "Specified string not found (ASCII or UNICODE)", vbInformation
+    Else
+        frmMemSearchResults.LoadSearchResults active_pid, c
     End If
     
 End Sub
-
+       
 Private Sub mnuStrings_Click()
-    If selli Is Nothing Then Exit Sub
+    If selLi Is Nothing Then Exit Sub
     On Error Resume Next
     Dim f As String
     f = fso.GetFreeFileName(Environ("temp"), ".bin")
-    If pi.DumpMemory(active_pid, selli.Text, selli.SubItems(1), f) Then
+    If pi.DumpMemory(active_pid, selLi.Text, selLi.SubItems(1), f) Then
        LaunchStrings f, True
     Else
         MsgBox "Error saving file: " & Err.Description
@@ -415,13 +421,13 @@ Private Sub mnuStrings_Click()
 End Sub
 
 Private Sub mnuViewMemory_Click()
-    If selli Is Nothing Then Exit Sub
+    If selLi Is Nothing Then Exit Sub
     Dim s As String
-    Dim base As Long
+    Dim Base As Long
     On Error Resume Next
     
     'Base = CLng("&h" & selli.Text)
-    s = pi.ReadMemory2(active_pid, selli.Text, CLng("&h" & selli.SubItems(1)))
+    s = pi.ReadMemory2(active_pid, selLi.Text, CLng("&h" & selLi.SubItems(1)))
     
     If Len(s) = 0 Then
         List1.AddItem Now & ": Failed to readmemory?"
@@ -433,18 +439,18 @@ Private Sub mnuViewMemory_Click()
     
 #If isSysanalyzer = 1 Then
     Dim f As New rhexed.CHexEditor
-    If Len(selli.Text) <= 8 Then f.Editor.AdjustBaseOffset = CLng("&h" & selli.Text)
+    If Len(selLi.Text) <= 8 Then f.Editor.AdjustBaseOffset = CLng("&h" & selLi.Text)
     f.Editor.LoadString s
     
     If Err.Number <> 0 Then
         If Err.Number = 401 Then 'cant show non-modal form from modal form..
-            LaunchExternalHexViewer s, , selli.Text
+            LaunchExternalHexViewer s, , selLi.Text
             Exit Sub
         End If
         MsgBox "ViewErr: " & Err.Number
     End If
 #Else
-    LaunchExternalHexViewer s, , selli.Text
+    LaunchExternalHexViewer s, , selLi.Text
 #End If
 
 

@@ -10,7 +10,8 @@ apiLogger:        https://www.youtube.com/watch?v=SqdGjihhDoU
 original trainer: https://www.youtube.com/watch?v=OPXwKChdO4c
 -------------------------------
 
-Installer:        http://sandsprite.com/CodeStuff/SysAnalyzer_Setup.exe
+Installer:  http://sandsprite.com/tools.php?id=13
+Help File:  http://sandsprite.com/iDef/SysAnalyzer/
 
 SysAnalyzer is an application that was designed to give malcode analysts an 
 automated tool to quickly collect, compare, and report on the actions a 
