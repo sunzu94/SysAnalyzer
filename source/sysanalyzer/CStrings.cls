@@ -33,7 +33,7 @@ Attribute VB_Exposed = False
 
 Dim d As New RegExp
 Dim mc As MatchCollection
-Dim m As match
+Dim m As Match
 Dim ret() As String
 
 Dim filtered() As String
@@ -79,7 +79,7 @@ Function SearchOffsetsToCSV(fpath As String, ByVal find As String) As String
         If x < 1 Then Exit Do
         If x < 9000 Then ReDim buf(x)
         Get f, , buf()
-        Search buf
+        Search buf, pointer
     Loop
     
     unicode_string = StrConv(find, vbUnicode, LANG_US)
@@ -95,7 +95,7 @@ Function SearchOffsetsToCSV(fpath As String, ByVal find As String) As String
         If x < 1 Then Exit Do
         If x < 9000 Then ReDim buf(x)
         Get f, , buf()
-        Search buf
+        Search buf, pointer
     Loop
     
 hell:
@@ -180,7 +180,7 @@ done:
 
 End Function
 
-Private Sub Search(buf() As Byte)
+Private Sub Search(buf() As Byte, Optional base As Long)
     Dim b As String
     
     b = StrConv(buf, vbUnicode)
@@ -189,7 +189,7 @@ Private Sub Search(buf() As Byte)
     For Each m In mc
     
         If OffsetsOnly Then
-            push ret(), m.FirstIndex
+            push ret(), m.FirstIndex + base
         Else
             If FilterResults Then
                 If Not Filter(m.value) Then
@@ -240,15 +240,15 @@ Private Function Filter(x As String) As Boolean
     If InStr(x, "http://") > 0 Then
         Filter = False
     ElseIf toManySpecialChars(x) Then
-        If isIde() Then f = vbTab & vbTab & "(SpecialCharsFilter)"
+        If IsIde() Then f = vbTab & vbTab & "(SpecialCharsFilter)"
         push filtered, x & f
         Filter = True
     ElseIf toManyRepeats(x) Then
-        If isIde() Then f = vbTab & vbTab & "(RepeatFilter)"
+        If IsIde() Then f = vbTab & vbTab & "(RepeatFilter)"
         push filtered, x & f
         Filter = True
     ElseIf toManyNumbers(x) Then
-        If isIde() Then f = vbTab & vbTab & "(NumberFilter)"
+        If IsIde() Then f = vbTab & vbTab & "(NumberFilter)"
         push filtered, x & f
         Filter = True
     Else

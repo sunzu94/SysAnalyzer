@@ -280,9 +280,9 @@ Sub FindStealthInjections(pid As Long, pName As String)
                 'End If
             End If
             
-            Set li = lv.ListItems.Add(, , pid)
-            li.SubItems(1) = cMem.BaseAsHexString
-            li.SubItems(2) = Hex(cMem.size)
+            Set li = lv.ListItems.Add(, , pad(pid))
+            li.SubItems(1) = pad(cMem.BaseAsHexString)
+            li.SubItems(2) = pad(Hex(cMem.size))
             li.SubItems(3) = cMem.MemTypeAsString()
             li.SubItems(4) = cMem.ProtectionAsString()
             li.SubItems(5) = pName
@@ -351,9 +351,9 @@ Private Sub mnuSave_Click()
     On Error Resume Next
     pid = CLng(selli.Text)
     'f = InputBox("Save file as: ", , UserDeskTopFolder & "\" & pid & "_" & selli.SubItems(1) & ".mem")
-    f = frmDlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save As:", , Me, pid & "_" & selli.SubItems(1) & ".mem")
+    f = frmDlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save As:", , Me, pid & "_" & Trim(selli.SubItems(1)) & ".mem")
     If Len(f) = 0 Then Exit Sub
-    If pi.DumpMemory(pid, selli.SubItems(1), selli.SubItems(2), f) Then
+    If pi.DumpMemory(pid, Trim(selli.SubItems(1)), Trim(selli.SubItems(2)), f) Then
         MsgBox "File successfully saved"
     Else
         MsgBox "Error saving file: " & Err.Description
@@ -376,8 +376,8 @@ Private Sub mnuSaveAll_Click()
     
     For Each li In lv.ListItems
         pid = CLng(li.Text)
-        f = saveDir & "\" & pid & "_" & li.SubItems(1) & ".mem"
-        If pi.DumpMemory(pid, li.SubItems(1), li.SubItems(2), f) Then
+        f = saveDir & "\" & pid & "_" & Trim(li.SubItems(1)) & ".mem"
+        If pi.DumpMemory(pid, Trim(li.SubItems(1)), Trim(li.SubItems(2)), f) Then
             i = i + 1
         Else
             e = e & "Error dumping " & f & vbCrLf
@@ -393,15 +393,14 @@ Private Sub mnuSaveAll_Click()
 End Sub
 
 Private Sub mnuSearchMem_Click()
-    Dim li As ListItem
     
+    Dim li As ListItem
     Dim s As String
-    Dim s2 As String
-    Dim ret As String
-    Dim a As Long
-    Dim b As Long
-    Dim cMem As CMemory
-    Dim m As String
+    Dim cs As New CStrings
+    Dim tmp As String
+    Dim c As New Collection
+    Dim csv As String
+    Dim m As CMemory
     
     If lv.ListItems.count = 0 Then
         MsgBox "Nothing to search"
@@ -411,32 +410,40 @@ Private Sub mnuSearchMem_Click()
     s = InputBox("Enter string to search for:")
     If Len(s) = 0 Then Exit Sub
     
-    s2 = StrConv(s, vbUnicode, LANG_US)
     pb.max = lv.ListItems.count
     pb.value = 0
     abort = False
     
+    tmp = fso.GetFreeFileName(Environ("temp"), ".bin")
+    
     For Each li In lv.ListItems
         If abort = True Then Exit For
+        
+        Set m = li.Tag
         li.Selected = True
         li.EnsureVisible
-        Set cMem = li.Tag
         DoEvents
         lv.Refresh
-        m = pi.ReadMemory2(cMem.pid, cMem.Base, cMem.size)
-        a = InStr(1, m, s, vbTextCompare)
-        b = InStr(1, m, s2, vbTextCompare)
-        If a > 0 Then ret = ret & "pid: " & li.Text & " base: " & li.SubItems(1) & " offset: " & cMem.Base & "+" & a & " ASCII " & li.SubItems(5) & vbCrLf
-        If b > 0 Then ret = ret & "pid: " & li.Text & " base: " & li.SubItems(1) & " offset: " & cMem.Base & "+" & b & " UNICODE " & li.SubItems(5) & vbCrLf
+
+        If fso.FileExists(tmp) Then fso.DeleteFile tmp
+        
+        If pi.DumpMemory(m.pid, m.BaseAsHexString, Hex(m.size), tmp) Then
+            csv = cs.SearchOffsetsToCSV(tmp, s) 'fast ascii and uni search using regex
+            If Len(csv) > 0 Then
+                m.SearchOffsetCSV = csv
+                c.Add m
+            End If
+        End If
+        
         pb.value = pb.value + 1
     Next
             
     pb.value = 0
     
-    If Len(ret) > 0 Then
-        frmReport.ShowList ret
-    Else
+    If c.count = 0 Then
         MsgBox "Specified string not found (ASCII or UNICODE)", vbInformation
+    Else
+        frmMemSearchResults.LoadSearchResults c
     End If
     
 End Sub
@@ -448,7 +455,7 @@ Private Sub mnuStrings_Click()
     On Error Resume Next
     pid = CLng(selli.Text)
     f = fso.GetFreeFileName(Environ("temp"), ".bin")
-    If pi.DumpMemory(pid, selli.SubItems(1), selli.SubItems(2), f) Then
+    If pi.DumpMemory(pid, Trim(selli.SubItems(1)), Trim(selli.SubItems(2)), f) Then
         LaunchStrings f, True
     Else
         MsgBox "Error saving file: " & Err.Description
@@ -461,9 +468,9 @@ Private Sub mnuView_Click()
     Dim pid As Long
     Dim Base 'As Long
     On Error Resume Next
-    Base = selli.SubItems(1)
+    Base = Trim(selli.SubItems(1))
     pid = CLng(selli.Text)
-    s = pi.ReadMemory2(pid, Base, CLng("&h" & selli.SubItems(2)))
+    s = pi.ReadMemory2(pid, Base, CLng("&h" & Trim(selli.SubItems(2))))
     If Len(s) = 0 Then
         MsgBox "Failed to readmemory?"
         Exit Sub

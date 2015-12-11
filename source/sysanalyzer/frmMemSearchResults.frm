@@ -6,18 +6,18 @@ Begin VB.Form frmMemSearchResults
    ClientHeight    =   8640
    ClientLeft      =   60
    ClientTop       =   345
-   ClientWidth     =   12885
+   ClientWidth     =   15375
    LinkTopic       =   "Form1"
    ScaleHeight     =   8640
-   ScaleWidth      =   12885
+   ScaleWidth      =   15375
    StartUpPosition =   2  'CenterScreen
    Begin rhexed.HexEd he 
       Height          =   8115
-      Left            =   3150
+      Left            =   3690
       TabIndex        =   3
       Top             =   360
-      Width           =   9600
-      _ExtentX        =   16933
+      Width           =   11535
+      _ExtentX        =   20346
       _ExtentY        =   14314
    End
    Begin MSComctlLib.ListView lvAlloc 
@@ -25,8 +25,8 @@ Begin VB.Form frmMemSearchResults
       Left            =   90
       TabIndex        =   1
       Top             =   315
-      Width           =   2895
-      _ExtentX        =   5106
+      Width           =   3525
+      _ExtentX        =   6218
       _ExtentY        =   6615
       View            =   3
       LabelEdit       =   1
@@ -39,24 +39,29 @@ Begin VB.Form frmMemSearchResults
       BackColor       =   -2147483643
       BorderStyle     =   1
       Appearance      =   1
-      NumItems        =   4
+      NumItems        =   5
       BeginProperty ColumnHeader(1) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
          Text            =   "Hits"
-         Object.Width           =   2540
+         Object.Width           =   1235
       EndProperty
       BeginProperty ColumnHeader(2) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
          SubItemIndex    =   1
-         Text            =   "Base"
-         Object.Width           =   2540
+         Text            =   "PID"
+         Object.Width           =   1412
       EndProperty
       BeginProperty ColumnHeader(3) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
          SubItemIndex    =   2
-         Text            =   "Size"
-         Object.Width           =   2540
+         Text            =   "Type"
+         Object.Width           =   1411
       EndProperty
       BeginProperty ColumnHeader(4) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
          SubItemIndex    =   3
-         Text            =   "Protect"
+         Text            =   "Base"
+         Object.Width           =   2540
+      EndProperty
+      BeginProperty ColumnHeader(5) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
+         SubItemIndex    =   4
+         Text            =   "Size"
          Object.Width           =   2540
       EndProperty
    End
@@ -65,8 +70,8 @@ Begin VB.Form frmMemSearchResults
       Left            =   90
       TabIndex        =   2
       Top             =   4095
-      Width           =   2895
-      _ExtentX        =   5106
+      Width           =   3525
+      _ExtentX        =   6218
       _ExtentY        =   7726
       View            =   3
       LabelEdit       =   1
@@ -99,16 +104,17 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
-Dim m_pid As Long
 Dim selMem As CMemory
 Dim pi As New CProcessInfo
 Dim dumpFile As String
 
-'lvAlloc: hits,base,size,protect
+'lvAlloc: hits,pid,protect,base, size
 
-Sub LoadSearchResults(pid As Long, c As Collection)   'of CMemory with searchoffsetcsv field filled in
+Sub LoadSearchResults(c As Collection)   'of CMemory with searchoffsetcsv field filled in
     Dim li As ListItem
     Dim m As CMemory
+    
+    On Error Resume Next
     
     m_pid = pid
     lvAlloc.ListItems.Clear
@@ -117,14 +123,21 @@ Sub LoadSearchResults(pid As Long, c As Collection)   'of CMemory with searchoff
     For Each m In c
         Set li = lvAlloc.ListItems.Add()
         Set li.Tag = m
-        li.Text = CountOccurances(m.SearchOffsetCSV, ",") + 1
-        li.SubItems(1) = m.BaseAsHexString
-        li.SubItems(2) = Hex(m.size)
-        li.SubItems(3) = m.ProtectionAsString
+        li.Text = pad(CountOccurances(m.SearchOffsetCSV, ",") + 1)
+        li.SubItems(1) = pad(m.pid)
+        li.SubItems(2) = m.ProtectionAsString
+        li.SubItems(3) = pad(m.BaseAsHexString)
+        li.SubItems(4) = pad(Hex(m.size))
     Next
     
+    lvAlloc_ColumnClick lvAlloc.ColumnHeaders(1)
+    lvAlloc_ItemClick lvAlloc.ListItems(1)
     Me.Visible = True
     
+End Sub
+
+Private Sub Form_Load()
+    LvSizeLastColumn lvOffset
 End Sub
 
 Private Sub lvAlloc_ColumnClick(ByVal ColumnHeader As MSComctlLib.ColumnHeader)
@@ -139,7 +152,7 @@ Private Sub lvAlloc_ItemClick(ByVal Item As MSComctlLib.ListItem)
     lvOffset.ListItems.Clear
     
     If fso.FileExists(dumpFile) Then fso.DeleteFile dumpFile
-    If pi.DumpMemory(m_pid, selMem.BaseAsHexString, Hex(selMem.size), dumpFile) Then
+    If pi.DumpMemory(selMem.pid, selMem.BaseAsHexString, Hex(selMem.size), dumpFile) Then
         he.LoadFile dumpFile
     Else
         he.LoadString "Failed to dump memory?"
@@ -162,7 +175,7 @@ Private Sub lvOffset_ItemClick(ByVal Item As MSComctlLib.ListItem)
     On Error Resume Next
     
     Dim o As Long
-    o = CLng("&h" & Item.Text)
+    o = CLng("&h" & Item.Text) - 1
     he.scrollTo o
     
 End Sub

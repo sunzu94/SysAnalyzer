@@ -228,6 +228,12 @@ Public Function GetShortName(sFile As String) As String
 
 End Function
 
+Sub LvSizeLastColumn(lv As ListView)
+    On Error Resume Next
+    Dim w As Long
+    w = lv.Width - lv.ColumnHeaders(lv.ColumnHeaders.count).Left - 100
+    If w > 0 Then lv.ColumnHeaders(lv.ColumnHeaders.count).Width = w
+End Sub
 
 Public Sub LV_ColumnSort(ListViewControl As ListView, Column As ColumnHeader)
      On Error Resume Next
