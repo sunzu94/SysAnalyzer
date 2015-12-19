@@ -229,6 +229,8 @@ Sub FindStealthInjections(pid As Long, pName As String)
     Dim s As String
     Dim entropy As Long
     Dim minEntropy As Long
+    Dim isInject As Boolean
+    Dim dumpLen As Long
     
     On Error Resume Next
     Me.Visible = True
@@ -256,6 +258,7 @@ Sub FindStealthInjections(pid As Long, pName As String)
     
     'todo: replace(chr(0) in readmem, if it shrinks by % then its just junk?
     For Each cMem In c
+        isInject = False
         If abort Then Exit Sub
         If nextProc Then Exit Sub
         totalScanned = totalScanned + 1
@@ -270,15 +273,25 @@ Sub FindStealthInjections(pid As Long, pName As String)
             totalRWEFound = totalRWEFound + 1
             entropy = -1
             
-            If cMem.size < &H10000 Then 'some level of DoS protection against huge allocations (Dridex)...
+            'If cMem.size < &H10000 Then 'some level of DoS protection against huge allocations (Dridex)...
+                dumpLen = IIf(cMem.size > &H4000, &H4000, cMem.size) 'do a spot check of entrophy, no need for full (non critical metric) now we dont exclude big ones..
                 s = pi.ReadMemory2(cMem.pid, cMem.Base, cMem.size) 'doesnt add that much time
                 entropy = CalculateEntropy(s)
+                
+                If VBA.Left(s, 2) = "MZ" Then
+                    isInject = True
+                Else
+                    dumpLen = IIf(cMem.size > &H1500, &H1500, cMem.size)
+                    s = Mid(s, 1, dumpLen)
+                    isInject = IIf(InStr(1, s, "DOS mode", vbTextCompare) > 0, True, False)
+                End If
+                
                 s = Empty
             
                 'If chkMinEntropy.Value = 1 Then
                 '    If entropy < minEntropy Then GoTo nextOne
                 'End If
-            End If
+            'End If
             
             Set li = lv.ListItems.Add(, , pad(pid))
             li.SubItems(1) = pad(cMem.BaseAsHexString)
@@ -287,7 +300,8 @@ Sub FindStealthInjections(pid As Long, pName As String)
             li.SubItems(4) = cMem.ProtectionAsString()
             li.SubItems(5) = pName
             
-            If VBA.Left(pi.ReadMemory2(cMem.pid, cMem.Base, 2), 2) = "MZ" Then
+            'If VBA.Left(pi.ReadMemory2(cMem.pid, cMem.Base, 2), 2) = "MZ" Then
+            If isInject Then
                 SetLiColor li, vbRed
             End If
 

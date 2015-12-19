@@ -161,7 +161,7 @@ Public Sub ShowDlls(pid As Long) 'x64 ok.
         #If isSysanalyzer = 1 Then
             If known.Loaded And known.Ready Then
                 mm = known.isFileKnown(cm.path)
-                li.ListSubItems(2).ForeColor = IIf(mm = exact_match, vbGreen, vbRed)
+                li.ListSubItems(2).ForeColor = IIf(mm = exact_match, vbBlue, vbRed)
             End If
         #End If
         
@@ -348,7 +348,7 @@ Private Sub mnuSaveMemory_Click()
     Dim f As String
     On Error Resume Next
     'f = InputBox("Save file as: ", , UserDeskTopFolder & "\" & selli.Text & ".mem")
-    f = frmDlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save Memory as:", , Me, selli.Text & ".mem")
+    f = frmDlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save Memory as:", , Me, Trim(selli.Text) & ".mem")
     If Len(f) = 0 Then Exit Sub
     If pi.DumpMemory(active_pid, Trim(selli.Text), Trim(selli.SubItems(1)), f) Then
         MsgBox "File successfully saved"
