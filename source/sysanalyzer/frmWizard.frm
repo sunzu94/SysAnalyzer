@@ -602,6 +602,9 @@ Begin VB.Form frmWizard
             Caption         =   "Command Prompt"
             Index           =   4
          End
+         Begin VB.Menu mnuEditHostsFile 
+            Caption         =   "Edit Hosts File"
+         End
       End
    End
 End
@@ -733,6 +736,11 @@ Private Sub lblSkip_Click()
     going_toMainUI = True
     Unload Me
     
+End Sub
+
+Private Sub mnuEditHostsFile_Click()
+    On Error Resume Next
+    Shell "notepad.exe C:\Windows\System32\Drivers\etc\hosts", vbNormalFocus
 End Sub
 
 Private Sub mnuExt_Click(index As Integer)

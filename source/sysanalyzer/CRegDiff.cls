@@ -34,6 +34,7 @@ Option Explicit
 Dim HKCU_vals() As String
 Dim HKLM_vals() As String
 Dim HKLM_keys() As String
+Dim HKLM_singleval() As String
 
 Public Snap1 As New Collection
 Public Snap2 As New Collection
@@ -55,13 +56,15 @@ Private Sub Class_Initialize()
      push HKLM_keys, "\SOFTWARE\Microsoft\Internet Explorer\Extensions"
      push HKLM_keys, "\SOFTWARE\Microsoft\Internet Explorer\Explorer Bars"
      push HKLM_keys, "\SYSTEM\CurrentControlSet\Services"
-     
+     push HKLM_keys, "\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options"
      
      'Example of a key which may change (not added new) which we currently dont have code for...
     '[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon]
     '"Userinit"="C:\\WINDOWS\\system32\\userinit.exe,C:\\WINDOWS\\system32\\bad.exe,"
-
-
+    'and  HKLM\Software\Microsoft\Windows NT\CurrentVersion\Windows\Load,AppInit_DLLs
+    push HKLM_singleval, "\Software\Microsoft\Windows NT\CurrentVersion\Windows,AppInit_DLLs"
+    push HKLM_singleval, "\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon,Userinit"
+    
 End Sub
 
 Sub Reset()
@@ -71,7 +74,7 @@ End Sub
 
 Private Sub DoSnap(Optional isSnap1 As Boolean = True)
         
-        Dim r() As String, k As String
+        Dim r() As String, k As String, tmp() As String
         Dim i As Long, j As Long
         Dim c As Collection
         
@@ -119,6 +122,14 @@ Private Sub DoSnap(Optional isSnap1 As Boolean = True)
             End If
         Next
         
+        For i = 0 To UBound(HKLM_singleval)
+            tmp = Split(HKLM_singleval(i), ",")
+            k = Empty
+            k = reg.ReadValue(tmp(0), tmp(1))
+            k = "HKLM" & HKLM_singleval(i) & "--->" & k
+            c.Add k, k
+        Next
+        
 End Sub
 
 Sub DoSnap1()
@@ -148,7 +159,7 @@ Function GetValForKey(key) As String
     Dim h As hKey
     Dim tmp() As String
     Dim prefix As String
-    
+
     If InStr(key, "-->") < 1 Then
         GetValForKey = "No --> marker?"
         Exit Function
@@ -174,8 +185,14 @@ Function GetValForKey(key) As String
     
     tmp() = Split(key, "-->")
     
-    reg.hive = h
-    GetValForKey = tmp(1) & "=" & reg.ReadValue(tmp(0), tmp(1))
-    key = prefix & tmp(0)
+    If InStr(key, "--->") > 0 Then
+        GetValForKey = tmp(1)
+        If Right(tmp(0), 1) = "-" Then tmp(0) = Mid(tmp(0), 1, Len(tmp(0)) - 1)
+        key = prefix & tmp(0)
+    Else
+        reg.hive = h
+        GetValForKey = tmp(1) & "=" & reg.ReadValue(tmp(0), tmp(1))
+        key = prefix & tmp(0)
+    End If
     
 End Function

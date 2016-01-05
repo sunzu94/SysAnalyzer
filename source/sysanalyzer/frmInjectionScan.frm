@@ -2,20 +2,20 @@ VERSION 5.00
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Begin VB.Form frmInjectionScan 
    Caption         =   "32bit process Injection Scan"
-   ClientHeight    =   3720
+   ClientHeight    =   3825
    ClientLeft      =   60
    ClientTop       =   630
    ClientWidth     =   11970
    LinkTopic       =   "Form1"
-   ScaleHeight     =   3720
+   ScaleHeight     =   3825
    ScaleWidth      =   11970
    StartUpPosition =   2  'CenterScreen
    Begin VB.Frame Frame1 
       BorderStyle     =   0  'None
       Height          =   495
-      Left            =   60
+      Left            =   105
       TabIndex        =   2
-      Top             =   3060
+      Top             =   3285
       Width           =   11835
       Begin VB.TextBox Text1 
          Height          =   345
@@ -86,9 +86,9 @@ Begin VB.Form frmInjectionScan
    End
    Begin MSComctlLib.ListView lv 
       Height          =   2595
-      Left            =   0
+      Left            =   45
       TabIndex        =   1
-      Top             =   420
+      Top             =   645
       Width           =   11925
       _ExtentX        =   21034
       _ExtentY        =   4577
@@ -139,6 +139,17 @@ Begin VB.Form frmInjectionScan
          Object.Width           =   2540
       EndProperty
    End
+   Begin MSComctlLib.ProgressBar pb2 
+      Height          =   255
+      Left            =   45
+      TabIndex        =   10
+      Top             =   360
+      Width           =   11925
+      _ExtentX        =   21034
+      _ExtentY        =   450
+      _Version        =   393216
+      Appearance      =   1
+   End
    Begin VB.Menu mnuPopup 
       Caption         =   "mnuPopup"
       Begin VB.Menu mnuView 
@@ -172,7 +183,6 @@ Dim selli As ListItem
 Dim nextProc As Boolean
 Dim totalScanned As Long
 Dim totalRWEFound As Long
-Dim multiscanMode As Boolean
 
 'todo: user config list of common target processes and only scan selected processes to speed up?
 
@@ -194,7 +204,6 @@ Function StealthInjectionScan()
     abort = False
     totalScanned = 0
     totalRWEFound = 0
-    multiscanMode = True
     
     For Each cp In c
         Me.Caption = "Scanning " & pb.value & "/" & c.count & "  Found: " & lv.ListItems.count & " Processing: " & cp.path & " TotalRWEFound: " & totalRWEFound & " Total Allocs Scanned: " & totalScanned
@@ -209,8 +218,8 @@ Function StealthInjectionScan()
         If abort Then Exit For
     Next
     
-    multiscanMode = False
     pb.value = 0
+    pb2.value = 0
     Me.Caption = "Found " & lv.ListItems.count & " allocations"
     
         
@@ -251,11 +260,9 @@ Sub FindStealthInjections(pid As Long, pName As String)
     nextProc = False
     Set c = pi.GetMemoryMap(pid)
 
-    If multiscanMode = False Then
-        pb.max = c.count
-        pb.value = 0
-    End If
-    
+    pb2.max = c.count
+    pb2.value = 0
+
     'todo: replace(chr(0) in readmem, if it shrinks by % then its just junk?
     For Each cMem In c
         isInject = False
@@ -264,8 +271,8 @@ Sub FindStealthInjections(pid As Long, pName As String)
         totalScanned = totalScanned + 1
         
         If multiscanMode = False Then
-            pb.value = pb.value + 1
-            Me.Caption = "Scanning " & pb.value & "/" & c.count & "  Found: " & lv.ListItems.count & " Total Allocs Scanned: " & totalScanned
+            pb2.value = pb2.value + 1
+            Me.Caption = "Scanning " & pb2.value & "/" & c.count & "  Found: " & lv.ListItems.count & " Total Allocs Scanned: " & totalScanned
         End If
          
         If cMem.Protection = PAGE_EXECUTE_READWRITE And cMem.MemType <> MEM_IMAGE Then
@@ -278,11 +285,11 @@ Sub FindStealthInjections(pid As Long, pName As String)
                 s = pi.ReadMemory2(cMem.pid, cMem.Base, cMem.size) 'doesnt add that much time
                 entropy = CalculateEntropy(s)
                 
-                If VBA.Left(s, 2) = "MZ" Then
+                If VBA.Left$(s, 2) = "MZ" Then
                     isInject = True
                 Else
                     dumpLen = IIf(cMem.size > &H1500, &H1500, cMem.size)
-                    s = Mid(s, 1, dumpLen)
+                    s = VBA.Left$(s, dumpLen)
                     isInject = IIf(InStr(1, s, "DOS mode", vbTextCompare) > 0, True, False)
                 End If
                 
@@ -314,7 +321,7 @@ nextone:
         Sleep 5
     Next
     
-    If multiscanMode = False Then pb.value = 0
+    pb2.value = 0
     
 End Sub
 
@@ -348,6 +355,7 @@ Private Sub Form_Resize()
     lv.Height = Frame1.top - 600
     lv.Width = Me.Width - lv.Left - 200
     pb.Width = lv.Width
+    pb2.Width = lv.Width
 End Sub
 
 Private Sub Form_Unload(Cancel As Integer)

@@ -1,27 +1,16 @@
 
  - api_log hook CryptGenKey,CryptDeriveKey, CryptImportKey 
  - api_log: x64 VirtualAlloc no longer flows to VirtualAllocEx apparently...
- - search all process memory maps for string (will take really long but can be necessary..)
- - dirwatch make last column rteally really wide by default
  - apilog does not work with .net exes
- - tools - edit hosts file
  - rwe mem scan - option to save with PE header for easy (auto rebased) disassembly?
-
- monitor HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\
- monitor Software\Microsoft\Windows NT\CurrentVersion\Windows\Load,AppInit_DLLs
  
  check all forms to account for BIG win8 title bars..
 
  diff/enum desktops, screen shot new ones? ref: CmdDesktopSwitch
  sniffhit make sure run as admin on win7+
- dirwatch right clk save as
  dirwatch data in sysanalyzer not saved after report generated..
- memmap window resize code
- memmap window base column header sort off
 
  if new dlls dropped scan processes for them as part of report.
-
- lock log files exclusive no share so crypto malware cant encrypt them...
 
  apilogger - option to follow injections/new processes
            - ability to exclude certain proocesses from logging?
@@ -32,18 +21,16 @@
            - each new process should create its own tab and own listview
            - frmdlls right click menu not working (modal issue?)
  
- is dirwatch able to capture files created with hidden attrib? 
-   if it cant immediatly capture a file, it should add it to a try again list 
 
- right click on driverrs hide known
+ dirwatch: if it cant immediatly capture a file, it should add it to a try again list 
 
- analyze process loadmemory map can appear hung, need second progress bar to run or some feedback..
+ right click on drivers hide known
+
  parse dirwatch log to manually save files to \DirWatch in case it didnt
  dirwatch should check md5s before incrementing file name
  prefix strings dumps with underscore
  once injected in explorer, dll auto injects into all new processes created.. limit this..
  dont dump api_log.dll
- does filecopy work on hidden system files?
 
  detect file type before launching in case they have extension wrong. (msi, dll etc)
  detect if arguments txtbox is x64 binary path and exe path is 32bit?
@@ -57,8 +44,5 @@
 
  make sure IE process running at start of test?
  Cstrings - be able to set min match leng
- add second progress bar to FindStealthInjections dialog, remove global multiscanMode
  update help file
  block reboot system api in apilog? or detect it and issue shutdown -a command?
-
-

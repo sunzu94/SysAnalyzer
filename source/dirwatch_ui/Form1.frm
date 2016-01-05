@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Begin VB.Form frmMain 
    Caption         =   "DirWatchTargetWindow"
    ClientHeight    =   6090
@@ -273,6 +273,20 @@ Option Explicit
 '         this program; if not, write to the Free Software Foundation, Inc., 59 Temple
 '         Place, Suite 330, Boston, MA 02111-1307 USA
 
+Private Declare Function GetDriveType Lib "kernel32" _
+     Alias "GetDriveTypeA" _
+    (ByVal nDrive As String) As Long
+
+Enum dtype
+    DRIVE_INVALID = 0
+    DRIVE_NOTFOUND = 1
+    DRIVE_REMOVABLE = 2
+    DRIVE_FIXED = 3
+    DRIVE_REMOTE = 4
+    DRIVE_CDROM = 5   'can be a CD or a DVD
+    DRIVE_RAMDISK = 6
+End Enum
+
 Dim WithEvents subclass As CSubclass2
 Attribute subclass.VB_VarHelpID = -1
 
@@ -379,6 +393,7 @@ Private Sub Form_Load()
     Dim tmp
     Dim activeDrives
     Dim drive
+    Dim dt As dtype
     
     mnuPopup.Visible = False
     mnuPopup2.Visible = False
@@ -392,14 +407,17 @@ Private Sub Form_Load()
     
     For i = 0 To Drive1.ListCount - 1
         tmp = Split(Drive1.List(i), ":")
-        Set li = lv.ListItems.Add(, , Drive1.List(i))
-        li.Tag = tmp(0) & ":\"
-        'If VBA.Left(LCase(lv.ListItems(i + 1).Text), 2) = "c:" Then lv.ListItems(i + 1).Checked = True
-        For Each drive In activeDrives
-            If Len(drive) > 0 Then
-                If CInt(drive) = i Then li.Checked = True
-            End If
-        Next
+        dt = GetDriveType(tmp(0) & ":\")
+        If dt = DRIVE_FIXED Or dt = DRIVE_REMOVABLE Then
+            Set li = lv.ListItems.Add(, , Drive1.List(i))
+            li.Tag = tmp(0) & ":\"
+            'If VBA.Left(LCase(lv.ListItems(i + 1).Text), 2) = "c:" Then lv.ListItems(i + 1).Checked = True
+            For Each drive In activeDrives
+                If Len(drive) > 0 Then
+                    If CInt(drive) = i Then li.Checked = True
+                End If
+            Next
+        End If
     Next
     
     Set cApiData = New Collection
@@ -407,6 +425,7 @@ Private Sub Form_Load()
    
     'DirWatchCtl True
 
+    lvDirWatch.ColumnHeaders(2).Width = lvDirWatch.ColumnHeaders(2).Width * 3
     
 End Sub
 

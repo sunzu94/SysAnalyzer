@@ -263,6 +263,16 @@ Private Sub Form_Load()
     lv2.ColumnHeaders(3).Width = lv2.Width - lv2.ColumnHeaders(3).Left - 350
 End Sub
 
+Private Sub Form_Resize()
+    On Error Resume Next
+    List1.Width = Me.Width - 250
+    lv.Width = List1.Width
+    lv2.Width = List1.Width
+    List1.top = Me.Height - 400 - List1.Height
+    lv.Height = Me.Height - List1.Height - 500
+    lv2.Height = lv.Height
+End Sub
+
 Private Sub lv_ColumnClick(ByVal ColumnHeader As MSComctlLib.ColumnHeader)
     LV_ColumnSort lv, ColumnHeader
 End Sub
