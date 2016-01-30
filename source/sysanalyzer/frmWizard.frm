@@ -1,18 +1,14 @@
 VERSION 5.00
 Begin VB.Form frmWizard 
    BackColor       =   &H005A5963&
-   BorderStyle     =   3  'Fixed Dialog
    Caption         =   "SysAnalyzer Configuration Wizard"
    ClientHeight    =   5325
-   ClientLeft      =   45
-   ClientTop       =   720
+   ClientLeft      =   60
+   ClientTop       =   735
    ClientWidth     =   10530
    LinkTopic       =   "Form2"
-   MaxButton       =   0   'False
-   MinButton       =   0   'False
    ScaleHeight     =   5325
    ScaleWidth      =   10530
-   ShowInTaskbar   =   0   'False
    StartUpPosition =   2  'CenterScreen
    Begin VB.CommandButton cmdBrowse 
       Caption         =   "..."

@@ -1,4 +1,4 @@
-frmMain = 207, 139, 1077, 811, Z, 85, 81, 982, 753, C
+frmMain = 207, 139, 1077, 811, , 85, 81, 982, 753, C
 CProcessPorts = 88, 88, 1150, 757, 
 CProcessPort = 0, 0, 0, 0, C
 CProcessInfo = 12, 188, 1104, 891, C
