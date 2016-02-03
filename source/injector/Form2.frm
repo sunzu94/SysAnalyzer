@@ -532,8 +532,8 @@ Private Declare Sub DebugBreak Lib "kernel32" ()
 Private Declare Function CloseHandle Lib "kernel32" (ByVal hObject As Long) As Long
 Private Declare Function GetTickCount Lib "kernel32" () As Long
 Private Declare Function TerminateProcess Lib "kernel32" (ByVal hProcess As Long, ByVal uExitCode As Long) As Long
-Private Declare Function NtSuspendProcess Lib "ntdll.dll" (ByVal hproc As Long) As Long
-Private Declare Function NtResumeProcess Lib "ntdll.dll" (ByVal hproc As Long) As Long
+Private Declare Function NtSuspendProcess Lib "ntdll.dll" (ByVal hProc As Long) As Long
+Private Declare Function NtResumeProcess Lib "ntdll.dll" (ByVal hProc As Long) As Long
 
 
 
@@ -563,6 +563,7 @@ Dim getTickIncrements As Long
 Dim liProc As ListItem
 Dim lastPid As String
 Dim lastMsg As String
+Dim doRnd As Boolean
 
 'Dim allocs As New Collection
 
@@ -595,10 +596,10 @@ Sub LoadChkSettings(Optional load As Boolean = True)
             defVal = 0
             If cc.Enabled Then
                 If load Then
-                    r = GetSetting("ApiLog", "settings", cc.Name, defVal)
+                    r = GetSetting("ApiLog", "settings", cc.name, defVal)
                     cc.value = r
                 Else
-                    Call SaveSetting("ApiLog", "settings", cc.Name, cc.value)
+                    Call SaveSetting("ApiLog", "settings", cc.name, cc.value)
                 End If
             End If
         End If
@@ -645,7 +646,7 @@ Private Sub cmdBrowse_Click(index As Integer)
     Dim f As String
     
     
-    f = dlg.OpenDialog(AllFiles, , "Open Executable to monitor", Me.hWnd)
+    f = dlg.OpenDialog(AllFiles, , "Open Executable to monitor", Me.hwnd)
     f = Replace(f, Chr(0), Empty)
     If Len(f) = 0 Then Exit Sub
     
@@ -687,8 +688,8 @@ End Sub
 
 Sub push(ary, value) 'this modifies parent ary object
     On Error GoTo init
-    Dim x As Long
-    x = UBound(ary) '<-throws Error If Not initalized
+    Dim X As Long
+    X = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
     ary(UBound(ary)) = value
     Exit Sub
@@ -742,7 +743,7 @@ Private Sub cmdSave_Click()
     Dim i As Long, t, f As String
     Dim li As ListItem
     
-    f = dlg.SaveDialog(textFiles, , , , Me.hWnd)
+    f = dlg.SaveDialog(textFiles, , , , Me.hwnd)
     If Len(f) = 0 Then Exit Sub
     
     For Each li In lv.ListItems
@@ -768,13 +769,16 @@ Private Sub cmdStart_Click()
     Dim li As ListItem
     Dim injDll As Boolean
     Dim injData As Boolean
+    Dim dllName As String
     
-    Dim x As String, tmp, y
+    Dim X As String, tmp, Y
     
     On Error GoTo hell
     
     injDll = (InStr(lblDll.Caption, "DLL") > 0)
     injData = (InStr(lblDll.Caption, "Data") > 0)
+    
+    
     
     lv.ListItems.Clear
     List2.Clear
@@ -810,18 +814,20 @@ Private Sub cmdStart_Click()
         Exit Sub
     End If
     
+    If injDll Then dllName = RandomizeApiLogDllName(txtDll)
+    
     Dim cp As CProcess
     
     If Not isx64 And Len(txtArgs) > 0 Then exe = exe & " " & txtArgs
     
     If isPid Then
         If injDll Then
-            If Not cpi.InjectDLL(pid, txtDll, x, cp) Then 'x64 Safe
+            If Not cpi.InjectDLL(pid, dllName, X, cp) Then 'x64 Safe
                 failed = True
                 MsgBox "Injection failed", vbInformation
             End If
         Else
-            If Not cpi.InjectShellcode(pid, txtDll, x, cp, injData) Then 'x64 Not supported...
+            If Not cpi.InjectShellcode(pid, dllName, X, cp, injData) Then 'x64 Not supported...
                 failed = True
                 MsgBox "Injection failed", vbInformation
             End If
@@ -829,7 +835,7 @@ Private Sub cmdStart_Click()
     Else
         cpi.x64.DisableRedir
         If injDll Then
-            If Not cpi.StartProcessWithDLL(exe, txtDll, x, cp) Then 'x64 Safe
+            If Not cpi.StartProcessWithDLL(exe, dllName, X, cp) Then 'x64 Safe
                 failed = True
                 MsgBox "Injection failed", vbInformation
             End If
@@ -846,10 +852,10 @@ Private Sub cmdStart_Click()
         li.Tag = cp.pid
     End If
     
-    tmp = Split(x, vbCrLf)
+    tmp = Split(X, vbCrLf)
     List2.Clear
-    For Each y In tmp
-       List2.AddItem y
+    For Each Y In tmp
+       List2.AddItem Y
     Next
     
     Exit Sub
@@ -858,8 +864,38 @@ hell:
     
 End Sub
 
- 
+Function RandomizeApiLogDllName(base As String) As String
+    On Error Resume Next
+    
+    'only do this when requested (no need to start playing cat and mouse)
+    If Not doRnd Then 'Or InStr(1, base, "api_log", vbTextCompare) < 1 Then
+        RandomizeApiLogDllName = base
+        Exit Function
+    End If
+    
+    Dim h As New CWinHash
+    Dim sz As Long, t As String, tmp As String
+    
+    Randomize
+    sz = RandomInteger()
+    t = h.HashString(Now)
+    t = Mid(t, 1, sz) & ".dll"
+    tmp = Environ("temp") & "\" & t
+    
+    FileCopy base, tmp
+    
+    If Not fso.FileExists(tmp) Then
+        RandomizeApiLogDllName = base
+        Exit Function
+    End If
+    
+    RandomizeApiLogDllName = tmp
+    
+End Function
 
+Private Function RandomInteger(Optional Lowerbound As Integer = 3, Optional Upperbound As Integer = 12) As Integer 'The random number generator code
+    RandomInteger = Int((Upperbound - Lowerbound + 1) * rnd + Lowerbound)
+End Function
  
 
 Private Sub Command1_Click()
@@ -924,7 +960,7 @@ Private Sub Form_Load()
     
     Set sc = New CSubclass2
     
-    sc.AttachMessage Me.hWnd, WM_COPYDATA
+    sc.AttachMessage Me.hwnd, WM_COPYDATA
     
     Dim defaultdll, defaultexe
     
@@ -959,17 +995,24 @@ Private Sub Form_Unload(Cancel As Integer)
     SaveMySetting "Ignore", txtIgnore
 End Sub
 
-Private Sub lblDll_Click()
-    If lblDll.Caption = "Inject DLL" Then
-        lblDll.Caption = "Inject Shellcode"
-    ElseIf lblDll.Caption = "Inject Shellcode" Then
-        lblDll.Caption = "Inject Data"
+Private Sub lblDll_MouseUp(Button As Integer, Shift As Integer, X As Single, Y As Single)
+    
+    If Button = 2 Then
+        doRnd = Not doRnd
+        lblDll.ForeColor = IIf(doRnd, vbRed, vbBlue)
     Else
-        lblDll.Caption = "Inject DLL"
+        If lblDll.Caption = "Inject DLL" Then
+            lblDll.Caption = "Inject Shellcode"
+        ElseIf lblDll.Caption = "Inject Shellcode" Then
+            lblDll.Caption = "Inject Data"
+        Else
+            lblDll.Caption = "Inject DLL"
+        End If
     End If
+    
 End Sub
 
-Private Sub lv_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub lv_MouseUp(Button As Integer, Shift As Integer, X As Single, Y As Single)
     If Button = 2 Then PopupMenu mnuPopup
 End Sub
 
@@ -977,7 +1020,7 @@ Private Sub lvProc_ItemClick(ByVal Item As MSComctlLib.ListItem)
     Set liProc = Item
 End Sub
 
-Private Sub lvProc_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub lvProc_MouseUp(Button As Integer, Shift As Integer, X As Single, Y As Single)
    ' mnuLoadSampleApiLog.Visible = isIde()
     If Button = 2 Then PopupMenu mnuProcess
 End Sub
@@ -1067,7 +1110,7 @@ Private Sub mnuUpdateConfig_Click()
     End If
 End Sub
 
-Private Sub sc_MessageReceived(hWnd As Long, wMsg As Long, wParam As Long, lParam As Long, Cancel As Boolean) '
+Private Sub sc_MessageReceived(hwnd As Long, wMsg As Long, wParam As Long, lParam As Long, Cancel As Boolean) '
     If wMsg = WM_COPYDATA Then RecieveTextMessage lParam
 End Sub
 
@@ -1343,19 +1386,19 @@ Private Sub TabStrip1_Click()
     List2.Visible = Not lvProc.Visible
 End Sub
 
-Private Sub txtArgs_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub txtArgs_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single)
     On Error Resume Next
     txtArgs = data.Files(1)
     DeterminePEFileStats txtArgs
 End Sub
 
-Private Sub txtDll_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub txtDll_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single)
     On Error Resume Next
     txtDll = data.Files(1)
     DeterminePEFileStats txtDll
 End Sub
 
-Private Sub txtPacked_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub txtPacked_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single)
     On Error Resume Next
     txtPacked = data.Files(1)
     DeterminePEFileStats txtPacked

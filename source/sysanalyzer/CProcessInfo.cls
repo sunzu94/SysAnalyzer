@@ -55,8 +55,8 @@ Private Declare Function NtQuerySystemInformation Lib "ntdll.dll" ( _
     dwReserved As Long) As Long
 
 Private Type SYSTEM_MODULE_INFORMATION
-    reserved(1) As Long                'ULONG reserved[2];
-    Base As Long                       'PVOID Base;
+    Reserved(1) As Long                'ULONG reserved[2];
+    base As Long                       'PVOID Base;
     size As Long                       'ULONG Size;
     flags As Long                      'ULONG Flags;
     index As Integer                   'USHORT Index;
@@ -273,7 +273,7 @@ End Type
 
 Private Declare Function WTSEnumerateProcesses _
    Lib "wtsapi32.dll" Alias "WTSEnumerateProcessesA" _
-   (ByVal hServer As Long, ByVal reserved As Long, _
+   (ByVal hServer As Long, ByVal Reserved As Long, _
    ByVal version As Long, ByRef ppProcessInfo As Long, _
    ByRef pCount As Long _
    ) As Long
@@ -581,7 +581,7 @@ Function GetProcessModules(pid As Long) As Collection
          
         Set cmod = New CModule
         cmod.path = mfn
-        cmod.Base = lmi.lpBaseOfDll
+        cmod.base = lmi.lpBaseOfDll
         cmod.size = lmi.SizeOfImage
          
         On Error Resume Next
@@ -664,7 +664,7 @@ Function DumpProcess(pid As Long, fpath As String) As Boolean
     Set col = GetProcessModules(pid)
     Set cmod = col(1)
 
-    DumpProcess = DumpProcessMemory(pid, cmod.Base, cmod.size, fpath)
+    DumpProcess = DumpProcessMemory(pid, cmod.base, cmod.size, fpath)
     
 End Function
 
@@ -913,7 +913,7 @@ Function GetMemoryMap(pid As Long) As Collection 'of CMem
             Set cMem = New CMemory
             cMem.pid = pid
             cMem.size = meminfo.RegionSize
-            cMem.Base = cur
+            cMem.base = cur
             cMem.AllocBase = meminfo.AllocationBase
             cMem.InitialProtection = meminfo.InitialProtect
             cMem.MemType = meminfo.Type
@@ -1295,9 +1295,9 @@ Public Function EnumMutexes() As Collection
     cnt = EnumMutex(pth)
     'If cnt < 1 Then 'it had an error...
         
-    If Not FileExists(pth) Then GoTo retNow
+    If Not fso.FileExists(pth) Then GoTo retNow
         
-    tmp = Split(ReadFile(pth), vbCrLf)
+    tmp = Split(fso.ReadFile(pth), vbCrLf)
     For Each x In tmp
         Set m = New CMutexElem
         If m.parseEntry(x) Then

@@ -967,3 +967,38 @@ Sub SetLiColor(li As ListItem, newcolor As Long)
         f.ForeColor = newcolor
     Next
 End Sub
+
+Function RandomizeApiLogDllName(Base As String, Optional rnd As Boolean = False) As String
+    On Error Resume Next
+       
+    'only do this if requested with hidden option..no need start cat and mouse games
+    If Not rnd Then 'Or InStr(1, Base, "api_log", vbTextCompare) < 1 Then
+        RandomizeApiLogDllName = Base
+        Exit Function
+    End If
+    
+    Dim sz As Long, t As String, tmp As String
+    
+    Randomize
+    sz = RandomInteger()
+    t = hash.HashString(Now)
+    t = Mid(t, 1, sz) & ".dll"
+    tmp = Environ("temp") & "\" & t
+    
+    FileCopy Base, tmp
+    
+    If Not fso.FileExists(tmp) Then
+        RandomizeApiLogDllName = Base
+        Exit Function
+    End If
+    
+    RandomizeApiLogDllName = tmp
+    
+End Function
+
+Private Function RandomInteger(Optional Lowerbound As Integer = 3, Optional Upperbound As Integer = 12) As Integer 'The random number generator code
+    RandomInteger = Int((Upperbound - Lowerbound + 1) * rnd + Lowerbound)
+End Function
+ 
+ 
+ 

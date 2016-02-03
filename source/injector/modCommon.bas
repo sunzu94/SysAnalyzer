@@ -5,7 +5,7 @@ Global frmMain As Object
 Private Declare Function SHGetPathFromIDList Lib "shell32" Alias "SHGetPathFromIDListA" (ByVal pidl As Long, ByVal pszPath As String) As Long
 Private Declare Function SHGetSpecialFolderLocation Lib "shell32" (ByVal hWndOwner As Long, ByVal nFolder As Long, pidl As Long) As Long
 Private Declare Sub CoTaskMemFree Lib "ole32" (ByVal pv As Long)
-Public Declare Function ShowWindow Lib "user32" (ByVal hWnd As Long, ByVal nCmdShow As Long) As Long
+Public Declare Function ShowWindow Lib "user32" (ByVal hwnd As Long, ByVal nCmdShow As Long) As Long
 
 Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 
@@ -99,7 +99,7 @@ Function LaunchStrings(data As String, Optional isPath As Boolean = False)
 
 End Function
 
-Function LaunchExternalHexViewer(data As String, Optional isPath As Boolean = False, Optional Base As String = Empty)
+Function LaunchExternalHexViewer(data As String, Optional isPath As Boolean = False, Optional base As String = Empty)
 
     Dim b() As Byte
     Dim f As String
@@ -108,7 +108,7 @@ Function LaunchExternalHexViewer(data As String, Optional isPath As Boolean = Fa
     
     On Error Resume Next
     
-    If Len(Base) > 0 Then Base = "/base=" & Replace(Base, "`", Empty)
+    If Len(base) > 0 Then base = "/base=" & Replace(base, "`", Empty)
     
     exe = App.path & IIf(isIde(), "\..\..", "") & "\shellext.exe"
     If Not fso.FileExists(exe) Then
@@ -133,7 +133,7 @@ Function LaunchExternalHexViewer(data As String, Optional isPath As Boolean = Fa
     Put h, , b()
     Close h
     
-    Shell "cmd.exe /c " & exe & " """ & f & """" & IIf(Len(Base) > 0, " " & Trim(Base), "") & " /hexv"
+    Shell "cmd.exe /c " & exe & " """ & f & """" & IIf(Len(base) > 0, " " & Trim(base), "") & " /hexv"
 
 End Function
 
@@ -156,7 +156,7 @@ Sub RestoreFormSizeAnPosition(f As Form)
     On Error GoTo hell
     Dim s
     
-    s = GetMySetting(f.Name & "_pos", "")
+    s = GetMySetting(f.name & "_pos", "")
     
     If Len(s) = 0 Then Exit Sub
     If occuranceCount(s, ",") <> 3 Then Exit Sub
@@ -176,7 +176,7 @@ Sub SaveFormSizeAnPosition(f As Form)
     Dim s As String
     If f.WindowState <> 0 Then Exit Sub 'vbnormal
     s = f.Left & "," & f.Top & "," & f.Width & "," & f.Height
-    SaveMySetting f.Name & "_pos", s
+    SaveMySetting f.name & "_pos", s
 End Sub
 
 Function GetMySetting(key, def)
@@ -194,4 +194,49 @@ Function occuranceCount(haystack, match) As Long
     occuranceCount = UBound(tmp)
     If Err.Number <> 0 Then occuranceCount = 0
 End Function
+
+Function objKeyExistsInCollection(c As Collection, val As String) As Boolean
+    On Error GoTo nope
+    Dim t
+    Set t = c(val)
+    Set t = Nothing
+    objKeyExistsInCollection = True
+ Exit Function
+nope: objKeyExistsInCollection = False
+End Function
+
+Function pad(v, Optional l As Long = 8)
+    On Error GoTo hell
+    Dim x As Long
+    x = Len(v)
+    If x < l Then
+        pad = String(l - x, " ") & v
+    Else
+hell:
+        pad = v
+    End If
+End Function
+
+Function rpad(v, Optional l As Long = 10)
+    On Error GoTo hell
+    Dim x As Long
+    x = Len(v)
+    If x < l Then
+        rpad = v & String(l - x, " ")
+    Else
+hell:
+        rpad = v
+    End If
+End Function
+
+
+
+Sub push(ary, value) 'this modifies parent ary object
+    On Error GoTo init
+    x = UBound(ary) '<-throws Error If Not initalized
+    ReDim Preserve ary(UBound(ary) + 1)
+    ary(UBound(ary)) = value
+    Exit Sub
+init:     ReDim ary(0): ary(0) = value
+End Sub
 

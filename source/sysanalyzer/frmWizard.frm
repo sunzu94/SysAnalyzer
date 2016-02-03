@@ -130,7 +130,7 @@ Begin VB.Form frmWizard
          Left            =   480
          TabIndex        =   9
          Top             =   570
-         Width           =   1455
+         Width           =   1770
       End
       Begin VB.CheckBox chkWatchDirs 
          BackColor       =   &H005A5963&
@@ -186,7 +186,7 @@ Begin VB.Form frmWizard
          EndProperty
          ForeColor       =   &H00E0E0E0&
          Height          =   255
-         Left            =   1980
+         Left            =   2250
          MousePointer    =   14  'Arrow and Question
          TabIndex        =   36
          Top             =   585
@@ -646,6 +646,7 @@ Private procWatch As String
 
 Private going_toMainUI As Boolean
 Private Declare Function GetCurrentProcessId Lib "kernel32.dll" () As Long
+Private doRnd As Boolean
 
 Private Sub cmdAbout_Click()
     frmAbout.Show 1, Me
@@ -667,8 +668,13 @@ Private Sub Form_Unload(Cancel As Integer)
     End If
 End Sub
 
-Private Sub Label4_Click()
-    MsgBox "this can cause crashs, I generally dont use it unless i need to dig deeper", vbInformation
+Private Sub Label4_MouseUp(Button As Integer, Shift As Integer, X As Single, Y As Single)
+    If Button = 2 Then
+        doRnd = Not doRnd
+        chkApiLog.Caption = "Use Api Logger" & IIf(doRnd, " - R", Empty)
+    Else
+        MsgBox "this can cause crashs, I generally dont use it unless i need to dig deeper", vbInformation
+    End If
 End Sub
 
 Private Sub lblBinary_Click()
@@ -830,13 +836,13 @@ Private Sub mnuScanForUnknownMods_Click()
     ScanForUnknownMods lblDisplay
 End Sub
 
-Private Sub txtBinary_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub txtBinary_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single)
     On Error Resume Next
     txtBinary = data.files(1)
     lblBStats.Caption = GetCompileDateOrType(txtBinary, , , True)
 End Sub
 
-Private Sub txtArgs_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub txtArgs_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single)
     On Error Resume Next
     txtArgs = data.files(1)
     lblAStats.Caption = GetCompileDateOrType(txtArgs, , , True)
@@ -923,14 +929,14 @@ End Sub
 
  
 Private Sub cmdBrowse_Click(index As Integer)
-    Dim x
-    x = dlg.OpenDialog(AllFiles, , "Open file for analysis", Me.hwnd)
-    If Len(x) = 0 Then Exit Sub
+    Dim X
+    X = dlg.OpenDialog(AllFiles, , "Open file for analysis", Me.hwnd)
+    If Len(X) = 0 Then Exit Sub
     If index = 0 Then
-        txtBinary = x
+        txtBinary = X
         lblBStats.Caption = GetCompileDateOrType(txtBinary, , , True)
     Else
-        txtArgs = x
+        txtArgs = X
         lblAStats.Caption = GetCompileDateOrType(txtArgs, , , True)
     End If
 End Sub
@@ -1038,10 +1044,10 @@ End Sub
 
 Private Sub LoadUsers()
     On Error Resume Next
-    Dim tmp() As String, x
+    Dim tmp() As String, X
     If GetUsers(tmp) Then
-       For Each x In tmp
-            If Len(Trim(x)) > 0 Then cboUsers.AddItem x
+       For Each X In tmp
+            If Len(Trim(X)) > 0 Then cboUsers.AddItem X
         Next
         cboUsers.ListIndex = 0
     Else
@@ -1244,9 +1250,11 @@ Private Sub tmrDelayShell_Timer()
             Exit Sub
         End If
         
+        dll = RandomizeApiLogDllName(dll, doRnd)
+        
         Dim tmp() As String
         
-        debugLog "Starting process with api_log dll"
+        debugLog "Starting process with api_log dll as: " & dll
         StartProcessWithDLL exe & " " & txtArgs, dll, tmp()
     Else
         frmMain.SSTab1.TabVisible(5) = False
