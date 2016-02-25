@@ -475,7 +475,8 @@ End Sub
 Private Sub Form_Resize()
     On Error Resume Next
     lvDirWatch.Width = Me.Width - lvDirWatch.Left - 200
-    lvDirWatch.ColumnHeaders(2).Width = lvDirWatch.Width - lvDirWatch.ColumnHeaders(2).Left - 100
+    'lvDirWatch.ColumnHeaders(2).Width = lvDirWatch.Width - lvDirWatch.ColumnHeaders(2).Left - 100
+    lvDirWatch.ColumnHeaders(2).Width = lvDirWatch.ColumnHeaders(2).Width * 3
     With lvDirWatch
         .Height = Me.Height - .Top - 500
         lv.Height = .Height

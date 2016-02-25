@@ -195,13 +195,13 @@ Private Function LoadProccesses(c As Collection)
         Set li.Tag = p
         cc = InStr(p.User, ":")
         If cc > 0 Then
-            li.SubItems(1) = Mid(p.User, cc + 1)
+            li.subItems(1) = Mid(p.User, cc + 1)
         Else
-            li.SubItems(1) = p.User
+            li.subItems(1) = p.User
         End If
-        li.SubItems(1) = IIf(p.is64Bit, "*64 ", "") & li.SubItems(1)
+        li.subItems(1) = IIf(p.is64Bit, "*64 ", "") & li.subItems(1)
         'li.SubItems(2) = p.path
-        li.SubItems(2) = p.fullpath 'can fail on win7?
+        li.subItems(2) = p.fullpath 'can fail on win7?
     Next
     
 End Function
@@ -352,7 +352,11 @@ End Sub
 Private Sub mnuShowDlls_Click()
     If selli Is Nothing Then Exit Sub
     
-    frmDlls.ShowDllsFor (CLng(selli.Text)), Me
+    #If isSysanalyzer Then
+        frmMemoryMap.ShowDlls CLng(selli.Text)
+    #Else
+        frmDlls.ShowDllsFor (CLng(selli.Text)), Me
+    #End If
     
 '    Dim c As Collection
 '    Dim cm As CModule
@@ -412,11 +416,11 @@ Private Sub txtSearch_Change()
     Dim li2 As ListItem
     
     For Each li In lv.ListItems
-        If InStr(1, li.SubItems(2), txtSearch, vbTextCompare) > 0 Then
+        If InStr(1, li.subItems(2), txtSearch, vbTextCompare) > 0 Then
             Set li2 = lv2.ListItems.Add(, , li.Text)
             Set li2.Tag = li.Tag
-            li2.SubItems(1) = li.SubItems(1)
-            li2.SubItems(2) = li.SubItems(2)
+            li2.subItems(1) = li.subItems(1)
+            li2.subItems(2) = li.subItems(2)
         End If
     Next
     

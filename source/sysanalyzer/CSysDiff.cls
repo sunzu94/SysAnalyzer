@@ -99,14 +99,14 @@ Sub DoSnap1()
     
     Dim col As Collection
     
-    frmMain.lvProcesses.ListItems.Clear
+    frmMain.lvProcesses.Clear
     frmMain.lvPorts.ListItems.Clear
     frmMain.lvExplorer.ListItems.Clear
     frmMain.lvIE.ListItems.Clear
-    frmMain.lvDrivers.ListItems.Clear
+    frmMain.lvDrivers.Clear
     frmMain.lvRegKeys.ListItems.Clear
     frmMain.lvTasks.ListItems.Clear
-    frmMain.lvMutex.ListItems.Clear
+    frmMain.lvMutex.Clear
     
     frmMain.Display = "Taking SnapShot 1"
     frmMain.pb.max = 7
@@ -413,14 +413,14 @@ Private Sub ShowSnapShot(procs As Collection, ports As Collection, servcs As Col
     frmMain.pb.value = 0
     frmMain.pb.max = 8
     
-    frmMain.lvProcesses.ListItems.Clear
+    frmMain.lvProcesses.Clear
     frmMain.lvPorts.ListItems.Clear
     'frmMain.lvServices.ListItems.Clear
     frmMain.lvExplorer.ListItems.Clear
     frmMain.lvIE.ListItems.Clear
-    frmMain.lvDrivers.ListItems.Clear
+    frmMain.lvDrivers.Clear
     frmMain.lvRegKeys.ListItems.Clear
-    frmMain.lvMutex.ListItems.Clear
+    frmMain.lvMutex.Clear
     frmMain.lvTasks.ListItems.Clear
     
     frmMain.Display = "Loading processes.."
@@ -430,11 +430,12 @@ Private Sub ShowSnapShot(procs As Collection, ports As Collection, servcs As Col
             mm = known.isFileKnown(proc.fullpath) 'CProc.GetProcessPath(proc.pid))
             If known.HideKnownInDisplays And mm = exact_match Then GoTo next_proc
         End If
-        Set li = frmMain.lvProcesses.ListItems.Add(, , pad(proc.pid))
+        'Set li = frmMain.lvProcesses.ListItems.Add(, , pad(proc.pid))
+        Set li = frmMain.lvProcesses.AddItem(pad(proc.pid))
         li.Tag = proc.pid
-        li.SubItems(1) = pad(proc.ParentPID)
-        li.SubItems(2) = proc.User & IIf(proc.is64Bit, "  *64 ", Empty)
-        li.SubItems(3) = proc.fullpath ' CProc.GetProcessPath(proc.pid)
+        li.subItems(1) = pad(proc.ParentPID)
+        li.subItems(2) = proc.User & IIf(proc.is64Bit, "  *64 ", Empty)
+        li.subItems(3) = proc.fullpath ' CProc.GetProcessPath(proc.pid)
         li.ToolTipText = proc.CmdLine
         If mm = exact_match Then SetLiColor li, my_green
         If mm = hash_changed Then SetLiColor li, my_orange
@@ -452,9 +453,9 @@ next_proc:
             If known.HideKnownInDisplays And mm = exact_match Then GoTo next_port
         End If
         Set li = frmMain.lvPorts.ListItems.Add(, , pad(Port.Port))
-        li.SubItems(1) = pad(Port.pid)
-        li.SubItems(2) = IIf(Port.isTCP, "TCP", "UDP")
-        li.SubItems(3) = Port.path
+        li.subItems(1) = pad(Port.pid)
+        li.subItems(2) = IIf(Port.isTCP, "TCP", "UDP")
+        li.subItems(3) = Port.path
         If mm = exact_match Then SetLiColor li, my_green
         If mm = hash_changed Then SetLiColor li, my_orange
 next_port:
@@ -483,8 +484,8 @@ next_port:
         End If
         Set li = frmMain.lvExplorer.ListItems.Add(, , n)
         fp = FileInfo(n)
-        li.SubItems(1) = fp.CompanyName
-        li.SubItems(2) = fp.FileDescription
+        li.subItems(1) = fp.CompanyName
+        li.subItems(2) = fp.FileDescription
         If mm = exact_match Then SetLiColor li, my_green
         If mm = hash_changed Then SetLiColor li, my_orange
 next_expdll:
@@ -503,8 +504,8 @@ next_expdll:
         End If
         Set li = frmMain.lvIE.ListItems.Add(, , n)
         fp = FileInfo(n)
-        li.SubItems(1) = fp.CompanyName
-        li.SubItems(2) = fp.FileDescription
+        li.subItems(1) = fp.CompanyName
+        li.subItems(2) = fp.FileDescription
         If mm = exact_match Then SetLiColor li, my_green
         If mm = hash_changed Then SetLiColor li, my_orange
 next_iedll:
@@ -544,14 +545,14 @@ next_iedll:
             If known.HideKnownInDisplays And mm = exact_match Then GoTo next_driver
         End If
         
-        Set li = frmMain.lvDrivers.ListItems.Add(, , d)
+        Set li = frmMain.lvDrivers.AddItem(d)
         
         'this can cause crash
         If FileExists(d) Then
             'debugLog "ShowSnapShot.Drivers.FileInfo(" & d & ")"
             fp = FileInfo(d)
-            li.SubItems(1) = fp.CompanyName
-            li.SubItems(2) = fp.FileDescription
+            li.subItems(1) = fp.CompanyName
+            li.subItems(2) = fp.FileDescription
         End If
         
         If mm = exact_match Then SetLiColor li, my_green
@@ -570,7 +571,7 @@ next_driver:
         Dim s As String
         s = CReg.GetValForKey(d)
         Set li = frmMain.lvRegKeys.ListItems.Add(, , d)
-        li.SubItems(1) = s
+        li.subItems(1) = s
         If shutDown Then Exit Sub
     Next
     
@@ -578,11 +579,11 @@ next_driver:
     frmMain.Display = "Loading mutexes.."
     
     For Each cme In mutexes
-        Set li = frmMain.lvMutex.ListItems.Add(, , cme.pid)
+        Set li = frmMain.lvMutex.AddItem(cme.pid)
         If isCompare Then
-            li.SubItems(1) = IIf(cme.isNew, "", "- ") & cme.name
+            li.subItems(1) = IIf(cme.isNew, "", "- ") & cme.name
         Else
-            li.SubItems(1) = cme.name
+            li.subItems(1) = cme.name
         End If
         If shutDown Then Exit Sub
     Next
@@ -593,7 +594,7 @@ next_driver:
     Dim cte As CTaskElem
     For Each cte In tasks
         Set li = frmMain.lvTasks.ListItems.Add(, , cte.name)
-        li.SubItems(1) = cte.exe
+        li.subItems(1) = cte.exe
         Set li.Tag = cte
         If shutDown Then Exit Sub
     Next

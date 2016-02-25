@@ -55,8 +55,8 @@ Private Declare Function NtQuerySystemInformation Lib "ntdll.dll" ( _
     dwReserved As Long) As Long
 
 Private Type SYSTEM_MODULE_INFORMATION
-    Reserved(1) As Long                'ULONG reserved[2];
-    base As Long                       'PVOID Base;
+    reserved(1) As Long                'ULONG reserved[2];
+    Base As Long                       'PVOID Base;
     size As Long                       'ULONG Size;
     flags As Long                      'ULONG Flags;
     index As Integer                   'USHORT Index;
@@ -273,7 +273,7 @@ End Type
 
 Private Declare Function WTSEnumerateProcesses _
    Lib "wtsapi32.dll" Alias "WTSEnumerateProcessesA" _
-   (ByVal hServer As Long, ByVal Reserved As Long, _
+   (ByVal hServer As Long, ByVal reserved As Long, _
    ByVal version As Long, ByRef ppProcessInfo As Long, _
    ByRef pCount As Long _
    ) As Long
@@ -363,7 +363,11 @@ Function SelectProcess() As CProcess
 End Function
 
 Function ShowDllsFor(pid As Long, Optional owner As Object)
-    frmDlls.ShowDllsFor pid, owner
+    #If isSysanalyzer Then
+        frmMemoryMap.ShowDlls pid
+    #Else
+        frmDlls.ShowDllsFor pid, owner
+    #End If
 End Function
 
 Function GetRunningProcesses() As Collection 'of CProcess classes
@@ -581,7 +585,7 @@ Function GetProcessModules(pid As Long) As Collection
          
         Set cmod = New CModule
         cmod.path = mfn
-        cmod.base = lmi.lpBaseOfDll
+        cmod.Base = lmi.lpBaseOfDll
         cmod.size = lmi.SizeOfImage
          
         On Error Resume Next
@@ -664,7 +668,7 @@ Function DumpProcess(pid As Long, fpath As String) As Boolean
     Set col = GetProcessModules(pid)
     Set cmod = col(1)
 
-    DumpProcess = DumpProcessMemory(pid, cmod.base, cmod.size, fpath)
+    DumpProcess = DumpProcessMemory(pid, cmod.Base, cmod.size, fpath)
     
 End Function
 
@@ -913,7 +917,7 @@ Function GetMemoryMap(pid As Long) As Collection 'of CMem
             Set cMem = New CMemory
             cMem.pid = pid
             cMem.size = meminfo.RegionSize
-            cMem.base = cur
+            cMem.Base = cur
             cMem.AllocBase = meminfo.AllocationBase
             cMem.InitialProtection = meminfo.InitialProtect
             cMem.MemType = meminfo.Type

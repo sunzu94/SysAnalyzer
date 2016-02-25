@@ -39,6 +39,7 @@ Global hash As New CWinHash
     Global ado As New clsAdoKit
     Global known As New CKnownFile
     Global apiDataManager As New CApiDataManager
+    Global reg As New clsRegistry2
 #End If
 
 Public Const x64Error = "This feature is only currently available for 32 bit processes."
@@ -729,7 +730,7 @@ Function GetAllElements(lv As ListView) As String
     For Each li In lv.ListItems
         tmp = li.Text & vbTab
         For i = 1 To lv.ColumnHeaders.count - 1
-            tmp = tmp & li.SubItems(i) & vbTab
+            tmp = tmp & li.subItems(i) & vbTab
         Next
         push ret, tmp
     Next
@@ -750,7 +751,7 @@ Function GetAllText(lv As ListView, Optional subItemRow As Long = 0, Optional se
                 tmp = tmp & x & vbCrLf
             End If
         Else
-            x = lv.ListItems(i).SubItems(subItemRow)
+            x = lv.ListItems(i).subItems(subItemRow)
             If selectedOnly And Not lv.ListItems(i).Selected Then x = Empty
             If Len(x) > 0 Then
                 tmp = tmp & x & vbCrLf

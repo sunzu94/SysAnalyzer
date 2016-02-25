@@ -10,41 +10,15 @@ Begin VB.Form frmMemoryMap
    ScaleHeight     =   6165
    ScaleWidth      =   11655
    StartUpPosition =   2  'CenterScreen
-   Begin MSComctlLib.ListView lv2 
-      Height          =   4125
-      Left            =   1740
+   Begin sysAnalyzer_2.ucFilterList lv2 
+      Height          =   3930
+      Left            =   1215
       TabIndex        =   2
-      Top             =   480
+      Top             =   450
       Visible         =   0   'False
-      Width           =   8895
-      _ExtentX        =   15690
-      _ExtentY        =   7276
-      View            =   3
-      LabelEdit       =   1
-      LabelWrap       =   -1  'True
-      HideSelection   =   -1  'True
-      FullRowSelect   =   -1  'True
-      GridLines       =   -1  'True
-      _Version        =   393217
-      ForeColor       =   -2147483640
-      BackColor       =   -2147483643
-      BorderStyle     =   1
-      Appearance      =   1
-      NumItems        =   3
-      BeginProperty ColumnHeader(1) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
-         Text            =   "Base"
-         Object.Width           =   2540
-      EndProperty
-      BeginProperty ColumnHeader(2) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
-         SubItemIndex    =   1
-         Text            =   "Size"
-         Object.Width           =   2540
-      EndProperty
-      BeginProperty ColumnHeader(3) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
-         SubItemIndex    =   2
-         Text            =   "Module"
-         Object.Width           =   2540
-      EndProperty
+      Width           =   8385
+      _ExtentX        =   14790
+      _ExtentY        =   6932
    End
    Begin VB.ListBox List1 
       Height          =   1035
@@ -154,9 +128,9 @@ Public Sub ShowDlls(pid As Long) 'x64 ok.
     Set c = pi.GetProcessModules(pid)
     
     For Each cm In c
-        Set li = lv2.ListItems.Add(, , cm.hexBase)
-        li.SubItems(1) = cm.hexSize
-        li.SubItems(2) = cm.path
+        Set li = lv2.AddItem(cm.hexBase)
+        li.subItems(1) = cm.hexSize
+        li.subItems(2) = cm.path
         
         #If isSysanalyzer = 1 Then
             If known.Loaded And known.Ready Then
@@ -204,10 +178,10 @@ Public Sub ShowMemoryMap(pid As Long) 'now x64 compatiabled...
     lv.ListItems.Clear
     For Each cMem In c
         Set li = lv.ListItems.Add(, , pad(cMem.BaseAsHexString))
-        li.SubItems(1) = pad(Hex(cMem.size))
-        li.SubItems(2) = cMem.MemTypeAsString()
-        li.SubItems(3) = cMem.ProtectionAsString()
-        li.SubItems(4) = cMem.ModuleName
+        li.subItems(1) = pad(Hex(cMem.size))
+        li.subItems(2) = cMem.MemTypeAsString()
+        li.subItems(3) = cMem.ProtectionAsString()
+        li.subItems(4) = cMem.ModuleName
         Set li.Tag = cMem
         
         #If isSysanalyzer = 1 Then
@@ -258,9 +232,11 @@ Private Sub Form_Load()
     mnuPopup.Visible = False
     mnuPopup2.Visible = False
     Me.Icon = frmMain.Icon
+    lv2.FilterColumn = 2
+    lv2.SetColumnHeaders "Base,Size,Module"
     lv.ColumnHeaders(5).Width = lv.Width - lv.ColumnHeaders(5).Left - 350
     lv2.Move lv.Left, lv.top, lv.Width, lv.Height
-    lv2.ColumnHeaders(3).Width = lv2.Width - lv2.ColumnHeaders(3).Left - 350
+    'lv2.ColumnHeaders(3).Width = lv2.Width - lv2.ColumnHeaders(3).Left - 350
 End Sub
 
 Private Sub Form_Resize()
@@ -290,7 +266,7 @@ Private Sub lv_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Si
 End Sub
 
 Private Sub lv2_ColumnClick(ByVal ColumnHeader As MSComctlLib.ColumnHeader)
-    LV_ColumnSort lv2, ColumnHeader
+    lv2.ColumnSort ColumnHeader
 End Sub
 
 Private Sub lv2_ItemClick(ByVal Item As MSComctlLib.ListItem)
@@ -310,7 +286,7 @@ Private Sub mnuDumpDll_Click()
     
     'MsgBox dlg.SaveDialog(AllFiles)
      
-    orgPath = selli.SubItems(2)
+    orgPath = selli.subItems(2)
     n = fso.FileNameFromPath(orgPath) & ".dmp"
     'f = InputBox("Save file as: ", , UserDeskTopFolder & "\" & n)
     f = frmDlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save Dll Dump as:", , Me, n)
@@ -318,7 +294,7 @@ Private Sub mnuDumpDll_Click()
     
     'If pi.DumpProcessMemory(active_pid, CLng("&h" & selli.Text), CLng("&h" & selli.SubItems(1)), f) Then
     
-    If pi.DumpMemory(active_pid, Trim(selli.Text), Trim(selli.SubItems(1)), f) Then    'x64 enabled version...
+    If pi.DumpMemory(active_pid, Trim(selli.Text), Trim(selli.subItems(1)), f) Then    'x64 enabled version...
         MsgBox "File successfully saved"
     Else
         MsgBox "Error saving file: " & Err.Description
@@ -333,7 +309,7 @@ Private Sub mnuSaveDll_Click()
     Dim orgPath As String
     
     On Error Resume Next
-    orgPath = selli.SubItems(2)
+    orgPath = selli.subItems(2)
     
     If Not fso.FileExists(orgPath) Then
         List1.AddItem "Error: Could not find: " & orgPath
@@ -360,7 +336,7 @@ Private Sub mnuSaveMemory_Click()
     'f = InputBox("Save file as: ", , UserDeskTopFolder & "\" & selli.Text & ".mem")
     f = frmDlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save Memory as:", , Me, Trim(selli.Text) & ".mem")
     If Len(f) = 0 Then Exit Sub
-    If pi.DumpMemory(active_pid, Trim(selli.Text), Trim(selli.SubItems(1)), f) Then
+    If pi.DumpMemory(active_pid, Trim(selli.Text), Trim(selli.subItems(1)), f) Then
         MsgBox "File successfully saved"
     Else
         MsgBox "Error saving file: " & Err.Description
@@ -423,7 +399,7 @@ Private Sub mnuStrings_Click()
     On Error Resume Next
     Dim f As String
     f = fso.GetFreeFileName(Environ("temp"), ".bin")
-    If pi.DumpMemory(active_pid, Trim(selli.Text), Trim(selli.SubItems(1)), f) Then
+    If pi.DumpMemory(active_pid, Trim(selli.Text), Trim(selli.subItems(1)), f) Then
        LaunchStrings f, True
     Else
         MsgBox "Error saving file: " & Err.Description
@@ -437,7 +413,7 @@ Private Sub mnuViewMemory_Click()
     On Error Resume Next
     
     'Base = CLng("&h" & selli.Text)
-    s = pi.ReadMemory2(active_pid, Trim(selli.Text), CLng("&h" & Trim(selli.SubItems(1))))
+    s = pi.ReadMemory2(active_pid, Trim(selli.Text), CLng("&h" & Trim(selli.subItems(1))))
     
     If Len(s) = 0 Then
         List1.AddItem Now & ": Failed to readmemory?"

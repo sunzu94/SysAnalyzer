@@ -20,7 +20,7 @@ Begin VB.Form frmMain
       Left            =   10170
       ScaleHeight     =   255
       ScaleWidth      =   1275
-      TabIndex        =   12
+      TabIndex        =   10
       Top             =   5085
       Width           =   1275
       Begin VB.Label lblTools 
@@ -37,7 +37,7 @@ Begin VB.Form frmMain
          ForeColor       =   &H00C00000&
          Height          =   195
          Left            =   720
-         TabIndex        =   14
+         TabIndex        =   12
          Top             =   0
          Width           =   435
       End
@@ -55,7 +55,7 @@ Begin VB.Form frmMain
          ForeColor       =   &H00C00000&
          Height          =   255
          Left            =   0
-         TabIndex        =   13
+         TabIndex        =   11
          Top             =   0
          Width           =   615
       End
@@ -72,15 +72,16 @@ Begin VB.Form frmMain
       TabOrientation  =   1
       Style           =   1
       Tabs            =   9
-      Tab             =   6
       TabsPerRow      =   10
       TabHeight       =   520
       ShowFocusRect   =   0   'False
       TabCaption(0)   =   "Running Processes"
       TabPicture(0)   =   "Form1.frx":5C12
-      Tab(0).ControlEnabled=   0   'False
+      Tab(0).ControlEnabled=   -1  'True
       Tab(0).Control(0)=   "fraProc"
+      Tab(0).Control(0).Enabled=   0   'False
       Tab(0).Control(1)=   "lvProcesses"
+      Tab(0).Control(1).Enabled=   0   'False
       Tab(0).ControlCount=   2
       TabCaption(1)   =   "Open Ports"
       TabPicture(1)   =   "Form1.frx":5C2E
@@ -115,11 +116,9 @@ Begin VB.Form frmMain
       Tab(5).ControlCount=   2
       TabCaption(6)   =   "Directory Watch Data"
       TabPicture(6)   =   "Form1.frx":5CBA
-      Tab(6).ControlEnabled=   -1  'True
+      Tab(6).ControlEnabled=   0   'False
       Tab(6).Control(0)=   "lvDirWatch"
-      Tab(6).Control(0).Enabled=   0   'False
       Tab(6).Control(1)=   "fraDirWatch"
-      Tab(6).Control(1).Enabled=   0   'False
       Tab(6).ControlCount=   2
       TabCaption(7)   =   "Mutexes"
       TabPicture(7)   =   "Form1.frx":5CD6
@@ -131,33 +130,60 @@ Begin VB.Form frmMain
       Tab(8).ControlEnabled=   0   'False
       Tab(8).Control(0)=   "lvTasks"
       Tab(8).ControlCount=   1
+      Begin sysAnalyzer_2.ucFilterList lvProcesses 
+         Height          =   4470
+         Left            =   45
+         TabIndex        =   41
+         Top             =   90
+         Width           =   10140
+         _ExtentX        =   17886
+         _ExtentY        =   7885
+      End
+      Begin sysAnalyzer_2.ucFilterList lvDrivers 
+         Height          =   4695
+         Left            =   -74910
+         TabIndex        =   40
+         Top             =   90
+         Width           =   11265
+         _ExtentX        =   17171
+         _ExtentY        =   8281
+      End
+      Begin sysAnalyzer_2.ucFilterList lvMutex 
+         Height          =   4830
+         Left            =   -74910
+         TabIndex        =   39
+         Top             =   90
+         Width           =   11265
+         _ExtentX        =   19870
+         _ExtentY        =   8520
+      End
       Begin VB.Frame fraAPILog 
          BorderStyle     =   0  'None
          Caption         =   "Frame1"
          Height          =   915
          Left            =   -74940
-         TabIndex        =   36
+         TabIndex        =   30
          Top             =   4020
          Width           =   10215
          Begin VB.CommandButton cmdSaveApiLog 
             Caption         =   "Save Api Log"
             Height          =   315
             Left            =   8280
-            TabIndex        =   43
+            TabIndex        =   37
             Top             =   420
             Width           =   1875
          End
          Begin VB.TextBox txtApiIgnore 
             Height          =   315
             Left            =   600
-            TabIndex        =   40
+            TabIndex        =   34
             Top             =   0
             Width           =   7635
          End
          Begin VB.TextBox txtAPIDelete 
             Height          =   315
             Left            =   660
-            TabIndex        =   39
+            TabIndex        =   33
             Top             =   420
             Width           =   4815
          End
@@ -165,7 +191,7 @@ Begin VB.Form frmMain
             Caption         =   "Delete Lines Like"
             Height          =   315
             Left            =   5580
-            TabIndex        =   38
+            TabIndex        =   32
             Top             =   420
             Width           =   1575
          End
@@ -173,7 +199,7 @@ Begin VB.Form frmMain
             Caption         =   "Turn off Api Logging"
             Height          =   315
             Left            =   8280
-            TabIndex        =   37
+            TabIndex        =   31
             Top             =   0
             Width           =   1935
          End
@@ -182,7 +208,7 @@ Begin VB.Form frmMain
             Height          =   315
             Index           =   2
             Left            =   60
-            TabIndex        =   42
+            TabIndex        =   36
             Top             =   480
             Width           =   555
          End
@@ -190,7 +216,7 @@ Begin VB.Form frmMain
             Caption         =   "Ignore"
             Height          =   315
             Left            =   0
-            TabIndex        =   41
+            TabIndex        =   35
             Top             =   60
             Width           =   555
          End
@@ -201,22 +227,22 @@ Begin VB.Form frmMain
          Height          =   75
          Left            =   -74940
          MousePointer    =   7  'Size N S
-         TabIndex        =   35
+         TabIndex        =   29
          Top             =   2160
          Width           =   10155
       End
       Begin VB.Frame fraDirWatch 
          BorderStyle     =   0  'None
          Height          =   795
-         Left            =   60
-         TabIndex        =   26
+         Left            =   -74940
+         TabIndex        =   20
          Top             =   4080
          Width           =   10215
          Begin VB.CommandButton cmdSaveDirWatchFile 
             Caption         =   "Save Selected files"
             Height          =   315
             Left            =   7140
-            TabIndex        =   31
+            TabIndex        =   25
             Top             =   360
             Width           =   1575
          End
@@ -224,21 +250,21 @@ Begin VB.Form frmMain
             Caption         =   "Delete Lines Like"
             Height          =   315
             Left            =   5520
-            TabIndex        =   30
+            TabIndex        =   24
             Top             =   360
             Width           =   1575
          End
          Begin VB.TextBox txtDeleteLike 
             Height          =   315
             Left            =   660
-            TabIndex        =   29
+            TabIndex        =   23
             Top             =   360
             Width           =   4755
          End
          Begin VB.TextBox txtIgnore 
             Height          =   315
             Left            =   660
-            TabIndex        =   28
+            TabIndex        =   22
             Top             =   0
             Width           =   9495
          End
@@ -246,7 +272,7 @@ Begin VB.Form frmMain
             Caption         =   "Stop Monitor"
             Height          =   315
             Left            =   8940
-            TabIndex        =   27
+            TabIndex        =   21
             Top             =   360
             Width           =   1215
          End
@@ -255,7 +281,7 @@ Begin VB.Form frmMain
             Height          =   315
             Index           =   1
             Left            =   0
-            TabIndex        =   33
+            TabIndex        =   27
             Top             =   360
             Width           =   555
          End
@@ -264,7 +290,7 @@ Begin VB.Form frmMain
             Height          =   315
             Index           =   0
             Left            =   0
-            TabIndex        =   32
+            TabIndex        =   26
             Top             =   0
             Width           =   555
          End
@@ -273,14 +299,14 @@ Begin VB.Form frmMain
          BorderStyle     =   0  'None
          Height          =   375
          Left            =   -74880
-         TabIndex        =   21
+         TabIndex        =   15
          Top             =   4500
          Width           =   10035
          Begin VB.CommandButton cmdCopyDll 
             Caption         =   "Save Copy"
             Height          =   315
             Left            =   8160
-            TabIndex        =   24
+            TabIndex        =   18
             Top             =   0
             Width           =   1035
          End
@@ -288,14 +314,14 @@ Begin VB.Form frmMain
             Caption         =   "Properties"
             Height          =   315
             Left            =   6840
-            TabIndex        =   23
+            TabIndex        =   17
             Top             =   0
             Width           =   975
          End
          Begin VB.TextBox txtDllPath 
             Height          =   315
             Left            =   540
-            TabIndex        =   22
+            TabIndex        =   16
             Top             =   0
             Width           =   6195
          End
@@ -303,46 +329,31 @@ Begin VB.Form frmMain
             Caption         =   "Path"
             Height          =   255
             Left            =   0
-            TabIndex        =   25
+            TabIndex        =   19
             Top             =   60
             Width           =   495
          End
       End
       Begin VB.Frame fraProc 
          BorderStyle     =   0  'None
-         Height          =   615
-         Left            =   -74880
-         TabIndex        =   15
-         Top             =   4320
+         Height          =   390
+         Left            =   135
+         TabIndex        =   13
+         Top             =   4455
          Width           =   10035
-         Begin VB.TextBox txtProcess 
-            Height          =   315
-            Left            =   1020
-            TabIndex        =   17
-            Top             =   300
-            Width           =   1215
-         End
-         Begin VB.CommandButton cmdAnalyze 
-            Caption         =   "Analyze Process"
-            Height          =   315
-            Left            =   2340
-            TabIndex        =   16
-            Top             =   300
-            Width           =   1875
-         End
          Begin VB.Timer tmrCountDown 
             Enabled         =   0   'False
             Interval        =   1000
-            Left            =   9600
-            Top             =   180
+            Left            =   9630
+            Top             =   0
          End
          Begin MSComctlLib.ProgressBar pb 
             Height          =   255
-            Left            =   0
-            TabIndex        =   34
-            Top             =   0
-            Width           =   10155
-            _ExtentX        =   17912
+            Left            =   2655
+            TabIndex        =   28
+            Top             =   90
+            Width           =   7185
+            _ExtentX        =   12674
             _ExtentY        =   450
             _Version        =   393216
             Appearance      =   1
@@ -351,32 +362,16 @@ Begin VB.Form frmMain
             Caption         =   "Currently displaying  base snapshot"
             ForeColor       =   &H00C00000&
             Height          =   255
-            Left            =   6240
-            TabIndex        =   18
-            Top             =   360
-            Width           =   3675
-         End
-         Begin VB.Label Label4 
-            Caption         =   "Analyze PID"
-            Height          =   315
             Left            =   0
-            TabIndex        =   20
-            Top             =   360
-            Width           =   1215
-         End
-         Begin VB.Label lblTimer 
-            Caption         =   "Seconds Remaining: "
-            Height          =   315
-            Left            =   4380
-            TabIndex        =   19
-            Top             =   360
-            Width           =   2955
+            TabIndex        =   14
+            Top             =   135
+            Width           =   3675
          End
       End
       Begin MSComctlLib.ListView lvPorts 
          Height          =   4755
          Left            =   -74940
-         TabIndex        =   2
+         TabIndex        =   1
          Top             =   120
          Width           =   10155
          _ExtentX        =   17912
@@ -413,50 +408,10 @@ Begin VB.Form frmMain
             Object.Width           =   12347
          EndProperty
       End
-      Begin MSComctlLib.ListView lvProcesses 
-         Height          =   4215
-         Left            =   -74940
-         TabIndex        =   1
-         Top             =   60
-         Width           =   10155
-         _ExtentX        =   17912
-         _ExtentY        =   7435
-         View            =   3
-         LabelEdit       =   1
-         LabelWrap       =   -1  'True
-         HideSelection   =   -1  'True
-         FullRowSelect   =   -1  'True
-         GridLines       =   -1  'True
-         _Version        =   393217
-         ForeColor       =   -2147483640
-         BackColor       =   -2147483643
-         BorderStyle     =   1
-         Appearance      =   1
-         NumItems        =   4
-         BeginProperty ColumnHeader(1) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
-            Text            =   "PID"
-            Object.Width           =   1058
-         EndProperty
-         BeginProperty ColumnHeader(2) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
-            SubItemIndex    =   1
-            Text            =   "ParentPID"
-            Object.Width           =   1058
-         EndProperty
-         BeginProperty ColumnHeader(3) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
-            SubItemIndex    =   2
-            Text            =   "User"
-            Object.Width           =   3881
-         EndProperty
-         BeginProperty ColumnHeader(4) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
-            SubItemIndex    =   3
-            Text            =   "Path"
-            Object.Width           =   10583
-         EndProperty
-      End
       Begin MSComctlLib.ListView lvExplorer 
          Height          =   1995
          Left            =   -74940
-         TabIndex        =   3
+         TabIndex        =   2
          Top             =   180
          Width           =   10155
          _ExtentX        =   17912
@@ -491,7 +446,7 @@ Begin VB.Form frmMain
       Begin MSComctlLib.ListView lvIE 
          Height          =   1875
          Left            =   -74940
-         TabIndex        =   4
+         TabIndex        =   3
          Top             =   2580
          Width           =   10155
          _ExtentX        =   17912
@@ -524,54 +479,10 @@ Begin VB.Form frmMain
             Object.Width           =   7056
          EndProperty
       End
-      Begin MSComctlLib.ListView lvDrivers 
-         Height          =   4815
-         Left            =   -75000
-         TabIndex        =   7
-         Top             =   0
-         Width           =   10215
-         _ExtentX        =   18018
-         _ExtentY        =   8493
-         View            =   3
-         LabelEdit       =   1
-         LabelWrap       =   -1  'True
-         HideSelection   =   -1  'True
-         FullRowSelect   =   -1  'True
-         GridLines       =   -1  'True
-         _Version        =   393217
-         ForeColor       =   -2147483640
-         BackColor       =   -2147483643
-         BorderStyle     =   1
-         Appearance      =   1
-         BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
-            Name            =   "Verdana"
-            Size            =   9.75
-            Charset         =   0
-            Weight          =   400
-            Underline       =   0   'False
-            Italic          =   0   'False
-            Strikethrough   =   0   'False
-         EndProperty
-         NumItems        =   3
-         BeginProperty ColumnHeader(1) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
-            Text            =   "Driver File"
-            Object.Width           =   8819
-         EndProperty
-         BeginProperty ColumnHeader(2) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
-            SubItemIndex    =   1
-            Text            =   "Company Name"
-            Object.Width           =   6174
-         EndProperty
-         BeginProperty ColumnHeader(3) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
-            SubItemIndex    =   2
-            Text            =   "Description"
-            Object.Width           =   6174
-         EndProperty
-      End
       Begin MSComctlLib.ListView lvRegKeys 
          Height          =   4815
          Left            =   -74940
-         TabIndex        =   8
+         TabIndex        =   6
          Top             =   0
          Width           =   10155
          _ExtentX        =   17912
@@ -610,7 +521,7 @@ Begin VB.Form frmMain
       Begin MSComctlLib.ListView lvAPILog 
          Height          =   3975
          Left            =   -75000
-         TabIndex        =   9
+         TabIndex        =   7
          Top             =   0
          Width           =   10215
          _ExtentX        =   18018
@@ -641,13 +552,13 @@ Begin VB.Form frmMain
          EndProperty
       End
       Begin MSComctlLib.ListView lvDirWatch 
-         Height          =   4035
-         Left            =   60
-         TabIndex        =   10
-         Top             =   0
+         Height          =   3900
+         Left            =   -74940
+         TabIndex        =   8
+         Top             =   90
          Width           =   10155
          _ExtentX        =   17912
-         _ExtentY        =   7117
+         _ExtentY        =   6879
          View            =   3
          LabelEdit       =   1
          LabelWrap       =   -1  'True
@@ -684,40 +595,10 @@ Begin VB.Form frmMain
             Object.Width           =   2540
          EndProperty
       End
-      Begin MSComctlLib.ListView lvMutex 
-         Height          =   4755
-         Left            =   -74910
-         TabIndex        =   44
-         Top             =   90
-         Width           =   10155
-         _ExtentX        =   17912
-         _ExtentY        =   8387
-         View            =   3
-         LabelEdit       =   1
-         LabelWrap       =   -1  'True
-         HideSelection   =   -1  'True
-         FullRowSelect   =   -1  'True
-         GridLines       =   -1  'True
-         _Version        =   393217
-         ForeColor       =   -2147483640
-         BackColor       =   -2147483643
-         BorderStyle     =   1
-         Appearance      =   1
-         NumItems        =   2
-         BeginProperty ColumnHeader(1) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
-            Text            =   "PID"
-            Object.Width           =   1058
-         EndProperty
-         BeginProperty ColumnHeader(2) {BDD1F052-858B-11D1-B16A-00C0F0283628} 
-            SubItemIndex    =   1
-            Text            =   "Name"
-            Object.Width           =   12347
-         EndProperty
-      End
       Begin MSComctlLib.ListView lvTasks 
          Height          =   4755
          Left            =   -74910
-         TabIndex        =   45
+         TabIndex        =   38
          Top             =   90
          Width           =   10155
          _ExtentX        =   17912
@@ -749,7 +630,7 @@ Begin VB.Form frmMain
          Height          =   255
          Index           =   0
          Left            =   -74940
-         TabIndex        =   6
+         TabIndex        =   5
          Top             =   0
          Width           =   1035
       End
@@ -757,7 +638,7 @@ Begin VB.Form frmMain
          Caption         =   "IE Dlls :"
          Height          =   255
          Left            =   -74940
-         TabIndex        =   5
+         TabIndex        =   4
          Top             =   2340
          Width           =   1035
       End
@@ -765,12 +646,15 @@ Begin VB.Form frmMain
    Begin VB.OLE OLE1 
       Height          =   30
       Left            =   6720
-      TabIndex        =   11
+      TabIndex        =   9
       Top             =   4800
       Width           =   75
    End
    Begin VB.Menu mnuProcessesPopup 
       Caption         =   "mnuProcessesPopup"
+      Begin VB.Menu mnuAnalyze 
+         Caption         =   "Analyze"
+      End
       Begin VB.Menu mnuShowProcessDlls 
          Caption         =   "ShowDlls"
       End
@@ -785,6 +669,9 @@ Begin VB.Form frmMain
       End
       Begin VB.Menu mnuKillProcess 
          Caption         =   "Kill"
+      End
+      Begin VB.Menu mnuDebug 
+         Caption         =   "Debug"
       End
       Begin VB.Menu mnuSpacer1 
          Caption         =   "-"
@@ -912,6 +799,9 @@ Begin VB.Form frmMain
       Begin VB.Menu mnuSaveDriver 
          Caption         =   "Save File"
       End
+      Begin VB.Menu mnuDriversCopyPath 
+         Caption         =   "Copy Path"
+      End
       Begin VB.Menu mnuAddSelDrivertoKnownDB 
          Caption         =   "Add Selected To Known DB"
          Enabled         =   0   'False
@@ -924,6 +814,15 @@ Begin VB.Form frmMain
       End
       Begin VB.Menu mnuRegMonCopyTable 
          Caption         =   "Copy Entire Table"
+      End
+   End
+   Begin VB.Menu mnuDirWatch 
+      Caption         =   "mnuDirWatch"
+      Begin VB.Menu mnuDirWatchCopyPath 
+         Caption         =   "Copy Path"
+      End
+      Begin VB.Menu mnuDirWatchOpenDir 
+         Caption         =   "Open Directory"
       End
    End
 End
@@ -1017,8 +916,8 @@ End Sub
 Sub StartCountDown(xSecs As Integer)
     
     seconds = xSecs
-    lblTimer = seconds & " Seconds remaining"
-    debugLog lblTimer.Caption
+    lblDisplay = seconds & " Seconds remaining"
+    debugLog lblDisplay.Caption
     
     Me.Visible = True
     tmrCountDown.Enabled = True
@@ -1073,6 +972,16 @@ Private Sub Form_Load()
     mnuDllsPopup.Visible = False
     mnuTools.Visible = False
     mnuRegMonitor.Visible = False
+    mnuDirWatch.Visible = False
+    
+    lvMutex.FilterColumn = 1
+    lvMutex.SetColumnHeaders "PID,Name"
+    
+    lvDrivers.FilterColumn = 0
+    lvDrivers.SetColumnHeaders "Driver File,Company Name,Description", "4470,2205"
+    
+    lvProcesses.FilterColumn = 3
+    lvProcesses.SetColumnHeaders "PID,ParentPID,User,Path"
     
     If known.Loaded And known.Ready Then
         mnuAddSelectedDllsToKnown.Enabled = True
@@ -1097,9 +1006,8 @@ Private Sub Form_Load()
     RestoreFormSizeAnPosition Me
     splitterDlls.top = SSTab1.Height / 2
     Splitter_DoMove
-    
-    On Error Resume Next
-    SSTab1.TabIndex = 1
+
+    SSTab1.Tab = 0
     debugLog "frmMain_Load"
     
     
@@ -1115,6 +1023,8 @@ Private Sub Form_Resize()
     SSTab1.Width = Me.Width - SSTab1.Left - 100
     SSTab1.Height = Me.Height - SSTab1.top - 500 - (TitleBarHeight(Me) - 255)
     For Each o In Me.Controls
+        'If InStr(1, TypeName(o), "filter", vbTextCompare) > 0 Then Stop
+        'Debug.Print
         If TypeName(o) = "ListView" Then
             Set lv = o
             lv.Width = SSTab1.Width - 200
@@ -1123,11 +1033,15 @@ Private Sub Form_Resize()
             Else
                 lv.ColumnHeaders(lv.ColumnHeaders.count).Width = lv.Width - lv.ColumnHeaders(lv.ColumnHeaders.count).Left - 200
             End If
-            If lv.name = "lvPorts" Or lv.name = "lvDrivers" Or lv.name = "lvRegKeys" Or lv.name = "lvMutex" Or lv.name = "lvTasks" Then
+            If lv.name = "lvPorts" Or lv.name = "lvRegKeys" Or lv.name = "lvTasks" Then
                 With lv
                     .Height = SSTab1.Height - .top - 500
                 End With
             End If
+        End If
+        If TypeName(o) = "ucFilterList" Then
+           o.Width = SSTab1.Width - 200
+           o.Height = SSTab1.Height - o.top - 500
         End If
     Next
     
@@ -1136,9 +1050,9 @@ Private Sub Form_Resize()
     
     With lvProcesses
         .Height = SSTab1.Height - .top - fraProc.Height - 500
-        fraProc.top = .top + .Height + 100
+        fraProc.top = .top + .Height '+ 100
         fraProc.Width = .Width
-        pb.Width = .Width
+        pb.Width = .Width - pb.Left - 100
     End With
     
     With lvIE
@@ -1167,6 +1081,10 @@ End Sub
 
 Private Sub lblTools_Click()
      PopupMenu mnuTools
+End Sub
+
+Private Sub lvDirWatch_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+    If Button = 2 Then PopupMenu mnuDirWatch
 End Sub
 
 Private Sub lvDrivers_ItemClick(ByVal Item As MSComctlLib.ListItem)
@@ -1244,6 +1162,21 @@ Private Sub mnuAddSelectedDllsToKnown_Click()
     
 End Sub
 
+Private Sub mnuAnalyze_Click()
+    
+    On Error GoTo hell
+    If liProc Is Nothing Then Exit Sub
+    
+    frmAnalyzeProcess.AnalyzeProcess CLng(liProc.Text)
+    Unload frmAnalyzeProcess
+    
+    frmReportViewer.OpenAnalysisFolder UserDeskTopFolder
+    
+    Exit Sub
+hell: MsgBox "Error in mnuAnalyze_Click: " & Err.Description, vbInformation
+
+End Sub
+
 Private Sub mnuCopySelected_Click()
     
     Dim active_lv As ListView
@@ -1257,7 +1190,7 @@ Private Sub mnuCopySelected_Click()
             If li.Selected Then
                 tmp = li.Text & vbTab
                 For i = 1 To active_lv.ColumnHeaders.count - 1
-                    tmp = tmp & li.SubItems(i) & vbTab
+                    tmp = tmp & li.subItems(i) & vbTab
                 Next
                 li.Selected = True
                 match = match + 1
@@ -1270,6 +1203,66 @@ Private Sub mnuCopySelected_Click()
         frmReport.ShowList ret, , "selected_items.txt", False
     End If
     
+End Sub
+
+Private Sub mnuDebug_Click()
+    On Error Resume Next
+    Dim dbg As String, pid As Long, tmp() As String, a As Long
+    If liProc Is Nothing Then Exit Sub
+    pid = CLng(liProc.Tag)
+    reg.hive = HKEY_LOCAL_MACHINE
+    dbg = reg.ReadValue("\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AeDebug", "Debugger")
+    If Len(dbg) = 0 Then
+        MsgBox "No JIT Debugger registered on your system", vbInformation
+        Exit Sub
+    End If
+    dbg = Replace(dbg, "%ld", "%d")
+        
+'    If InStr(1, dbg, "ollydbg", vbTextCompare) > 0 Then
+'         a = InStr(1, dbg, "-AE", vbTextCompare)
+'         If a > 0 Then
+'            dbg = Mid(dbg, 1, a - 1) & pid
+'         Else
+'            dbg = Replace(dbg, "%d", pid)
+'         End If
+'
+''        tmp = Split(dbg, "%d")
+''        tmp(1) = pid
+''        If UBound(tmp) > 1 Then tmp(2) = " 1"
+''        dbg = Join(tmp, "")
+'
+'    Else
+        dbg = Replace(dbg, "%d", pid)
+'    End If
+    
+    
+    Shell dbg
+End Sub
+
+Private Sub mnuDirWatchCopyPath_Click()
+    If liDirWatch Is Nothing Then Exit Sub
+    Clipboard.Clear
+    Clipboard.SetText liDirWatch.subItems(2)
+End Sub
+
+Private Sub mnuDirWatchOpenDir_Click()
+    If liDirWatch Is Nothing Then Exit Sub
+    On Error Resume Next
+    Dim f As String
+    f = liDirWatch.subItems(2)
+    If fso.FileExists(f) Then f = fso.GetParentFolder(f)
+    If fso.FolderExists(f) Then
+        Shell "explorer " & f, vbNormalFocus
+    End If
+End Sub
+
+Private Sub mnuDriversCopyPath_Click()
+    If liDriver Is Nothing Then Exit Sub
+    Dim p As String
+    On Error Resume Next
+    p = liDriver.Text
+    Clipboard.Clear
+    Clipboard.SetText p
 End Sub
 
 Private Sub mnuHideKnown_Click()
@@ -1286,15 +1279,11 @@ Private Sub mnuKnownFiles_Click()
     frmKnownFiles.Show 1, Me
 End Sub
 
- 
-
-
-
 Private Sub mnuLaunchStrings_Click()
     If liProc Is Nothing Then Exit Sub
     Dim f As String
     On Error Resume Next
-    f = liProc.SubItems(3)
+    f = liProc.subItems(3)
     LaunchStrings f, True
 End Sub
 
@@ -1310,7 +1299,7 @@ Private Sub mnuRegMonCopyLine_Click()
     If liRegMon Is Nothing Then Exit Sub
     On Error Resume Next
     Dim tmp As String
-    tmp = liRegMon.Text & vbCrLf & vbTab & liRegMon.SubItems(1)
+    tmp = liRegMon.Text & vbCrLf & vbTab & liRegMon.subItems(1)
     Clipboard.Clear
     Clipboard.SetText tmp
 End Sub
@@ -1348,7 +1337,7 @@ Private Sub mnuSaveToAnalysisFolder_Click()
     Dim f As String, f2 As String
     On Error Resume Next
     
-    f = liProc.SubItems(3)
+    f = liProc.subItems(3)
     If Not fso.FileExists(f) Then
         MsgBox "File not found: " & f
     Else
@@ -1376,7 +1365,7 @@ Private Sub mnuScanProcForStealthInjects_Click()
     '    MsgBox x64Error, vbInformation
     '    Exit Sub
     'End If
-    frmInjectionScan.FindStealthInjections pid, liProc.SubItems(3)
+    frmInjectionScan.FindStealthInjections pid, liProc.subItems(3)
 End Sub
 
 Private Sub mnuScanProcsForDll_Click()
@@ -1398,7 +1387,7 @@ Private Sub mnuSearch_Click()
         For Each li In active_lv.ListItems
             tmp = li.Text & vbTab
             For i = 1 To active_lv.ColumnHeaders.count - 1
-                tmp = tmp & li.SubItems(i) & vbTab
+                tmp = tmp & li.subItems(i) & vbTab
             Next
             If InStr(1, tmp, Search, vbTextCompare) > 0 Then
                 li.Selected = True
@@ -1430,7 +1419,7 @@ Function GetActiveLV(Optional index As Long = -1) As ListView
         Case 4: Set active_lv = lvRegKeys
         Case 5: Set active_lv = lvAPILog
         Case 6: Set active_lv = lvDirWatch
-        Case 7: Set active_lv = lvMutex
+        Case 7: Set active_lv = lvMutex.lstView
         Case 8: Set active_lv = lvTasks
     End Select
     
@@ -1462,7 +1451,6 @@ Private Sub tmrCountDown_Timer()
     
     tickCount = tickCount + 1
     If tickCount > seconds Then
-        lblTimer.Visible = False
         tmrCountDown.Enabled = False
     
         diff.DoSnap2
@@ -1495,24 +1483,13 @@ Private Sub tmrCountDown_Timer()
         
         
     Else
-        lblTimer = (seconds - tickCount) & " Seconds remaining"
+        lblDisplay = (seconds - tickCount) & " Seconds remaining"
     End If
     
     
 End Sub
 
-Sub cmdAnalyze_Click()
-    
-    On Error GoTo hell
-    frmAnalyzeProcess.AnalyzeProcess CLng(txtProcess)
-    Unload frmAnalyzeProcess
-    
-    frmReportViewer.OpenAnalysisFolder UserDeskTopFolder
-    
-    Exit Sub
-hell: MsgBox "Error in cmdAnalyze_Click: " & Err.Description, vbInformation
-    
-End Sub
+ 
 
 Function GetClipboard() As String
     GetClipboard = Clipboard.GetText
@@ -1569,7 +1546,7 @@ Private Sub cmdSaveDirWatchFile_Click()
     
         If li.Selected Then
         
-            f = li.SubItems(2)
+            f = li.subItems(2)
             Err.Clear
             
             If Not fso.FileExists(f) Then
@@ -1626,7 +1603,7 @@ Function GetSystemDataReport(Optional appendClipboard As Boolean = False) As Str
     push ret, GetAllElements(lvPorts)
     
     push ret, vbCrLf & "Mutexes:"
-    push ret, GetAllElements(lvMutex)
+    push ret, lvMutex.GetAllElements
     
     push ret, vbCrLf & "Tasks:"
     push ret, GetAllElements(lvTasks)
@@ -1855,8 +1832,8 @@ Private Sub subclass_MessageReceived(hwnd As Long, wMsg As Long, wParam As Long,
                 End If
                     
                 Set li = lvDirWatch.ListItems.Add(, , tmp(0))
-                If size > 0 Then li.SubItems(1) = Hex(size) & IIf(saved, " +", "")
-                li.SubItems(2) = Trim(tmp(1))
+                If size > 0 Then li.subItems(1) = Hex(size) & IIf(saved, " +", "")
+                li.subItems(2) = Trim(tmp(1))
                 li.EnsureVisible
                 
             End If
@@ -1926,11 +1903,6 @@ Private Function RecieveTextMessage(lParam As Long, msg As String) As Boolean
     End If
     
 End Function
- 
-
-
-
-
 
 Private Sub lvProcesses_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     If Button = 2 Then PopupMenu mnuProcessesPopup
@@ -1938,9 +1910,8 @@ End Sub
 
 Sub lvProcesses_ItemClick(ByVal Item As MSComctlLib.ListItem)
     Set liProc = Item
-    txtProcess = Item.Tag
 End Sub
- 
+
 Private Sub mnuDumpProcess_Click()
     If liProc Is Nothing Then Exit Sub
 
@@ -1955,7 +1926,7 @@ Private Sub mnuDumpProcess_Click()
     'End If
     
     Dim pth As String
-    pth = fso.FileNameFromPath(liProc.SubItems(3)) & ".dmp"
+    pth = fso.FileNameFromPath(liProc.subItems(3)) & ".dmp"
     'pth = InputBox("Enter path to dump file as:", , UserDeskTopFolder & "\" & pth)
     pth = frmDlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save Dump as", , Me, pth)
     If Len(pth) = 0 Then Exit Sub
@@ -1977,7 +1948,7 @@ Private Sub mnuCopyProcessPath_Click()
     On Error Resume Next
     If liProc Is Nothing Then Exit Sub
     Dim pth As String
-    pth = liProc.SubItems(3)
+    pth = liProc.subItems(3)
     Clipboard.Clear
     Clipboard.SetText pth
 End Sub
@@ -2002,7 +1973,7 @@ Private Sub mnuProcessFileProps_Click()
 
     On Error Resume Next
 
-    path = liProc.SubItems(3)
+    path = liProc.subItems(3)
     fsize = "FileSize: " & FileLen(path) & vbCrLf & String(70, "-") & vbCrLf
 
     path = QuickInfo(path)
@@ -2044,9 +2015,10 @@ Private Sub lvPorts_ColumnClick(ByVal ColumnHeader As MSComctlLib.ColumnHeader)
     LV_ColumnSort lvPorts, ColumnHeader
 End Sub
 
- Private Sub lvProcesses_ColumnClick(ByVal ColumnHeader As MSComctlLib.ColumnHeader)
+Private Sub lvProcesses_ColumnClick(ByVal ColumnHeader As MSComctlLib.ColumnHeader)
     LV_ColumnSort lvProcesses, ColumnHeader
 End Sub
+
 
 
 'splitter code
@@ -2097,5 +2069,4 @@ End Function
 
 '------------------------------------------------
 'end splitter code
-
 

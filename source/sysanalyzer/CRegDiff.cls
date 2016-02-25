@@ -39,8 +39,6 @@ Dim HKLM_singleval() As String
 Public Snap1 As New Collection
 Public Snap2 As New Collection
 
-Dim reg As New clsRegistry2
-
 Private Sub Class_Initialize()
     
      'enum values

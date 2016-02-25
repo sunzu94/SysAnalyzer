@@ -668,7 +668,7 @@ Private Sub Form_Unload(Cancel As Integer)
     End If
 End Sub
 
-Private Sub Label4_MouseUp(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub Label4_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     If Button = 2 Then
         doRnd = Not doRnd
         chkApiLog.Caption = "Use Api Logger" & IIf(doRnd, " - R", Empty)
@@ -729,7 +729,6 @@ Private Sub lblSkip_Click()
     frmMain.SSTab1.TabVisible(6) = True 'False
     frmMain.cmdDirWatch_Click
     frmMain.SSTab1.TabVisible(5) = False
-    frmMain.lblTimer.Visible = False
     frmMain.Visible = True
     Me.Visible = False
     frmMain.mnuToolItem_Click 4 'take base snapshot..
@@ -836,13 +835,13 @@ Private Sub mnuScanForUnknownMods_Click()
     ScanForUnknownMods lblDisplay
 End Sub
 
-Private Sub txtBinary_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub txtBinary_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, y As Single)
     On Error Resume Next
     txtBinary = data.files(1)
     lblBStats.Caption = GetCompileDateOrType(txtBinary, , , True)
 End Sub
 
-Private Sub txtArgs_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub txtArgs_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, y As Single)
     On Error Resume Next
     txtArgs = data.files(1)
     lblAStats.Caption = GetCompileDateOrType(txtArgs, , , True)
@@ -929,14 +928,14 @@ End Sub
 
  
 Private Sub cmdBrowse_Click(index As Integer)
-    Dim X
-    X = dlg.OpenDialog(AllFiles, , "Open file for analysis", Me.hwnd)
-    If Len(X) = 0 Then Exit Sub
+    Dim x
+    x = dlg.OpenDialog(AllFiles, , "Open file for analysis", Me.hwnd)
+    If Len(x) = 0 Then Exit Sub
     If index = 0 Then
-        txtBinary = X
+        txtBinary = x
         lblBStats.Caption = GetCompileDateOrType(txtBinary, , , True)
     Else
-        txtArgs = X
+        txtArgs = x
         lblAStats.Caption = GetCompileDateOrType(txtArgs, , , True)
     End If
 End Sub
@@ -1044,10 +1043,10 @@ End Sub
 
 Private Sub LoadUsers()
     On Error Resume Next
-    Dim tmp() As String, X
+    Dim tmp() As String, x
     If GetUsers(tmp) Then
-       For Each X In tmp
-            If Len(Trim(X)) > 0 Then cboUsers.AddItem X
+       For Each x In tmp
+            If Len(Trim(x)) > 0 Then cboUsers.AddItem x
         Next
         cboUsers.ListIndex = 0
     Else
@@ -1137,7 +1136,6 @@ Sub cmdStart_Click()
     going_toMainUI = True
     frmMain.Initalize
     
-    frmMain.lblTimer = txtDelay & " Seconds remaining"
     frmMain.Visible = True
     Me.Visible = False
     
