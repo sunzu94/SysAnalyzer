@@ -2,12 +2,12 @@ VERSION 5.00
 Begin VB.Form frmWizard 
    BackColor       =   &H005A5963&
    Caption         =   "SysAnalyzer Configuration Wizard"
-   ClientHeight    =   5325
+   ClientHeight    =   5835
    ClientLeft      =   60
    ClientTop       =   735
    ClientWidth     =   10530
    LinkTopic       =   "Form2"
-   ScaleHeight     =   5325
+   ScaleHeight     =   5835
    ScaleWidth      =   10530
    StartUpPosition =   2  'CenterScreen
    Begin VB.CommandButton cmdBrowse 
@@ -40,11 +40,19 @@ Begin VB.Form frmWizard
       BackColor       =   &H005A5963&
       Caption         =   " Options "
       ForeColor       =   &H00E0E0E0&
-      Height          =   3360
+      Height          =   3855
       Left            =   3840
       TabIndex        =   7
       Top             =   1260
       Width           =   6465
+      Begin VB.TextBox txtMonitorDlls 
+         Height          =   285
+         Left            =   1575
+         TabIndex        =   41
+         Text            =   "explore,svchost,firefox,rundll"
+         Top             =   3285
+         Width           =   4290
+      End
       Begin VB.TextBox txtPassword 
          Height          =   285
          Left            =   4770
@@ -85,7 +93,7 @@ Begin VB.Form frmWizard
          TabIndex        =   20
          Text            =   "explorer.exe,iexplore.exe"
          Top             =   2835
-         Width           =   3435
+         Width           =   4290
       End
       Begin VB.ComboBox cboIp 
          Height          =   315
@@ -141,6 +149,37 @@ Begin VB.Form frmWizard
          TabIndex        =   8
          Top             =   960
          Width           =   2835
+      End
+      Begin VB.Label lblMonitorDllHelp 
+         BackColor       =   &H005A5963&
+         Caption         =   "?"
+         BeginProperty Font 
+            Name            =   "MS Sans Serif"
+            Size            =   8.25
+            Charset         =   0
+            Weight          =   400
+            Underline       =   -1  'True
+            Italic          =   0   'False
+            Strikethrough   =   0   'False
+         EndProperty
+         ForeColor       =   &H00E0E0E0&
+         Height          =   255
+         Left            =   6030
+         MousePointer    =   14  'Arrow and Question
+         TabIndex        =   42
+         Top             =   3285
+         Width           =   225
+      End
+      Begin VB.Label Label3 
+         BackColor       =   &H005A5963&
+         Caption         =   "Monitor Dlls in:"
+         ForeColor       =   &H00E0E0E0&
+         Height          =   195
+         Index           =   1
+         Left            =   450
+         TabIndex        =   40
+         Top             =   3375
+         Width           =   1140
       End
       Begin VB.Label lblRunAsUserHelp 
          BackColor       =   &H005A5963&
@@ -217,7 +256,8 @@ Begin VB.Form frmWizard
          Caption         =   "RWE Scan:"
          ForeColor       =   &H00E0E0E0&
          Height          =   195
-         Left            =   495
+         Index           =   0
+         Left            =   630
          TabIndex        =   19
          Top             =   2880
          Width           =   915
@@ -294,7 +334,7 @@ Begin VB.Form frmWizard
       Height          =   375
       Left            =   9090
       TabIndex        =   3
-      Top             =   4770
+      Top             =   5355
       Width           =   1155
    End
    Begin VB.CommandButton cmdBrowse 
@@ -354,10 +394,10 @@ Begin VB.Form frmWizard
       EndProperty
       ForeColor       =   &H0000FFFF&
       Height          =   345
-      Left            =   225
+      Left            =   180
       MousePointer    =   14  'Arrow and Question
       TabIndex        =   29
-      Top             =   4860
+      Top             =   5400
       Width           =   5625
    End
    Begin VB.Label lblDisplay 
@@ -393,7 +433,7 @@ Begin VB.Form frmWizard
       EndProperty
       ForeColor       =   &H00E0E0E0&
       Height          =   255
-      Left            =   150
+      Left            =   135
       MousePointer    =   14  'Arrow and Question
       TabIndex        =   27
       Top             =   3990
@@ -413,7 +453,7 @@ Begin VB.Form frmWizard
       EndProperty
       ForeColor       =   &H00E0E0E0&
       Height          =   255
-      Left            =   90
+      Left            =   135
       MousePointer    =   14  'Arrow and Question
       TabIndex        =   26
       Top             =   3300
@@ -508,7 +548,7 @@ Begin VB.Form frmWizard
       Left            =   6615
       MousePointer    =   14  'Arrow and Question
       TabIndex        =   6
-      Top             =   4875
+      Top             =   5445
       Width           =   435
    End
    Begin VB.Image Image1 
@@ -660,12 +700,18 @@ Private Sub Form_Unload(Cancel As Integer)
     SaveConfig
     SaveMySetting "chkFilterHostOnly.Value", chkFilterHostOnly.value
     If Len(txtRWEScan) > 0 Then SaveMySetting "txtRWEScan", txtRWEScan.Text
+    If Len(txtMonitorDlls) = 0 Then txtMonitorDlls = "explore"
+    SaveMySetting "txtMonitorDlls", txtMonitorDlls.Text
     Dim f As Form
     If Not going_toMainUI Then
         For Each f In Forms
             Unload f
         Next
     End If
+End Sub
+
+Private Sub Label3_Click(index As Integer)
+    txtMonitorDlls = "explore,svchost,firefox,rundll"
 End Sub
 
 Private Sub Label4_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
@@ -678,7 +724,17 @@ Private Sub Label4_MouseUp(Button As Integer, Shift As Integer, x As Single, y A
 End Sub
 
 Private Sub lblBinary_Click()
-    MsgBox "SysAnalyzer can launch any file type which has a registered shell extension such as doc,pdf,html as well as standard executable extensions such as exe, pif,com, scr etc. Built in support is also included for launching dlls through the use of a helper application. You can also use this textbox to launch the parent application, and use the arguments box to load the specific malicious file", vbInformation
+
+    Const msg = "SysAnalyzer can launch any file type which has a registered \n" & _
+                "shell extension such as doc,pdf,html as well as standard \n" & _
+                "executable extensions such as exe, pif,com, scr etc. \n\n" & _
+                "Built in support is also included for launching dlls through \n" & _
+                "the use of a helper application. You can also use this textbox \n" & _
+                "to launch the parent application, and use the arguments box to \n" & _
+                "load the specific malicious file"
+                
+    MsgBox Replace(msg, "\n", vbCrLf), vbInformation
+          
 End Sub
 
 Private Sub lblBuildKnownFileDB_Click()
@@ -715,6 +771,20 @@ Private Sub lblLaunchTcpDump_Click()
     launchtcpdump
 End Sub
 
+Private Sub lblMonitorDllHelp_Click()
+
+    Const msg = "You can specify which processes you want\n" & _
+                "to watch for new dlls loaded into. Partial\n" & _
+                "strings such as explore will cover both \n" & _
+                "explorer and IExplore. Seperate names with \n" & _
+                "commas.\n\nEnter * to include all processes\n" & _
+                "Double click on the monitor label to use\n" & _
+                "the default values"
+                
+    MsgBox Replace(msg, "\n", vbCrLf), vbInformation
+
+End Sub
+
 Private Sub lblRunAsUserHelp_Click()
     MsgBox "this option does not work with the API logger, credentials will be verified before execution. " & vbCrLf & vbCrLf & _
            "Also if you are trying to launch a file by extension such as a doc file, " & vbCrLf & _
@@ -723,7 +793,10 @@ Private Sub lblRunAsUserHelp_Click()
 End Sub
 
 Private Sub lblSkip_Click()
-   
+    
+    ProcessesToRWEScan = txtRWEScan
+    csvProcessesToDllMonitor = txtMonitorDlls
+    
     frmMain.Initalize
     frmMain.SSTab1.TabVisible(6) = True 'dir watch, they can turn on anytime..
     If chkWatchDirs.value Then frmMain.cmdDirWatch_Click
@@ -985,6 +1058,7 @@ Private Sub Form_Load()
     procWatch = App.path & IIf(isIde(), "\..\..", Empty) & "\proc_watch.exe"
     tcpdump = App.path & IIf(isIde(), "\..\..", Empty) & "\win_dump.exe"
     txtRWEScan = GetMySetting("txtRWEScan", "explorer.exe,iexplore.exe,")
+    txtMonitorDlls = GetMySetting("txtMonitorDlls", "explore,svchost,firefox,rundll")
     
     Set c = AvailableInterfaces()
     For Each ip In c
@@ -1071,6 +1145,7 @@ Sub cmdStart_Click()
     End If
     
     ProcessesToRWEScan = txtRWEScan
+    csvProcessesToDllMonitor = txtMonitorDlls
     
     If chkPacketCapture.value = 1 Then
         If Not IsNumeric(txtInterface.Text) Or txtInterface.Text = 0 Then

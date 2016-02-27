@@ -25,15 +25,15 @@ Begin VB.Form frmMain
       _Version        =   393216
       Style           =   1
       Tabs            =   9
-      Tab             =   4
+      Tab             =   2
       TabsPerRow      =   10
       TabHeight       =   520
       ShowFocusRect   =   0   'False
       TabCaption(0)   =   "Running Processes"
       TabPicture(0)   =   "Form1.frx":5C12
       Tab(0).ControlEnabled=   0   'False
-      Tab(0).Control(0)=   "lvProcesses"
-      Tab(0).Control(1)=   "fraProc"
+      Tab(0).Control(0)=   "fraProc"
+      Tab(0).Control(1)=   "lvProcesses"
       Tab(0).ControlCount=   2
       TabCaption(1)   =   "Open Ports"
       TabPicture(1)   =   "Form1.frx":5C2E
@@ -42,9 +42,11 @@ Begin VB.Form frmMain
       Tab(1).ControlCount=   1
       TabCaption(2)   =   "Process Dlls"
       TabPicture(2)   =   "Form1.frx":5C4A
-      Tab(2).ControlEnabled=   0   'False
-      Tab(2).Control(0)=   "lvProcessDlls"
-      Tab(2).Control(1)=   "lvProcessDllList"
+      Tab(2).ControlEnabled=   -1  'True
+      Tab(2).Control(0)=   "lvProcessDllList"
+      Tab(2).Control(0).Enabled=   0   'False
+      Tab(2).Control(1)=   "lvProcessDlls"
+      Tab(2).Control(1).Enabled=   0   'False
       Tab(2).ControlCount=   2
       TabCaption(3)   =   "Loaded Drivers"
       TabPicture(3)   =   "Form1.frx":5C66
@@ -53,9 +55,8 @@ Begin VB.Form frmMain
       Tab(3).ControlCount=   1
       TabCaption(4)   =   "Reg Monitor"
       TabPicture(4)   =   "Form1.frx":5C82
-      Tab(4).ControlEnabled=   -1  'True
+      Tab(4).ControlEnabled=   0   'False
       Tab(4).Control(0)=   "lvRegKeys"
-      Tab(4).Control(0).Enabled=   0   'False
       Tab(4).ControlCount=   1
       TabCaption(5)   =   "Api Log"
       TabPicture(5)   =   "Form1.frx":5C9E
@@ -79,7 +80,7 @@ Begin VB.Form frmMain
       Tab(8).ControlCount=   1
       Begin sysAnalyzer_2.ucFilterList lvRegKeys 
          Height          =   4740
-         Left            =   135
+         Left            =   -74865
          TabIndex        =   14
          Top             =   405
          Width           =   10950
@@ -97,7 +98,7 @@ Begin VB.Form frmMain
       End
       Begin sysAnalyzer_2.ucFilterList lvProcessDlls 
          Height          =   4785
-         Left            =   -71850
+         Left            =   3150
          TabIndex        =   12
          Top             =   465
          Width           =   8250
@@ -106,7 +107,7 @@ Begin VB.Form frmMain
       End
       Begin MSComctlLib.ListView lvProcessDllList 
          Height          =   4740
-         Left            =   -74910
+         Left            =   90
          TabIndex        =   11
          Top             =   465
          Width           =   3030
@@ -1213,13 +1214,13 @@ Private Sub mnuSearch_Click()
     
 End Sub
 
-Function GetActiveLV(Optional index As Long = -1) As ListView
+Function GetActiveLV(Optional Index As Long = -1) As ListView
 
     Dim active_lv As ListView
     
-    If index = -1 Then index = SSTab1.TabIndex
+    If Index = -1 Then Index = SSTab1.TabIndex
     
-    Select Case index
+    Select Case Index
         Case 0: Set active_lv = lvProcesses.mainLV
         Case 1: Set active_lv = lvPorts.mainLV
         Case 2: Set active_lv = lvProcessDllList
@@ -1448,14 +1449,14 @@ Private Sub mnuDataReport_Click()
     ShowDataReport
 End Sub
 
-Public Sub mnuToolItem_Click(index As Integer)
+Public Sub mnuToolItem_Click(Index As Integer)
     
     'show1, show2, diff, - , take1, take2, - , startover
     
     Dim c As String
     
     With diff
-        Select Case index
+        Select Case Index
             Case 0: .ShowBaseSnap
             Case 1: .ShowSnap2
             Case 2: .ShowDiffReport
@@ -1478,7 +1479,7 @@ Public Sub mnuToolItem_Click(index As Integer)
         End Select
     End With
     
-    Select Case index
+    Select Case Index
         Case 0: c = "Showing base snapshot"
         Case 1: c = "Showing snapshot 2"
         Case 2: c = "Showing snapshot diff"
@@ -1487,7 +1488,7 @@ Public Sub mnuToolItem_Click(index As Integer)
     End Select
     
     If lastViewMode <= 5 Then
-        lastViewMode = index
+        lastViewMode = Index
     Else
         lastViewMode = -1
     End If
@@ -1693,7 +1694,7 @@ Private Sub mnuKillProcess_Click()
     On Error Resume Next
     If liProc Is Nothing Then Exit Sub
     If diff.CProc.TerminateProces(CLng(liProc.Text)) Then
-        lvProcesses.ListItems.Remove liProc.index
+        lvProcesses.ListItems.Remove liProc.Index
         MsgBox "Process Killed", vbInformation
     Else
         MsgBox "Unable to kill Process", vbInformation

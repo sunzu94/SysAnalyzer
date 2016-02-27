@@ -44,6 +44,7 @@ Global hash As New CWinHash
 Public Const x64Error = "This feature is only currently available for 32 bit processes."
 
 Global ProcessesToRWEScan As String
+Global csvProcessesToDllMonitor As String
 Global tcpdump As String
 Global networkAnalyzer As String
 Global watchIDs() As Long

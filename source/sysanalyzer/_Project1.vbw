@@ -1,4 +1,4 @@
-frmMain = 124, 89, 994, 903, C, 85, 81, 982, 753, C
+frmMain = 124, 89, 994, 903, , 85, 81, 982, 753, C
 CProcessPorts = 88, 88, 1150, 757, C
 CProcessPort = 0, 0, 0, 0, C
 CProcessInfo = 12, 188, 1104, 891, C
@@ -40,6 +40,6 @@ CSection = 0, 0, 0, 0, C
 CMutexElem = 0, 0, 984, 669, 
 CTaskElem = 220, 220, 952, 841, 
 frmMemSearchResults = 86, 34, 896, 815, , 112, 154, 1058, 925, C
-ucFilterList = 153, 114, 866, 859, Z, 264, 264, 977, 1009, C
+ucFilterList = 153, 114, 866, 859, , 264, 264, 977, 1009, C
 CProcessDllDiff = 198, 198, 938, 788, 
 frmDeepMemScan = 242, 242, 913, 825, , 198, 198, 869, 781, C

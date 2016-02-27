@@ -172,12 +172,11 @@ Sub DoSnap1()
     For Each p In Processes1
         recordIt = False
         
-        If InStr(1, p.path, "explore", vbTextCompare) > 0 Then recordIt = True 'iexplore and explorer
-        If InStr(1, p.path, "svchost", vbTextCompare) > 0 Then recordIt = True
-        If InStr(1, p.path, "rundll", vbTextCompare) > 0 Then recordIt = True
-        If InStr(1, p.path, "firefox", vbTextCompare) > 0 Then recordIt = True
-        If InStr(1, p.path, "opera", vbTextCompare) > 0 Then recordIt = True
-        If InStr(1, p.path, "chrome", vbTextCompare) > 0 Then recordIt = True
+        If csvProcessesToDllMonitor = "*" Then
+            recordIt = True
+        Else
+            If AnyOfTheseInstr(p.path, csvProcessesToDllMonitor) Then recordIt = True
+        End If
         
         If recordIt Then
             Set dd = New CProcessDllDiff
@@ -245,13 +244,7 @@ Sub DoSnap2()
     If shutDown Then Exit Sub
     frmMain.pb.value = frmMain.pb.value + 1
     
-    Dim explorerPID As Long
-    Dim IEPID As Long
-   
-    explorerPID = FindPidForExeName("explorer.exe", Processes2)
-    IEPID = FindPidForExeName("iexplore.exe", Processes2)
-    
-    frmMain.Display = "Scanning explorer loaded dlls..."
+    frmMain.Display = "Scanning loaded dlls..."
     DoEvents
     
     Dim dd As CProcessDllDiff
