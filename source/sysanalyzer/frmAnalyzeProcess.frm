@@ -370,8 +370,8 @@ Private Sub ScanForRWE(pid As Long, Optional prefix As String = "") 'not x64 com
                 End If
             Else
                 If cMem.size < &H10000 Then
-                    s = proc.ReadMemory(cMem.pid, cMem.Base, cMem.size) 'doesnt add that much time
-                    entropy = CalculateEntropy(s)
+                    s = proc.ReadMemory(cMem.pid, cMem.Base, cMem.size) 'doesnt add that much time (if small)
+                    entropy = CalculateEntropy(s) 'helps eliminate noise
                     If entropy > 40 Then
                         AddLine pHex(cMem.Base) & " is RWE but not part of an image..possible injection entropy: " & entropy & "%  size:" & Hex(cMem.size)
                         dmpPath = DumpMemorySection(pid, cMem, "raw_" & prefix)
@@ -379,8 +379,11 @@ Private Sub ScanForRWE(pid As Long, Optional prefix As String = "") 'not x64 com
                         push rep, List1.list(List1.ListCount - 1)
                     End If
                 Else
-                    AddLine pHex(cMem.Base) & " is RWE but not part of an image..possible injection **LARGER THAN AUTO-DUMP LIMIT** size:" & Hex(cMem.size)
+                    'notable for its size..
+                    AddLine pHex(cMem.Base) & " is LARGE RWE (" & pHex(cMem.size) & ") but not part of an image dumping..."
                     push rep, List1.list(List1.ListCount - 1)
+                    dmpPath = DumpMemorySection(pid, cMem, prefix)
+                    If fso.FileExists(dmpPath) Then AddLine "Memory dump saved as " & dmpPath
                 End If
             End If
          
@@ -429,8 +432,8 @@ End Sub
 
 Private Sub Form_Resize()
     On Error Resume Next
-    List1.Height = Me.Height - List1.top - fraPB.Height - 400
-    fraPB.top = Me.Height - fraPB.Height - 400
+    List1.Height = Me.Height - List1.Top - fraPB.Height - 400
+    fraPB.Top = Me.Height - fraPB.Height - 400
     List1.Width = Me.Width - List1.Left - 200
     fraPB.Width = Me.Width - fraPB.Left - 200
     cmdAbort.Left = fraPB.Width - cmdAbort.Width - 200

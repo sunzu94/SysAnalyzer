@@ -107,7 +107,7 @@ Attribute VB_Exposed = False
 'site:    http://sandsprite.com
 'License: free for any use
 
-Public FilterColumn As Long
+Public FilterColumn As Long '0 based
 
 Event Click()
 'Event ColumnClick(ByVal ColumnHeader As MSComctlLib.ColumnHeader)
@@ -246,9 +246,9 @@ End Sub
 Private Sub mnuSetFilterCol_Click()
     On Error Resume Next
     Dim x As Long
-    x = InputBox("Enter column that filter searches", , FilterColumn + 1)
+    x = InputBox("Enter column that filter searches (0 Based)", , FilterColumn)
     If Len(x) = 0 Then Exit Sub
-    x = CLng(x) - 1 'we are 0 based internally..
+    x = CLng(x)
     FilterColumn = x
 End Sub
 

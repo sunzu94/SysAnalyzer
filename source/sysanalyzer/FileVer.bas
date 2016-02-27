@@ -173,6 +173,10 @@ Private Declare Function GetShortPathName Lib "kernel32" Alias "GetShortPathName
 
 Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 
+Sub LaunchWebPage(url)
+    ShellExecute 0, "open", CStr(url), 0, 0, 1
+End Sub
+
 Property Get TitleBarHeight(f As Form) As Long
     Const SM_CYCAPTION = 4
     TitleBarHeight = GetSystemMetrics(SM_CYCAPTION) 'pixels

@@ -400,7 +400,7 @@ Private Sub ShowSnapShot(procs As Collection, ports As Collection, servcs As Col
     frmMain.lvProcessDllList.ListItems.Clear
     frmMain.lvProcessDlls.ListItems.Clear
     frmMain.lvDrivers.Clear
-    frmMain.lvRegKeys.ListItems.Clear
+    frmMain.lvRegKeys.Clear
     frmMain.lvMutex.Clear
     frmMain.lvTasks.ListItems.Clear
     
@@ -531,7 +531,7 @@ next_driver:
     For Each d In regSnap
         Dim s As String
         s = CReg.GetValForKey(d)
-        Set li = frmMain.lvRegKeys.ListItems.Add(, , d)
+        Set li = frmMain.lvRegKeys.AddItem(d)
         li.subItems(1) = s
         If shutDown Then Exit Sub
     Next
