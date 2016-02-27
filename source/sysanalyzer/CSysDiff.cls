@@ -48,13 +48,7 @@ Dim Services1 As New Collection  'unused
 Dim Services2 As New Collection  'unused
 Dim ChangedServices As Collection
 
-Dim ExplorerDlls1 As Collection
-Dim Explorerdlls2 As Collection
-Dim ChangedExplorerDlls As Collection
-
-Dim IEDlls1 As Collection
-Dim IEDlls2 As Collection
-Dim ChangedIEDlls As Collection
+Public ProcessDlls As Collection 'of cProcessDllDiff
 
 Dim Drivers1 As Collection
 Dim Drivers2 As Collection
@@ -75,13 +69,22 @@ Dim explorerPopup As Boolean
 
 Public shutDown As Boolean
 
+Enum DisplayModes
+    dm_snap1 = 0
+    dm_snap2
+    dm_diff
+End Enum
+
+Public DisplayMode As DisplayModes
+    
 
 Sub ShowBaseSnap(Optional FirstTabOnly = False)
     If Processes1 Is Nothing Then
         MsgBox "You must first take the base snapshot", vbInformation
         Exit Sub
     End If
-    ShowSnapShot Processes1, Ports1, Services1, ExplorerDlls1, IEDlls1, Mutex1, Tasks1, False, Drivers1, CReg.Snap1, FirstTabOnly
+    DisplayMode = dm_snap1
+    ShowSnapShot Processes1, Ports1, Services1, Mutex1, Tasks1, Drivers1, CReg.Snap1, FirstTabOnly
 End Sub
 
 Sub ShowSnap2()
@@ -89,7 +92,8 @@ Sub ShowSnap2()
         MsgBox "You must first take second snapshot", vbInformation
         Exit Sub
     End If
-    ShowSnapShot Processes2, ports2, Services2, Explorerdlls2, IEDlls2, Mutex2, Tasks2, False, Drivers2, CReg.Snap2
+    DisplayMode = dm_snap2
+    ShowSnapShot Processes2, ports2, Services2, Mutex2, Tasks2, Drivers2, CReg.Snap2
 End Sub
 
 
@@ -101,8 +105,6 @@ Sub DoSnap1()
     
     frmMain.lvProcesses.Clear
     frmMain.lvPorts.ListItems.Clear
-    frmMain.lvExplorer.ListItems.Clear
-    frmMain.lvIE.ListItems.Clear
     frmMain.lvDrivers.Clear
     frmMain.lvRegKeys.ListItems.Clear
     frmMain.lvTasks.ListItems.Clear
@@ -158,27 +160,32 @@ Sub DoSnap1()
     Dim explorerPID As Long
     Dim IEPID As Long
     
-    explorerPID = FindPidForExeName("explorer.exe", Processes1)
-    IEPID = FindPidForExeName("iexplore.exe", Processes1)
-     
+    Dim p As CProcess
+    Dim dd As CProcessDllDiff
+    Dim recordIt As Boolean
+    
     frmMain.Display = "Scanning explorer loaded dlls..."
     DoEvents
-    If explorerPID = 0 Then
-        Set ExplorerDlls1 = New Collection
-    Else
-        Set ExplorerDlls1 = CProc.GetProcessModules(explorerPID)
-    End If
-    frmMain.pb.value = frmMain.pb.value + 1
-    If shutDown Then Exit Sub
     
-    frmMain.Display = "Scanning IE loaded dlls..."
-    DoEvents
-    If IEPID = 0 Then
-        Set IEDlls1 = New Collection
-    Else
-        Set IEDlls1 = CProc.GetProcessModules(IEPID)
-    End If
+    Set ProcessDlls = New Collection
     
+    For Each p In Processes1
+        recordIt = False
+        
+        If InStr(1, p.path, "explore", vbTextCompare) > 0 Then recordIt = True 'iexplore and explorer
+        If InStr(1, p.path, "svchost", vbTextCompare) > 0 Then recordIt = True
+        If InStr(1, p.path, "rundll", vbTextCompare) > 0 Then recordIt = True
+        If InStr(1, p.path, "firefox", vbTextCompare) > 0 Then recordIt = True
+        If InStr(1, p.path, "opera", vbTextCompare) > 0 Then recordIt = True
+        If InStr(1, p.path, "chrome", vbTextCompare) > 0 Then recordIt = True
+        
+        If recordIt Then
+            Set dd = New CProcessDllDiff
+            dd.SnapShot1 p.pid
+            ProcessDlls.Add dd
+        End If
+    Next
+
     frmMain.pb.value = 0
     frmMain.Display = Empty
     
@@ -247,23 +254,10 @@ Sub DoSnap2()
     frmMain.Display = "Scanning explorer loaded dlls..."
     DoEvents
     
-    If explorerPID = 0 Then
-        Set Explorerdlls2 = New Collection
-    Else
-        Set Explorerdlls2 = CProc.GetProcessModules(explorerPID)
-    End If
-    
-    If shutDown Then Exit Sub
-    frmMain.pb.value = frmMain.pb.value + 1
-    
-    frmMain.Display = "Scanning IE loaded dlls..."
-    DoEvents
-    
-    If IEPID = 0 Then
-        Set IEDlls2 = New Collection
-    Else
-        Set IEDlls2 = CProc.GetProcessModules(IEPID)
-    End If
+    Dim dd As CProcessDllDiff
+    For Each dd In ProcessDlls
+        dd.SnapShot2
+    Next
    
     frmMain.pb.value = 0
     
@@ -294,17 +288,17 @@ Sub ShowDiffReport()
         Exit Sub
     End If
     
+    DisplayMode = dm_diff
     frmMain.Display = "Showing Diff report"
     
     Set ChangedProcesses = New Collection
     Set ChangedPorts = New Collection
-    Set ChangedServices = New Collection
-    Set ChangedExplorerDlls = New Collection
-    Set ChangedIEDlls = New Collection
+'    Set ChangedServices = New Collection
     Set ChangedDrivers = New Collection
     Set ChangedMutexes = New Collection
     Set ChangedTasks = New Collection
     
+    Dim dd As CProcessDllDiff
     Dim t As CTaskElem
     Dim m As CMutexElem
     Dim proc As CProcess
@@ -330,21 +324,7 @@ Sub ShowDiffReport()
         End If
         If shutDown Then Exit Sub
     Next
-    
-    For Each cmod In Explorerdlls2
-        If Not objKeyExistsInCollection(ExplorerDlls1, cmod.path) Then
-            ChangedExplorerDlls.Add cmod
-        End If
-        If shutDown Then Exit Sub
-    Next
-   
-    For Each cmod In IEDlls2
-        If Not objKeyExistsInCollection(IEDlls1, cmod.path) Then
-            ChangedIEDlls.Add cmod
-        End If
-        If shutDown Then Exit Sub
-    Next
-    
+
     For Each drv In Drivers2
         If Not KeyExistsInCollection(Drivers1, CStr(drv)) Then
             ChangedDrivers.Add drv
@@ -352,6 +332,10 @@ Sub ShowDiffReport()
         If shutDown Then Exit Sub
     Next
         
+    For Each dd In ProcessDlls
+        dd.DiffDlls
+    Next
+    
     Dim c1 As Collection
     Dim c2 As Collection
     
@@ -381,14 +365,15 @@ Sub ShowDiffReport()
         End If
     Next
 
-    ShowSnapShot ChangedProcesses, ChangedPorts, ChangedServices, ChangedExplorerDlls, ChangedIEDlls, ChangedMutexes, ChangedTasks, True, ChangedDrivers, CReg.GetDifferences
+    ShowSnapShot ChangedProcesses, ChangedPorts, ChangedServices, ChangedMutexes, _
+                 ChangedTasks, ChangedDrivers, CReg.GetDifferences
 
 
 End Sub
 
 
-Private Sub ShowSnapShot(procs As Collection, ports As Collection, servcs As Collection, expdlls As Collection, _
-                        iedlls As Collection, mutexes As Collection, tasks As Collection, Optional isCompare As Boolean = False, Optional drivers As Collection, _
+Private Sub ShowSnapShot(procs As Collection, ports As Collection, servcs As Collection, _
+                        mutexes As Collection, tasks As Collection, Optional drivers As Collection, _
                         Optional regSnap As Collection, Optional FirstTabOnly = False)
    
     Dim proc As CProcess
@@ -402,10 +387,7 @@ Private Sub ShowSnapShot(procs As Collection, ports As Collection, servcs As Col
     Dim li As ListItem
     Dim fp As FILEPROPERTIE
     Dim root As String
-    
-    Const my_orange As Long = vbRed
-    Const my_green As Long = &HC00000
-    
+        
     On Error Resume Next
     'If known.Loaded And known.Ready Then ado.OpenConnection
     
@@ -415,9 +397,8 @@ Private Sub ShowSnapShot(procs As Collection, ports As Collection, servcs As Col
     
     frmMain.lvProcesses.Clear
     frmMain.lvPorts.ListItems.Clear
-    'frmMain.lvServices.ListItems.Clear
-    frmMain.lvExplorer.ListItems.Clear
-    frmMain.lvIE.ListItems.Clear
+    frmMain.lvProcessDllList.ListItems.Clear
+    frmMain.lvProcessDlls.ListItems.Clear
     frmMain.lvDrivers.Clear
     frmMain.lvRegKeys.ListItems.Clear
     frmMain.lvMutex.Clear
@@ -452,7 +433,7 @@ next_proc:
             mm = known.isFileKnown(Port.path)
             If known.HideKnownInDisplays And mm = exact_match Then GoTo next_port
         End If
-        Set li = frmMain.lvPorts.ListItems.Add(, , pad(Port.Port))
+        Set li = frmMain.lvPorts.AddItem(pad(Port.Port))
         li.subItems(1) = pad(Port.pid)
         li.subItems(2) = IIf(Port.isTCP, "TCP", "UDP")
         li.subItems(3) = Port.path
@@ -469,50 +450,30 @@ next_port:
     End If
     
     frmMain.pb.value = frmMain.pb.value + 1
-    'For Each servc In servcs
-    '    Set li = frmMain.lvServices.ListItems.Add(, , servc.State)
-    '    li.SubItems(1) = servc.DisplayName
-    '    li.SubItems(2) = servc.ServiceName
-    'Next
    
-    frmMain.Display = "Loading explorer dlls.."
-    For Each n In expdlls
-        mm = not_found
-        If known.Ready And known.Loaded Then
-            mm = known.isFileKnown(n)
-            If known.HideKnownInDisplays And mm = exact_match Then GoTo next_expdll
+    frmMain.Display = "Loading process dll list.."
+    Dim dd As CProcessDllDiff
+    For Each dd In ProcessDlls
+        If DisplayMode = dm_diff Then
+            If dd.ChangedDlls.count > 0 Then
+                Set li = frmMain.lvProcessDllList.ListItems.Add(, , dd.pid)
+                li.subItems(1) = dd.ChangedDlls.count
+                li.subItems(2) = dd.processName
+                Set li.Tag = dd
+            End If
+        Else
+            Set li = frmMain.lvProcessDllList.ListItems.Add(, , dd.pid)
+            If DisplayMode = dm_snap1 Then
+                li.subItems(1) = dd.dlls1.count
+            Else
+                li.subItems(1) = dd.dlls2.count
+            End If
+            li.subItems(2) = dd.processName
+            Set li.Tag = dd
         End If
-        Set li = frmMain.lvExplorer.ListItems.Add(, , n)
-        fp = FileInfo(n)
-        li.subItems(1) = fp.CompanyName
-        li.subItems(2) = fp.FileDescription
-        If mm = exact_match Then SetLiColor li, my_green
-        If mm = hash_changed Then SetLiColor li, my_orange
-next_expdll:
-        DoEvents
-        If shutDown Then Exit Sub
-    Next
-   
-    frmMain.pb.value = frmMain.pb.value + 1
-       
-    frmMain.Display = "Loading ie dlls.."
-    For Each n In iedlls
-        mm = not_found
-        If known.Ready And known.Loaded Then
-            mm = known.isFileKnown(n)
-            If known.HideKnownInDisplays And mm = exact_match Then GoTo next_iedll
-        End If
-        Set li = frmMain.lvIE.ListItems.Add(, , n)
-        fp = FileInfo(n)
-        li.subItems(1) = fp.CompanyName
-        li.subItems(2) = fp.FileDescription
-        If mm = exact_match Then SetLiColor li, my_green
-        If mm = hash_changed Then SetLiColor li, my_orange
-next_iedll:
-        DoEvents
-        If shutDown Then Exit Sub
     Next
     
+    frmMain.pb.value = frmMain.pb.value + 1
     frmMain.pb.value = frmMain.pb.value + 1
         
     frmMain.Display = "Loading drivers.."
@@ -580,7 +541,7 @@ next_driver:
     
     For Each cme In mutexes
         Set li = frmMain.lvMutex.AddItem(cme.pid)
-        If isCompare Then
+        If DisplayMode = dm_diff Then
             li.subItems(1) = IIf(cme.isNew, "", "- ") & cme.name
         Else
             li.subItems(1) = cme.name
@@ -600,10 +561,6 @@ next_driver:
     Next
     
     frmMain.pb.value = frmMain.pb.value + 1
-        
-    If iedlls.count = 0 Then frmMain.lvIE.ListItems.Add , , IIf(isCompare, "No changes Found", "IE PID Not found")
-    If expdlls.count = 0 Then frmMain.lvExplorer.ListItems.Add , , IIf(isCompare, "No changes Found", "Explorer PID Not found?")
-    
     frmMain.pb.value = 0
     'If known.Loaded And known.Ready Then ado.CloseConnection
 End Sub

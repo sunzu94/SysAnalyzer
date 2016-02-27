@@ -597,6 +597,7 @@ Function GetProcessModules(pid As Long) As Collection
     
     Exit Function
 hell:
+    Set GetProcessModules = mCol
 End Function
 
 'this will fail for Local Service and Network Service processes even with Admin and sedebug...

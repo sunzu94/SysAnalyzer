@@ -723,12 +723,11 @@ Private Sub lblRunAsUserHelp_Click()
 End Sub
 
 Private Sub lblSkip_Click()
-    
    
     frmMain.Initalize
-    frmMain.SSTab1.TabVisible(6) = True 'False
-    frmMain.cmdDirWatch_Click
-    frmMain.SSTab1.TabVisible(5) = False
+    frmMain.SSTab1.TabVisible(6) = True 'dir watch, they can turn on anytime..
+    If chkWatchDirs.value Then frmMain.cmdDirWatch_Click
+    frmMain.SSTab1.TabVisible(5) = False 'apilog wont be used no injection done..
     frmMain.Visible = True
     Me.Visible = False
     frmMain.mnuToolItem_Click 4 'take base snapshot..
@@ -1030,7 +1029,7 @@ Private Sub Form_Load()
     End If
     
     If Len(txtBinary) = 0 And isIde() Then
-        txtBinary = App.path & "\..\..\safe_test1.exe"
+        txtBinary = App.path & "\..\..\_safe_test1.exe"
     End If
 
     LoadUsers

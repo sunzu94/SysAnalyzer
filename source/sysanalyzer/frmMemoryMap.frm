@@ -128,8 +128,8 @@ Public Sub ShowDlls(pid As Long) 'x64 ok.
     Set c = pi.GetProcessModules(pid)
     
     For Each cm In c
-        Set li = lv2.AddItem(cm.hexBase)
-        li.subItems(1) = cm.hexSize
+        Set li = lv2.AddItem(cm.HexBase)
+        li.subItems(1) = cm.HexSize
         li.subItems(2) = cm.path
         
         #If isSysanalyzer = 1 Then
@@ -235,7 +235,7 @@ Private Sub Form_Load()
     lv2.FilterColumn = 2
     lv2.SetColumnHeaders "Base,Size,Module"
     lv.ColumnHeaders(5).Width = lv.Width - lv.ColumnHeaders(5).Left - 350
-    lv2.Move lv.Left, lv.top, lv.Width, lv.Height
+    lv2.Move lv.Left, lv.Top, lv.Width, lv.Height
     'lv2.ColumnHeaders(3).Width = lv2.Width - lv2.ColumnHeaders(3).Left - 350
 End Sub
 
@@ -244,7 +244,7 @@ Private Sub Form_Resize()
     List1.Width = Me.Width - 250
     lv.Width = List1.Width
     lv2.Width = List1.Width
-    List1.top = Me.Height - 400 - List1.Height
+    List1.Top = Me.Height - 400 - List1.Height
     lv.Height = Me.Height - List1.Height - 500
     lv2.Height = lv.Height
 End Sub
@@ -265,9 +265,6 @@ Private Sub lv_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Si
     If Button = 2 Then PopupMenu mnuPopup
 End Sub
 
-Private Sub lv2_ColumnClick(ByVal ColumnHeader As MSComctlLib.ColumnHeader)
-    lv2.ColumnSort ColumnHeader
-End Sub
 
 Private Sub lv2_ItemClick(ByVal Item As MSComctlLib.ListItem)
     Set selli = Item

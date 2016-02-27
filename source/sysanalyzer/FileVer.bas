@@ -21,14 +21,13 @@ Attribute VB_Name = "FileProps"
 
 'Used in several projects do not change interface!
 
+'note we do not attach subclass messages in the IDE for greater stability...
 Public Declare Function StartWatch Lib "dir_watch.dll" (ByVal dirPath As String) As Long
 Public Declare Function CloseWatch Lib "dir_watch.dll" (ByVal threadID As Long) As Long
 
-Public Declare Function IDEStartWatch Lib "./../../dir_watch.dll" Alias "StartWatch" (ByVal dirPath As String) As Long
-Public Declare Function IDECloseWatch Lib "./../../dir_watch.dll" Alias "CloseWatch" (ByVal threadID As Long) As Long
-
 Public Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
 Private Declare Function SetWindowPos Lib "user32" (ByVal hwnd As Long, ByVal hWndInsertAfter As Long, ByVal x As Long, ByVal y As Long, ByVal cx As Long, ByVal cy As Long, ByVal wFlags As Long) As Long
+Public Declare Function GetModuleHandle Lib "kernel32" Alias "GetModuleHandleA" (ByVal lpModuleName As String) As Long
 
 Global fso As New clsFileSystem
 Global dlg As New clsCmnDlg2 'comdlg threadlocks on main form?! even MS one does..
@@ -54,12 +53,16 @@ Global cLogData As New Collection
 Global DebugLogFile As String
 Global START_TIME As Date
 Global procWatchPID As Long
+Global DirWatchActive As Boolean
 
 Global Const LANG_US = &H409
 Private Const HWND_NOTOPMOST = -2
 Private Const HWND_TOPMOST = -1
 Private Const SWP_NOACTIVATE = &H10
 Private Const SWP_SHOWWINDOW = &H40
+
+Global Const my_orange As Long = vbRed
+Global Const my_green As Long = &HC00000
 
 Public Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
 Private Declare Function SHGetPathFromIDList Lib "shell32" Alias "SHGetPathFromIDListA" (ByVal pidl As Long, ByVal pszPath As String) As Long
@@ -196,7 +199,7 @@ Public Sub AlwaysOnTop(f As Form, Optional SetOnTop As Boolean = True)
     
     lflag = IIf(SetOnTop, HWND_TOPMOST, HWND_NOTOPMOST)
      
-    SetWindowPos f.hwnd, lflag, f.Left / tx, f.top / ty, f.Width / tx, f.Height / ty, SWP_NOACTIVATE Or SWP_SHOWWINDOW
+    SetWindowPos f.hwnd, lflag, f.Left / tx, f.Top / ty, f.Width / tx, f.Height / ty, SWP_NOACTIVATE Or SWP_SHOWWINDOW
     
 End Sub
 
@@ -359,7 +362,7 @@ Sub SaveFormSizeAnPosition(f As Form)
     On Error Resume Next
     Dim s As String
     If f.WindowState <> 0 Then Exit Sub 'vbnormal
-    s = f.Left & "," & f.top & "," & f.Width & "," & f.Height
+    s = f.Left & "," & f.Top & "," & f.Width & "," & f.Height
     SaveMySetting f.name & "_pos", s
 End Sub
 
@@ -383,7 +386,7 @@ Sub RestoreFormSizeAnPosition(f As Form)
     
     s = Split(s, ",")
     f.Left = s(0)
-    f.top = s(1)
+    f.Top = s(1)
     f.Width = s(2)
     f.Height = s(3)
     
@@ -483,15 +486,29 @@ End Function
 Sub DirWatchCtl(enable As Boolean)
     Dim i As Integer, d
      
+    If GetModuleHandle("dir_watch.dll") = 0 Then
+        If isIde() Then
+            d = App.path & "\..\..\dir_watch.dll"
+            If Not fso.FileExists(CStr(d)) Then
+                d = App.path & "\..\..\..\dir_watch.dll"
+                If Not fso.FileExists(CStr(d)) Then Exit Sub
+            End If
+        Else
+            d = App.path & "\dir_watch.dll"
+        End If
+        If LoadLibrary(CStr(d)) = 0 Then
+            'dirwatch not found?
+            Exit Sub
+        End If
+    End If
+     
+    DirWatchActive = enable
+    
     If enable Then
         Erase watchIDs
         For Each d In watchDirs
             If Len(d) > 0 Then
-                If isIde Then
-                    push watchIDs(), IDEStartWatch(d)
-                Else
-                    push watchIDs(), StartWatch(d)
-                End If
+                push watchIDs(), StartWatch(d)
                 DoEvents
                 Sleep 20
             End If
@@ -499,11 +516,7 @@ Sub DirWatchCtl(enable As Boolean)
     Else
         If Not AryIsEmpty(watchIDs) Then
             For i = 0 To UBound(watchIDs)
-                If isIde() Then
-                    IDECloseWatch watchIDs(i)
-                Else
-                    CloseWatch watchIDs(i)
-                End If
+                CloseWatch watchIDs(i)
             Next
         End If
     End If

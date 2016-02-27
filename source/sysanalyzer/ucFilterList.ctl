@@ -110,7 +110,7 @@ Attribute VB_Exposed = False
 Public FilterColumn As Long
 
 Event Click()
-Event ColumnClick(ByVal ColumnHeader As MSComctlLib.ColumnHeader)
+'Event ColumnClick(ByVal ColumnHeader As MSComctlLib.ColumnHeader)
 Event DblClick()
 Event ItemClick(ByVal Item As MSComctlLib.ListItem)
 Event MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
@@ -309,7 +309,8 @@ Private Sub lv_Click()
 End Sub
 
 Private Sub lv_ColumnClick(ByVal ColumnHeader As MSComctlLib.ColumnHeader)
-    RaiseEvent ColumnClick(ColumnHeader)
+    Me.ColumnSort ColumnHeader
+    'RaiseEvent ColumnClick(ColumnHeader)
 End Sub
 
 Private Sub lv_DblClick()
@@ -329,7 +330,8 @@ Private Sub lvFilter_Click()
 End Sub
 
 Private Sub lvFilter_ColumnClick(ByVal ColumnHeader As MSComctlLib.ColumnHeader)
-    RaiseEvent ColumnClick(ColumnHeader)
+    Me.ColumnSort ColumnHeader
+    'RaiseEvent ColumnClick(ColumnHeader)
 End Sub
 
 Private Sub lvFilter_DblClick()
@@ -351,17 +353,17 @@ End Sub
 Private Sub UserControl_Resize()
     On Error Resume Next
     With UserControl
-        lv.top = 0
+        lv.Top = 0
         lv.Left = 0
         lv.Width = .Width
         lv.Height = .Height - txtFilter.Height - 300
-        txtFilter.top = .Height - txtFilter.Height - 150
+        txtFilter.Top = .Height - txtFilter.Height - 150
         txtFilter.Width = .Width - txtFilter.Left '- lblTools.Width - 100
         'lblTools.Left = .Width - lblTools.Width
-        Label1.top = txtFilter.top + 30
+        Label1.Top = txtFilter.Top + 30
         'lblTools.Top = txtFilter.Top + 30
     End With
-    lvFilter.Move lv.Left, lv.top, lv.Width, lv.Height
+    lvFilter.Move lv.Left, lv.Top, lv.Width, lv.Height
     lv.ColumnHeaders(lv.ColumnHeaders.count).Width = lv.Width - lv.ColumnHeaders(lv.ColumnHeaders.count).Left - 200
     lvFilter.ColumnHeaders(lvFilter.ColumnHeaders.count).Width = lv.ColumnHeaders(lv.ColumnHeaders.count).Width
 End Sub
