@@ -19,6 +19,7 @@ Begin VB.UserControl ucFilterList
       Left            =   360
       TabIndex        =   1
       Top             =   360
+      Visible         =   0   'False
       Width           =   5775
       _ExtentX        =   10186
       _ExtentY        =   5821
@@ -107,7 +108,8 @@ Attribute VB_Exposed = False
 'site:    http://sandsprite.com
 'License: free for any use
 
-Public FilterColumn As Long '0 based
+Public m_FilterColumn As Long
+Private m_FilterColumnPreset As Long
 
 Event Click()
 'Event ColumnClick(ByVal ColumnHeader As MSComctlLib.ColumnHeader)
@@ -116,10 +118,48 @@ Event ItemClick(ByVal Item As MSComctlLib.ListItem)
 Event MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
 
 #If 0 Then
-    Dim x, y 'force lowercase so ide doesnt switch around on its own whim...
+    Dim x, y, Column, nextOne, Count, Index 'force case so ide doesnt switch around on its own whim...
 #End If
 
-Property Get ListItems() As ListItems
+Property Get FilterColumn() As Long
+    FilterColumn = m_FilterColumn
+End Property
+
+Property Let FilterColumn(x As Long)
+    On Error Resume Next
+    Dim tmp As String
+    Dim ch As ColumnHeader
+    
+    If lv.ColumnHeaders.Count = 0 Then
+        m_FilterColumnPreset = x
+        Exit Property
+    End If
+    
+    If x <= 0 Then x = 1
+    
+    If x > lv.ColumnHeaders.Count Then
+        x = lv.ColumnHeaders.Count
+    End If
+    
+    'remove the visual marker that this is the filter column
+    Set ch = lv.ColumnHeaders(m_FilterColumn)
+    ch.Text = Trim(Replace(ch.Text, "*", Empty))
+    
+    Set ch = lvFilter.ColumnHeaders(m_FilterColumn)
+    ch.Text = Trim(Replace(ch.Text, "*", Empty))
+
+    'add the visual marker to the new column
+    Set ch = lv.ColumnHeaders(x)
+    ch.Text = ch.Text & " *"
+    
+    Set ch = lvFilter.ColumnHeaders(x)
+    ch.Text = ch.Text & " *"
+
+    m_FilterColumn = x
+    
+End Property
+
+Property Get ListItems() As ListItems 'doesnt seem to work as intended in all cases?
     Set ListItems = lv.ListItems
 End Property
 
@@ -166,7 +206,7 @@ Function AddItem(txt, ParamArray subItems()) As ListItem
     
     Dim i As Integer
     
-    Set AddItem = lv.ListItems.Add(, , txt)
+    Set AddItem = lv.ListItems.Add(, , CStr(txt))
     
     For Each si In subItems
         AddItem.subItems(i + 1) = si
@@ -185,15 +225,26 @@ End Sub
 Sub SetColumnHeaders(csvList As String, Optional csvWidths As String)
     
     On Error Resume Next
+    Dim i As Long, fc As Long, ch As ColumnHeader
     
+    fc = -1
     lv.ColumnHeaders.Clear
     lvFilter.ColumnHeaders.Clear
     
     tmp = Split(csvList, ",")
     For Each t In tmp
+        i = i + 1
+        If InStr(t, "*") > 0 Then
+            fc = i
+            t = Trim(Replace(t, "*", Empty))
+        End If
         lv.ColumnHeaders.Add , , Trim(t)
         lvFilter.ColumnHeaders.Add , , Trim(t)
     Next
+    
+    If fc <> -1 Then FilterColumn = fc  'this sets the visual marker on the column if they specified it..
+    If m_FilterColumnPreset <> -1 Then FilterColumn = m_FilterColumnPreset 'they called FilterColumn manually first, now apply..
+    If m_FilterColumn = -1 Then FilterColumn = 1 'they never specified it so default to first column
     
     If Len(csvWidths) > 0 Then
         tmp = Split(csvWidths, ",")
@@ -207,16 +258,16 @@ Sub SetColumnHeaders(csvList As String, Optional csvWidths As String)
     
 End Sub
 
-Private Sub Label1_Click()
-    PopupMenu mnuTools
-End Sub
-
 Private Sub mnuAlertColWidths_Click()
     Dim tmp(), c As ColumnHeader
     For Each c In lv.ColumnHeaders
         push tmp, Round(c.Width)
     Next
     InputBox "Column Widths are: ", , Join(tmp, ",")
+End Sub
+
+Private Sub Label1_Click()
+    PopupMenu mnuTools
 End Sub
 
 Private Sub mnuCopyAll_Click()
@@ -227,7 +278,7 @@ End Sub
 Private Sub mnuCopyColumn_Click()
     On Error Resume Next
     Dim x As Long
-    x = InputBox("Enter column index to copy", , 0)
+    x = InputBox("Enter column index to copy", , 1)
     If Len(x) = 0 Then Exit Sub
     x = CLng(x) - 1 'we are 0 based internally..
     Clipboard.Clear
@@ -246,7 +297,7 @@ End Sub
 Private Sub mnuSetFilterCol_Click()
     On Error Resume Next
     Dim x As Long
-    x = InputBox("Enter column that filter searches (0 Based)", , FilterColumn)
+    x = InputBox("Enter column that filter searches", , FilterColumn)
     If Len(x) = 0 Then Exit Sub
     x = CLng(x)
     FilterColumn = x
@@ -264,19 +315,33 @@ Private Sub txtFilter_Change()
     On Error Resume Next
     
     If Len(txtFilter) = 0 Then
-        lvFilter.Visible = False
+        If lvFilter.Visible Then lvFilter.Visible = False
         Exit Sub
+    End If
+    
+    If Len(txtFilter) = 1 Then
+        If VBA.Left(txtFilter, 1) = "/" Then
+            lvFilter.Visible = False
+            Exit Sub
+        End If
+    End If
+        
+    If VBA.Left(txtFilter, 1) = "/" Then
+        t = Replace(txtFilter, "/", Empty)
+        If IsNumeric(t) Then
+            lvFilter.Visible = False
+            Exit Sub 'they are going to change the FilterColumn on "cmdline"
+        End If
     End If
     
     lvFilter.Visible = True
     lvFilter.ListItems.Clear
     
     For Each li In lv.ListItems
-        If FilterColumn = 0 Then
+        If FilterColumn = 1 Then
             t = li.Text
         Else
-            If FilterColumn >= lv.ColumnHeaders.count Then FilterColumn = lv.ColumnHeaders.count - 1
-            t = li.subItems(FilterColumn)
+            t = li.subItems(m_FilterColumn - 1)
         End If
         If InStr(1, t, txtFilter, vbTextCompare) > 0 Then
             CloneListItemTo li, lvFilter
@@ -289,7 +354,7 @@ End Sub
 Sub CloneListItemTo(li As ListItem, lv As ListView)
     Dim li2 As ListItem, i As Integer
     Set li2 = lv.ListItems.Add(, , li.Text)
-    For i = 1 To lv.ColumnHeaders.count - 1
+    For i = 1 To lv.ColumnHeaders.Count - 1
         li2.subItems(i) = li.subItems(i)
     Next
     If li.ForeColor <> vbBlack Then SetLiColor li2, li.ForeColor
@@ -346,7 +411,35 @@ Private Sub lvFilter_MouseUp(Button As Integer, Shift As Integer, x As Single, y
     RaiseEvent MouseUp(Button, Shift, x, y)
 End Sub
 
+Private Sub txtFilter_KeyPress(KeyAscii As Integer)
+    'MsgBox KeyAscii
+    
+    On Error Resume Next
+    Dim t As String
+    
+    If KeyAscii = vbKeyEscape Then
+        KeyAscii = 0
+        Filter = Empty
+    End If
+    
+    If KeyAscii = vbKeyReturn Then
+        KeyAscii = 0
+        If Len(txtFilter) > 0 Then
+            If Left(txtFilter, 1) = "/" Then
+                t = Replace(txtFilter, "/", Empty)
+                If IsNumeric(t) Then
+                    FilterColumn = CLng(t)
+                    Filter = Empty
+                End If
+            End If
+        End If
+    End If
+            
+End Sub
+
 Private Sub UserControl_Initialize()
+    m_FilterColumn = -1
+    m_FilterColumnPreset = -1
     mnuAlertColWidths.Visible = isIde()
 End Sub
 
@@ -364,8 +457,8 @@ Private Sub UserControl_Resize()
         'lblTools.Top = txtFilter.Top + 30
     End With
     lvFilter.Move lv.Left, lv.Top, lv.Width, lv.Height
-    lv.ColumnHeaders(lv.ColumnHeaders.count).Width = lv.Width - lv.ColumnHeaders(lv.ColumnHeaders.count).Left - 200
-    lvFilter.ColumnHeaders(lvFilter.ColumnHeaders.count).Width = lv.ColumnHeaders(lv.ColumnHeaders.count).Width
+    lv.ColumnHeaders(lv.ColumnHeaders.Count).Width = lv.Width - lv.ColumnHeaders(lv.ColumnHeaders.Count).Left - 200
+    lvFilter.ColumnHeaders(lvFilter.ColumnHeaders.Count).Width = lv.ColumnHeaders(lv.ColumnHeaders.Count).Width
 End Sub
 
 
@@ -386,8 +479,8 @@ Public Sub ColumnSort(Column As ColumnHeader)
     If lvFilter.Visible Then Set ListViewControl = lvFilter
         
     With ListViewControl
-       If .SortKey <> Column.index - 1 Then
-             .SortKey = Column.index - 1
+       If .SortKey <> Column.Index - 1 Then
+             .SortKey = Column.Index - 1
              .SortOrder = lvwAscending
        Else
              If .SortOrder = lvwAscending Then
@@ -412,7 +505,7 @@ Public Function GetAllElements(Optional selectedOnly As Boolean = False) As Stri
     Set ListViewControl = lv
     If lvFilter.Visible Then Set ListViewControl = lvFilter
         
-    For i = 1 To ListViewControl.ColumnHeaders.count
+    For i = 1 To ListViewControl.ColumnHeaders.Count
         tmp = tmp & ListViewControl.ColumnHeaders(i).Text & vbTab
     Next
 
@@ -422,16 +515,16 @@ Public Function GetAllElements(Optional selectedOnly As Boolean = False) As Stri
     For Each li In ListViewControl.ListItems
     
         If selectedOnly Then
-            If Not li.Selected Then GoTo nextone
+            If Not li.Selected Then GoTo nextOne
         End If
             
         tmp = li.Text & vbTab
-        For i = 1 To ListViewControl.ColumnHeaders.count - 1
+        For i = 1 To ListViewControl.ColumnHeaders.Count - 1
             tmp = tmp & li.subItems(i) & vbTab
         Next
         push ret, tmp
         
-nextone:
+nextOne:
     Next
 
     GetAllElements = Join(ret, vbCrLf)
@@ -448,7 +541,7 @@ Function GetAllText(Optional subItemRow As Long = 0, Optional selectedOnly As Bo
     Set ListViewControl = lv
     If lvFilter.Visible Then Set ListViewControl = lvFilter
     
-    For i = 1 To ListViewControl.ListItems.count
+    For i = 1 To ListViewControl.ListItems.Count
         If subItemRow = 0 Then
             x = ListViewControl.ListItems(i).Text
             If selectedOnly And Not ListViewControl.ListItems(i).Selected Then x = Empty
@@ -477,7 +570,12 @@ Private Sub push(ary, value) 'this modifies parent ary object
 init:     ReDim ary(0): ary(0) = value
 End Sub
 
-
+Private Function isIde() As Boolean
+' Brad Martinez  http://www.mvps.org/ccrp
+    On Error GoTo out
+    Debug.Print 1 / 0
+out: isIde = Err
+End Function
 
 
 

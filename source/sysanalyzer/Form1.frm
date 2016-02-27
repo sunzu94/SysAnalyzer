@@ -83,8 +83,8 @@ Begin VB.Form frmMain
          TabIndex        =   14
          Top             =   405
          Width           =   10950
-         _extentx        =   19315
-         _extenty        =   8361
+         _ExtentX        =   19315
+         _ExtentY        =   8361
       End
       Begin sysAnalyzer_2.ucFilterList lvPorts 
          Height          =   4830
@@ -92,8 +92,8 @@ Begin VB.Form frmMain
          TabIndex        =   13
          Top             =   375
          Width           =   10410
-         _extentx        =   18362
-         _extenty        =   8520
+         _ExtentX        =   18362
+         _ExtentY        =   8520
       End
       Begin sysAnalyzer_2.ucFilterList lvProcessDlls 
          Height          =   4785
@@ -101,8 +101,8 @@ Begin VB.Form frmMain
          TabIndex        =   12
          Top             =   465
          Width           =   8250
-         _extentx        =   14552
-         _extenty        =   8440
+         _ExtentX        =   14552
+         _ExtentY        =   8440
       End
       Begin MSComctlLib.ListView lvProcessDllList 
          Height          =   4740
@@ -145,8 +145,8 @@ Begin VB.Form frmMain
          TabIndex        =   10
          Top             =   420
          Width           =   10140
-         _extentx        =   17886
-         _extenty        =   7885
+         _ExtentX        =   17886
+         _ExtentY        =   7885
       End
       Begin sysAnalyzer_2.ucFilterList lvDrivers 
          Height          =   4695
@@ -154,8 +154,8 @@ Begin VB.Form frmMain
          TabIndex        =   9
          Top             =   420
          Width           =   11265
-         _extentx        =   17171
-         _extenty        =   8281
+         _ExtentX        =   17171
+         _ExtentY        =   8281
       End
       Begin sysAnalyzer_2.ucFilterList lvMutex 
          Height          =   4830
@@ -163,8 +163,8 @@ Begin VB.Form frmMain
          TabIndex        =   8
          Top             =   420
          Width           =   11265
-         _extentx        =   19870
-         _extenty        =   8520
+         _ExtentX        =   19870
+         _ExtentY        =   8520
       End
       Begin VB.Frame fraProc 
          BorderStyle     =   0  'None
@@ -752,24 +752,14 @@ Private Sub Form_Load()
         
     If DirWatchActive Then cmdDirWatch.Caption = "Stop Filesystem Monitor"
         
-    lvMutex.FilterColumn = 1
-    lvMutex.SetColumnHeaders "PID,Name"
-    
-    lvDrivers.FilterColumn = 0
+    lvMutex.SetColumnHeaders "PID,Name*"
     lvDrivers.SetColumnHeaders "Driver File,Company Name,Description", "4470,2205"
-    
-    lvProcesses.FilterColumn = 3
-    lvProcesses.SetColumnHeaders "PID,ParentPID,User,Path", "810,1005,1665"
-    
-    lvProcessDlls.FilterColumn = 0
+    lvProcesses.SetColumnHeaders "PID,ParentPID,User,Path*", "810,1005,1665"
     lvProcessDlls.SetColumnHeaders "DLL Path,Company Name,File Description", "4080,2175"
+    lvPorts.SetColumnHeaders "Port,PID,Type,Path*", "735,750,690"
+    lvRegKeys.SetColumnHeaders "Path,Value*", "4530"
+    
     LvSizeLastColumn lvProcessDllList
-    
-    lvPorts.FilterColumn = 3
-    lvPorts.SetColumnHeaders "Port,PID,Type,Path", "735,750,690"
-    
-    lvRegKeys.FilterColumn = 1
-    lvRegKeys.SetColumnHeaders "Path,Value", "4530"
     
     If known.Loaded And known.Ready Then
         mnuAddSelectedDllsToKnown.Enabled = True
@@ -1102,7 +1092,7 @@ End Sub
 
 Private Sub mnuRegMonCopyTable_Click()
     Dim tmp As String
-    tmp = GetAllElements(lvRegKeys)
+    tmp = lvRegKeys.GetAllElements
     Clipboard.Clear
     Clipboard.SetText tmp
 End Sub
