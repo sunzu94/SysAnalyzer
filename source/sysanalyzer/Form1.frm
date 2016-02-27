@@ -32,8 +32,8 @@ Begin VB.Form frmMain
       TabCaption(0)   =   "Running Processes"
       TabPicture(0)   =   "Form1.frx":5C12
       Tab(0).ControlEnabled=   0   'False
-      Tab(0).Control(0)=   "fraProc"
-      Tab(0).Control(1)=   "lvProcesses"
+      Tab(0).Control(0)=   "lvProcesses"
+      Tab(0).Control(1)=   "fraProc"
       Tab(0).ControlCount=   2
       TabCaption(1)   =   "Open Ports"
       TabPicture(1)   =   "Form1.frx":5C2E
@@ -43,8 +43,8 @@ Begin VB.Form frmMain
       TabCaption(2)   =   "Process Dlls"
       TabPicture(2)   =   "Form1.frx":5C4A
       Tab(2).ControlEnabled=   0   'False
-      Tab(2).Control(0)=   "lvProcessDllList"
-      Tab(2).Control(1)=   "lvProcessDlls"
+      Tab(2).Control(0)=   "lvProcessDlls"
+      Tab(2).Control(1)=   "lvProcessDllList"
       Tab(2).ControlCount=   2
       TabCaption(3)   =   "Loaded Drivers"
       TabPicture(3)   =   "Form1.frx":5C66
@@ -481,10 +481,19 @@ Begin VB.Form frmMain
          Caption         =   "Scan Procs for Unknown Dlls"
       End
       Begin VB.Menu mnuScanProcsForDll 
-         Caption         =   "Scan Procs For Dll"
+         Caption         =   "Scan Processes For Dll"
+      End
+      Begin VB.Menu mnuSpacer4839 
+         Caption         =   "-"
       End
       Begin VB.Menu mnuStealthInjScan 
-         Caption         =   "RWE Mem Scan"
+         Caption         =   "RWE Memory Scan All"
+      End
+      Begin VB.Menu mnuDeepMemScan 
+         Caption         =   "String Memory Scan All"
+      End
+      Begin VB.Menu mnuspacer44 
+         Caption         =   "-"
       End
       Begin VB.Menu cmdDirWatch 
          Caption         =   "Start Directory Watch"
@@ -522,6 +531,9 @@ Begin VB.Form frmMain
       End
       Begin VB.Menu mnuUpdatesVideo 
          Caption         =   "Updates Video (2013)"
+      End
+      Begin VB.Menu mnu2016Updates 
+         Caption         =   "Updates Video (2016)"
       End
       Begin VB.Menu mnuApiLoggerVideo 
          Caption         =   "Api Logger Video"
@@ -669,6 +681,10 @@ Private Sub lvProcessDllList_MouseUp(Button As Integer, Shift As Integer, x As S
     If Button = 2 Then PopupMenu mnuProcessesPopup
 End Sub
 
+Private Sub mnu2016Updates_Click()
+    LaunchWebPage "https://www.youtube.com/watch?v=ICeF5QI_kaA"
+End Sub
+
 Private Sub mnuApiLoggerVideo_Click()
     LaunchWebPage "https://www.youtube.com/watch?v=SqdGjihhDoU"
 End Sub
@@ -695,6 +711,10 @@ Private Sub mnuCommandPrompt_Click()
         Shell f, vbNormalFocus
     End If
 
+End Sub
+
+Private Sub mnuDeepMemScan_Click()
+    frmDeepMemScan.Show
 End Sub
 
 Private Sub mnuHelpFile_Click()
@@ -1200,14 +1220,14 @@ Function GetActiveLV(Optional index As Long = -1) As ListView
     If index = -1 Then index = SSTab1.TabIndex
     
     Select Case index
-        Case 0: Set active_lv = lvProcesses.lstView
-        Case 1: Set active_lv = lvPorts.lstView
+        Case 0: Set active_lv = lvProcesses.mainLV
+        Case 1: Set active_lv = lvPorts.mainLV
         Case 2: Set active_lv = lvProcessDllList
-        Case 3: Set active_lv = lvDrivers.lstView
-        Case 4: Set active_lv = lvRegKeys
+        Case 3: Set active_lv = lvDrivers.mainLV
+        Case 4: Set active_lv = lvRegKeys.mainLV
         Case 5: Set active_lv = lvAPILog
         Case 6: Set active_lv = lvDirWatch
-        Case 7: Set active_lv = lvMutex.lstView
+        Case 7: Set active_lv = lvMutex.mainLV
         Case 8: Set active_lv = lvTasks
     End Select
     

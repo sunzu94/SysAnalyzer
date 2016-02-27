@@ -124,10 +124,10 @@ Sub LoadSearchResults(c As Collection)   'of CMemory with searchoffsetcsv field 
         Set li = lvAlloc.ListItems.Add()
         Set li.Tag = m
         li.Text = pad(CountOccurances(m.SearchOffsetCSV, ",") + 1)
-        li.SubItems(1) = pad(m.pid)
-        li.SubItems(2) = m.ProtectionAsString
-        li.SubItems(3) = pad(m.BaseAsHexString)
-        li.SubItems(4) = pad(Hex(m.size))
+        li.subItems(1) = pad(m.pid)
+        li.subItems(2) = m.ProtectionAsString
+        li.subItems(3) = pad(m.BaseAsHexString)
+        li.subItems(4) = pad(Hex(m.size))
     Next
     
     lvAlloc_ColumnClick lvAlloc.ColumnHeaders(1)
