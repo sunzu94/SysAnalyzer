@@ -40,6 +40,6 @@ CSection = 0, 0, 0, 0, C
 CMutexElem = 0, 0, 984, 669, 
 CTaskElem = 220, 220, 952, 841, 
 frmMemSearchResults = 86, 34, 896, 815, , 112, 154, 1058, 925, C
-ucFilterList = 72, 30, 833, 818, Z, 84, 219, 797, 964, C
+ucFilterList = 72, 30, 921, 865, , 84, 219, 797, 964, C
 CProcessDllDiff = 198, 198, 938, 788, 
 frmDeepMemScan = 154, 70, 917, 764, , 198, 198, 869, 781, C

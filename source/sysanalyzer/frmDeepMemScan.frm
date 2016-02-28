@@ -265,6 +265,8 @@ Private Sub Form_Load()
     Dim c As Collection
     Dim cp As CProcess
     
+    lvProcs.AllowDelete = True
+    lvProcs.MultiSelect = True
     lvProcs.Locked = False
     lvProcs.SetColumnHeaders "PID,Path*", "700"
     

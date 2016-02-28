@@ -128,7 +128,6 @@ Public AllowDelete As Boolean
 Private m_Locked As Boolean
 Private m_FilterColumn As Long
 Private m_FilterColumnPreset As Long
-'Private m_ComplexFilter As Boolean
 
 'we need to track the index map between listviews in case they delete from lvFilter..
 Private indexMapping As Collection
@@ -143,15 +142,7 @@ Event MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     Dim x, y, Column, nextone 'force lowercase so ide doesnt switch around on its own whim...
 #End If
 
-'Property Get ComplexFilter() As Boolean
-'   ComplexFilter = m_ComplexFilter
-'End Property
-'
-'Property Let ComplexFilter(x As Boolean)
-'    m_ComplexFilter = x
-'    mnuComplexFilter.Checked = x
-'End Property
-
+'note when locked you wont receive events, and can not add items..
 Property Get Locked() As Boolean
     Locked = m_Locked
 End Property
@@ -272,7 +263,7 @@ Function AddItem(txt, ParamArray subItems()) As ListItem
     
     Dim i As Integer
     
-    If Locked Then Exit Function
+    If m_Locked Then Exit Function
     
     Set AddItem = lv.ListItems.Add(, , CStr(txt))
     
@@ -286,7 +277,7 @@ Function AddItem(txt, ParamArray subItems()) As ListItem
 End Function
 
 Sub Clear()
-    If Locked Then Exit Sub
+    If m_Locked Then Exit Sub
     lv.ListItems.Clear
     lvFilter.ListItems.Clear
 End Sub
@@ -333,7 +324,7 @@ Private Sub lv_KeyDown(KeyCode As Integer, Shift As Integer)
     
     On Error Resume Next
     
-    If Locked Then Exit Sub
+    If m_Locked Then Exit Sub
     
     If KeyCode = vbKeyDelete And AllowDelete Then
         For i = lv.ListItems.count To 1 Step -1
@@ -345,17 +336,17 @@ End Sub
 
 Private Sub lvFilter_KeyDown(KeyCode As Integer, Shift As Integer)
     Dim i As Long
-    Dim lvIndex As Long
+    Dim liMain As ListItem
     
     On Error Resume Next
     
-    If Locked Then Exit Sub
+    If m_Locked Then Exit Sub
     
     If KeyCode = vbKeyDelete And AllowDelete Then
         For i = lvFilter.ListItems.count To 1 Step -1
             If lvFilter.ListItems(i).Selected Then
-                lvIndex = getMainItemIndexFor(lvFilter.ListItems(i).index)
-                If lvIndex <> 0 Then lv.ListItems.Remove lvIndex
+                Set liMain = getMainListItemFor(lvFilter.ListItems(i))
+                If Not liMain Is Nothing Then lv.ListItems.Remove liMain.index
                 lvFilter.ListItems.Remove i
             End If
         Next
@@ -373,7 +364,7 @@ Private Sub mnuAlertColWidths_Click()
 End Sub
 
 Private Sub Label1_Click()
-    If Locked Then Exit Sub
+    If m_Locked Then Exit Sub
     mnuResults.Caption = "Results: " & Me.currentLV.ListItems.count
     PopupMenu mnuTools
 End Sub
@@ -456,41 +447,27 @@ Private Sub txtFilter_Change()
     
     On Error Resume Next
     
-    If Locked Then Exit Sub
+    If m_Locked Then Exit Sub
     
-    If Len(txtFilter) = 0 Then
-        If lvFilter.Visible Then lvFilter.Visible = False
-        Exit Sub
-    End If
+    If Len(txtFilter) = 0 Then GoTo hideExit
     
     If Len(txtFilter) = 1 Then
-        If VBA.Left(txtFilter, 1) = "/" Then
-            lvFilter.Visible = False
-            Exit Sub
-        End If
+        If VBA.Left(txtFilter, 1) = "/" Then GoTo hideExit
     End If
         
     If VBA.Left(txtFilter, 1) = "/" Then
         t = Replace(txtFilter, "/", Empty)
-        If IsNumeric(t) Then
-            lvFilter.Visible = False
-            Exit Sub 'they are going to change the FilterColumn on "cmdline"
-        End If
+        If IsNumeric(t) Then GoTo hideExit 'they are going to change the FilterColumn on "cmdline"
     End If
     
-    If m_ComplexFilter Then
-        If VBA.Left(txtFilter, 1) = "-" Then 'they are typing a subtractive filter..give them time to formulate it..
-            If Len(txtFilter) = 1 Then
-                lvFilter.Visible = False
-                Exit Sub
-            End If
-            If VBA.Right(txtFilter, 1) = "," Or VBA.Right(txtFilter, 1) = " " Then
-                lvFilter.Visible = False
-                Exit Sub
-            End If
-        End If
+    
+    If VBA.Left(txtFilter, 1) = "-" Then 'they are typing a subtractive filter..give them time to formulate it..
+        If Len(txtFilter) = 1 Then GoTo hideExit
+        If VBA.Right(txtFilter, 1) = "," Then Exit Sub 'they are adding more criteria
     End If
 
+    'should multiple (csv) filters only apply on hitting return?
+    'so you can see full list to work off of?
     
     lvFilter.Visible = True
     lvFilter.ListItems.Clear
@@ -538,7 +515,11 @@ Private Sub txtFilter_Change()
      Next
 
      
-    
+Exit Sub
+
+hideExit:
+            lvFilter.Visible = False
+            Exit Sub
             
     
 End Sub
@@ -558,57 +539,65 @@ Sub CloneListItemTo(li As ListItem, lv As ListView)
         li2.Tag = li.Tag
     End If
     
-    indexMapping.Add li.index, "fi:" & li2.index 'filter list item index to lv item index map
+    indexMapping.Add li, "fObj:" & ObjPtr(li2)  'filter list item obj to lvFilter objPtr map
     
 End Sub
 
-'value of 0 is an error return code..can not exist
-Private Function getMainItemIndexFor(filtIndex As Long) As Long
+'we had to switch from index mapping to object mapping to account for column click sorts..
+Private Function getMainListItemFor(liFilt As ListItem) As ListItem
     On Error Resume Next
-    getMainItemIndexFor = indexMapping("fi:" & filtIndex)
+    Set getMainListItemFor = indexMapping("fObj:" & ObjPtr(liFilt))
 End Function
 
 Private Sub lv_Click()
+    If m_Locked Then Exit Sub
     RaiseEvent Click
 End Sub
 
 Private Sub lv_ColumnClick(ByVal ColumnHeader As MSComctlLib.ColumnHeader)
-    If Locked Then Exit Sub
+    If m_Locked Then Exit Sub
     Me.ColumnSort ColumnHeader
     'RaiseEvent ColumnClick(ColumnHeader)
 End Sub
 
 Private Sub lv_DblClick()
+    If m_Locked Then Exit Sub
     RaiseEvent DblClick
 End Sub
 
 Private Sub lv_ItemClick(ByVal Item As MSComctlLib.ListItem)
+    If m_Locked Then Exit Sub
     RaiseEvent ItemClick(Item)
 End Sub
 
 Private Sub lv_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+    If m_Locked Then Exit Sub
     RaiseEvent MouseUp(Button, Shift, x, y)
 End Sub
 
 Private Sub lvFilter_Click()
+    If m_Locked Then Exit Sub
     RaiseEvent Click
 End Sub
 
 Private Sub lvFilter_ColumnClick(ByVal ColumnHeader As MSComctlLib.ColumnHeader)
-    If Locked Then Exit Sub
+    If m_Locked Then Exit Sub
     Me.ColumnSort ColumnHeader
     'RaiseEvent ColumnClick(ColumnHeader)
 End Sub
 
 Private Sub lvFilter_DblClick()
+    If m_Locked Then Exit Sub
     RaiseEvent DblClick
 End Sub
 
 Private Sub lvFilter_ItemClick(ByVal Item As MSComctlLib.ListItem)
+    If m_Locked Then Exit Sub
     RaiseEvent ItemClick(Item)
 End Sub
 
 Private Sub lvFilter_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+    If m_Locked Then Exit Sub
     RaiseEvent MouseUp(Button, Shift, x, y)
 End Sub
 
@@ -618,7 +607,7 @@ Private Sub txtFilter_KeyPress(KeyAscii As Integer)
     On Error Resume Next
     Dim t As String
     
-    If Locked Then Exit Sub
+    If m_Locked Then Exit Sub
     
     If KeyAscii = vbKeyEscape Then
         KeyAscii = 0
