@@ -9,7 +9,7 @@ Begin VB.UserControl ucFilterList
    ScaleWidth      =   7605
    Begin VB.TextBox txtFilter 
       Height          =   330
-      Left            =   495
+      Left            =   540
       TabIndex        =   3
       Top             =   4320
       Width           =   1995
@@ -85,14 +85,29 @@ Begin VB.UserControl ucFilterList
       Begin VB.Menu mnuCopyColumn 
          Caption         =   "Copy Column"
       End
+      Begin VB.Menu mnuspacer4 
+         Caption         =   "-"
+      End
+      Begin VB.Menu mnuFilterHelp 
+         Caption         =   "Filter Help"
+      End
       Begin VB.Menu mnuSetFilterCol 
          Caption         =   "Set Filter Column"
+      End
+      Begin VB.Menu mnuResults 
+         Caption         =   "Results:"
+      End
+      Begin VB.Menu mnuspacer 
+         Caption         =   "-"
       End
       Begin VB.Menu mnuToggleMulti 
          Caption         =   "MultiSelect"
       End
       Begin VB.Menu mnuHideSel 
          Caption         =   "Hide Selection"
+      End
+      Begin VB.Menu mnuSelectInverse 
+         Caption         =   "Inverse Selection"
       End
       Begin VB.Menu mnuAlertColWidths 
          Caption         =   "Alert Column Widths (IDE Only)"
@@ -113,6 +128,7 @@ Public AllowDelete As Boolean
 Private m_Locked As Boolean
 Private m_FilterColumn As Long
 Private m_FilterColumnPreset As Long
+'Private m_ComplexFilter As Boolean
 
 'we need to track the index map between listviews in case they delete from lvFilter..
 Private indexMapping As Collection
@@ -126,6 +142,15 @@ Event MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
 #If 0 Then
     Dim x, y, Column, nextone 'force lowercase so ide doesnt switch around on its own whim...
 #End If
+
+'Property Get ComplexFilter() As Boolean
+'   ComplexFilter = m_ComplexFilter
+'End Property
+'
+'Property Let ComplexFilter(x As Boolean)
+'    m_ComplexFilter = x
+'    mnuComplexFilter.Checked = x
+'End Property
 
 Property Get Locked() As Boolean
     Locked = m_Locked
@@ -182,16 +207,33 @@ Property Get ListItems() As ListItems
     Set ListItems = lv.ListItems
 End Property
 
+Property Get MultiSelect() As Boolean
+    MultiSelect = lv.MultiSelect
+End Property
+
 Property Let MultiSelect(x As Boolean)
     lv.MultiSelect = x
     lvFilter.MultiSelect = x
     mnuToggleMulti.Checked = x
 End Property
 
+Property Get HideSelection() As Boolean
+    HideSelection = lv.MultiSelect
+End Property
+
 Property Let HideSelection(x As Boolean)
     lv.HideSelection = x
     lvFilter.HideSelection = x
     mnuHideSel.Checked = x
+End Property
+
+Property Get GridLines() As Boolean
+    GridLines = lv.GridLines
+End Property
+
+Property Let GridLines(x As Boolean)
+    lv.GridLines = x
+    lvFilter.GridLines = x
 End Property
 
 'which ever one is currently displayed
@@ -332,6 +374,7 @@ End Sub
 
 Private Sub Label1_Click()
     If Locked Then Exit Sub
+    mnuResults.Caption = "Results: " & Me.currentLV.ListItems.count
     PopupMenu mnuTools
 End Sub
 
@@ -355,8 +398,40 @@ Private Sub mnuCopySel_Click()
     Clipboard.SetText Me.GetAllElements(True)
 End Sub
 
+Private Sub mnuFilterHelp_Click()
+    
+    Const msg = "You can enter multiple criteria to filter \n" & _
+                "on by seperating with commas. You can also\n" & _
+                "utilize a subtractive filter if the first \n" & _
+                "character in the textbox is a minus sign\n\n" & _
+                "The FilterColumn is marked with an * this is \n" & _
+                "the column that is being searched. You can \n" & _
+                "modify it on the filter menu, or by entering\n" & _
+                "/[index] in the filter textbox and hitting return\n\n" & _
+                "Pressing escape in the filter textbox will clear it.\n\n" & _
+                "If the AllowDelete property has been set, you can\n" & _
+                "select list items and press the delete key to remove\n" & _
+                "them."
+                
+                
+    MsgBox Replace(msg, "\n", vbCrLf), vbInformation
+                
+End Sub
+
 Private Sub mnuHideSel_Click()
     Me.HideSelection = Not lv.HideSelection
+End Sub
+
+Private Sub mnuSelectInverse_Click()
+    InvertSelection
+End Sub
+
+Public Sub InvertSelection()
+    If Not MultiSelect Then Exit Sub
+    Dim li As ListItem
+    For Each li In Me.currentLV.ListItems
+        li.Selected = Not li.Selected
+    Next
 End Sub
 
 Private Sub mnuSetFilterCol_Click()
@@ -376,6 +451,8 @@ Private Sub txtFilter_Change()
 
     Dim li As ListItem
     Dim t As String
+    Dim useSubtractiveFilter As Boolean
+    Dim tmp() As String, addit As Boolean, x
     
     On Error Resume Next
     
@@ -401,49 +478,67 @@ Private Sub txtFilter_Change()
         End If
     End If
     
+    If m_ComplexFilter Then
+        If VBA.Left(txtFilter, 1) = "-" Then 'they are typing a subtractive filter..give them time to formulate it..
+            If Len(txtFilter) = 1 Then
+                lvFilter.Visible = False
+                Exit Sub
+            End If
+            If VBA.Right(txtFilter, 1) = "," Or VBA.Right(txtFilter, 1) = " " Then
+                lvFilter.Visible = False
+                Exit Sub
+            End If
+        End If
+    End If
+
+    
     lvFilter.Visible = True
     lvFilter.ListItems.Clear
     Set indexMapping = New Collection
     
-    'simple filter
-    For Each li In lv.ListItems
-        If FilterColumn = 1 Then
+    Dim sMatch As String
+    
+    If VBA.Left(txtFilter, 1) = "-" Then
+        useSubtractiveFilter = True
+        sMatch = Mid(txtFilter, 2)
+    Else
+        sMatch = txtFilter
+    End If
+    
+    'we allow for csv multiple criteria, also
+    'you can use a subtractive filter like -mnu,cmd,lv
+     For Each li In lv.ListItems
+        
+         If FilterColumn = 1 Then
             t = li.Text
-        Else
+         Else
             t = li.subItems(m_FilterColumn - 1)
-        End If
-        If InStr(1, t, txtFilter, vbTextCompare) > 0 Then
-            CloneListItemTo li, lvFilter
-        End If
-    Next
+         End If
+        
+         addit = useSubtractiveFilter
+         If InStr(txtFilter, ",") Then
+            tmp = Split(sMatch, ",")
+         Else
+            push tmp, sMatch
+         End If
+         
+         For Each x In tmp
+             If Len(x) > 0 Then
+                 If InStr(1, t, x, vbTextCompare) > 0 Then
+                     addit = Not addit
+                     Exit For
+                 End If
+             End If
+         Next
+         
+         If addit Then
+             CloneListItemTo li, lvFilter
+         End If
+      
+     Next
+
+     
     
-    'complex filtering from CodeView addin..adapt if desired..
-    
-'    If VBA.Left(txtFilter, 1) = "-" Then 'they are typing a subtractive filter..give them time to formulate it..
-'        If Len(txtFilter) = 1 Then Exit Sub
-'        If VBA.Right(txtFilter, 1) = "," Or VBA.Right(txtFilter, 1) = " " Then Exit Sub
-'    End If
-'
-'    If VBA.Left(txtFilter, 1) = "-" And Len(txtFilter) > 1 Then   'subtractive filter like -mnu,cmd,lv
-'        Dim tmp() As String, addit As Boolean, x
-'        addit = True
-'        If InStr(txtFilter, ",") Then tmp = Split(Mid(txtFilter, 2), ",") Else tmp = Split(Mid(txtFilter, 2), " ")
-'        For Each x In tmp
-'            If Len(x) > 0 Then
-'                If InStr(1, mber.Name, x, vbTextCompare) > 0 Then
-'                    addit = False
-'                    Exit For
-'                End If
-'            End If
-'        Next
-'        If addit Then
-'            CodeView.Nodes.Add Nodes(mType), tvwChild, mber.Scope & mType & hash & Loc & hash, mber.Name, mType + i
-'        Else
-'            'Stop
-'        End If
-'    ElseIf InStr(1, mber.Name, txtFilter, vbTextCompare) > 0 Then
-'        CodeView.Nodes.Add Nodes(mType), tvwChild, mber.Scope & mType & hash & Loc & hash, mber.Name, mType + i
-'    End If
             
     
 End Sub

@@ -10,6 +10,12 @@ Begin VB.Form frmDeepMemScan
    ScaleHeight     =   5760
    ScaleWidth      =   9150
    StartUpPosition =   1  'CenterOwner
+   Begin VB.Timer Timer1 
+      Enabled         =   0   'False
+      Interval        =   1000
+      Left            =   2295
+      Top             =   45
+   End
    Begin VB.ListBox List1 
       Height          =   3570
       Left            =   2790
@@ -87,7 +93,7 @@ Begin VB.Form frmDeepMemScan
       Top             =   90
       Width           =   2040
    End
-   Begin VB.Label Label4 
+   Begin VB.Label lblTimer 
       Caption         =   "Ascii/Unicode, case insensitive, regexp \x ok"
       Height          =   285
       Left            =   2835
@@ -137,6 +143,9 @@ Dim tmp As String
 Dim results As New Collection
 Dim csv As String
     
+Dim ticks As Long
+Dim minutes As Long
+
 Private Sub cmdAbort_Click()
     abort = True
 End Sub
@@ -154,6 +163,8 @@ Private Sub cmdSearch_Click()
     Dim pid As Long
     
     On Error Resume Next
+    ticks = 0
+    minutes = 0
     
     If Len(txtFind) = 0 Then Exit Sub
 
@@ -167,6 +178,7 @@ Private Sub cmdSearch_Click()
     List1.Clear
     
     lvProcs.Locked = True
+    Timer1.Enabled = True
     
     For Each li In lvProcs.currentLV.ListItems
         pid = CLng(li.Text)
@@ -177,6 +189,7 @@ Private Sub cmdSearch_Click()
         If abort Then Exit For
     Next
     
+    Timer1.Enabled = False
     lvProcs.Locked = False
     pb.value = 0
     pb2.value = 0
@@ -264,3 +277,14 @@ Private Sub Form_Load()
     
     
 End Sub
+
+Private Sub Timer1_Timer()
+    ticks = ticks + 1
+    If ticks = 60 Then
+        ticks = 0
+        minutes = minutes + 1
+        lblTimer.Caption = IIf(minutes > 0, minutes & " min", "") & ticks & " sec"
+    End If
+End Sub
+
+ 
