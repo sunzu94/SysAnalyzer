@@ -369,7 +369,7 @@ Begin VB.Form Form2
       Height          =   315
       Left            =   6210
       TabIndex        =   2
-      Top             =   30
+      Top             =   0
       Width           =   1335
    End
    Begin VB.TextBox txtPacked 
@@ -620,7 +620,7 @@ Function AddPid(hex_pid As String)
     Next
     
     Set li = lvProc.ListItems.Add(, , LCase(hex_pid))
-    li.SubItems(1) = fso.FileNameFromPath(cpi.GetProcessPath(pid))
+    li.subItems(1) = fso.FileNameFromPath(cpi.GetProcessPath(pid))
     li.Tag = pid
     
 End Function
@@ -688,8 +688,8 @@ End Sub
 
 Sub push(ary, value) 'this modifies parent ary object
     On Error GoTo init
-    Dim X As Long
-    X = UBound(ary) '<-throws Error If Not initalized
+    Dim x As Long
+    x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
     ary(UBound(ary)) = value
     Exit Sub
@@ -714,8 +714,8 @@ Private Sub cmdFind_Click()
     f = InputBox("Enter string to find in log:")
     If Len(f) = 0 Then Exit Sub
     For i = 1 To lv.ListItems.count
-        If InStr(1, lv.ListItems(i).SubItems(1), f, vbTextCompare) > 0 Then
-            t = t & "pid: " & lv.ListItems(i).Text & " - " & lv.ListItems(i).SubItems(1) & vbCrLf
+        If InStr(1, lv.ListItems(i).subItems(1), f, vbTextCompare) > 0 Then
+            t = t & "pid: " & lv.ListItems(i).Text & " - " & lv.ListItems(i).subItems(1) & vbCrLf
         End If
     Next
     Dim fso As New CFileSystem2
@@ -731,7 +731,7 @@ Private Sub cmdParse_Click()
     Dim li As ListItem
     
     For Each li In lv.ListItems
-        t = t & "pid: " & li.Text & " - " & li.SubItems(1) & vbCrLf
+        t = t & "pid: " & li.Text & " - " & li.subItems(1) & vbCrLf
     Next
     
     frmLogParser.LoadSampleApiLog CStr(t)
@@ -747,7 +747,7 @@ Private Sub cmdSave_Click()
     If Len(f) = 0 Then Exit Sub
     
     For Each li In lv.ListItems
-        t = t & "pid: " & li.Text & " - " & li.SubItems(1) & vbCrLf
+        t = t & "pid: " & li.Text & " - " & li.subItems(1) & vbCrLf
     Next
     
     fso.writeFile f, t
@@ -770,16 +770,15 @@ Private Sub cmdStart_Click()
     Dim injDll As Boolean
     Dim injData As Boolean
     Dim dllName As String
+    Dim rndDll As Boolean
     
-    Dim X As String, tmp, Y
+    Dim x As String, tmp, y
     
     On Error GoTo hell
     
     injDll = (InStr(lblDll.Caption, "DLL") > 0)
     injData = (InStr(lblDll.Caption, "Data") > 0)
-    
-    
-    
+   
     lv.ListItems.Clear
     List2.Clear
     Erase ignored
@@ -814,7 +813,8 @@ Private Sub cmdStart_Click()
         Exit Sub
     End If
     
-    If injDll Then dllName = RandomizeApiLogDllName(txtDll)
+    dllName = txtDll
+    If doRnd Then dllName = RandomizeApiLogDllName(txtDll)
     
     Dim cp As CProcess
     
@@ -822,12 +822,12 @@ Private Sub cmdStart_Click()
     
     If isPid Then
         If injDll Then
-            If Not cpi.InjectDLL(pid, dllName, X, cp) Then 'x64 Safe
+            If Not cpi.InjectDLL(pid, dllName, x, cp) Then 'x64 Safe
                 failed = True
                 MsgBox "Injection failed", vbInformation
             End If
         Else
-            If Not cpi.InjectShellcode(pid, dllName, X, cp, injData) Then 'x64 Not supported...
+            If Not cpi.InjectShellcode(pid, dllName, x, cp, injData) Then 'x64 Not supported...
                 failed = True
                 MsgBox "Injection failed", vbInformation
             End If
@@ -835,7 +835,7 @@ Private Sub cmdStart_Click()
     Else
         cpi.x64.DisableRedir
         If injDll Then
-            If Not cpi.StartProcessWithDLL(exe, dllName, X, cp) Then 'x64 Safe
+            If Not cpi.StartProcessWithDLL(exe, dllName, x, cp) Then 'x64 Safe
                 failed = True
                 MsgBox "Injection failed", vbInformation
             End If
@@ -848,14 +848,14 @@ Private Sub cmdStart_Click()
     
     If Not failed Then
         Set li = lvProc.ListItems.Add(, , LCase(Hex(cp.pid)))
-        li.SubItems(1) = fso.FileNameFromPath(cp.fullpath)
+        li.subItems(1) = fso.FileNameFromPath(cp.fullpath)
         li.Tag = cp.pid
     End If
     
-    tmp = Split(X, vbCrLf)
+    tmp = Split(x, vbCrLf)
     List2.Clear
-    For Each Y In tmp
-       List2.AddItem Y
+    For Each y In tmp
+       List2.AddItem y
     Next
     
     Exit Sub
@@ -894,7 +894,7 @@ Function RandomizeApiLogDllName(base As String) As String
 End Function
 
 Private Function RandomInteger(Optional Lowerbound As Integer = 3, Optional Upperbound As Integer = 12) As Integer 'The random number generator code
-    RandomInteger = Int((Upperbound - Lowerbound + 1) * rnd + Lowerbound)
+    RandomInteger = Int((Upperbound - Lowerbound + 1) * Rnd + Lowerbound)
 End Function
  
 
@@ -920,7 +920,7 @@ Private Sub Command4_Click()
         ignored = Split(txtIgnore, ",")
     End If
     For i = lv.ListItems.count To 1 Step -1
-        If ignoreit(lv.ListItems(i).SubItems(1)) Then
+        If ignoreit(lv.ListItems(i).subItems(1)) Then
             lv.ListItems.Remove i
         End If
     Next
@@ -995,7 +995,7 @@ Private Sub Form_Unload(Cancel As Integer)
     SaveMySetting "Ignore", txtIgnore
 End Sub
 
-Private Sub lblDll_MouseUp(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub lblDll_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     
     If Button = 2 Then
         doRnd = Not doRnd
@@ -1012,7 +1012,7 @@ Private Sub lblDll_MouseUp(Button As Integer, Shift As Integer, X As Single, Y A
     
 End Sub
 
-Private Sub lv_MouseUp(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub lv_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     If Button = 2 Then PopupMenu mnuPopup
 End Sub
 
@@ -1020,7 +1020,7 @@ Private Sub lvProc_ItemClick(ByVal Item As MSComctlLib.ListItem)
     Set liProc = Item
 End Sub
 
-Private Sub lvProc_MouseUp(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub lvProc_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
    ' mnuLoadSampleApiLog.Visible = isIde()
     If Button = 2 Then PopupMenu mnuProcess
 End Sub
@@ -1084,7 +1084,7 @@ Private Sub mnuUpdateAll_Click()
     Dim li As ListItem
     For Each li In lvProc.ListItems
         pid = CLng("&h" & li.Text)
-        handler = CLng("&h" & li.SubItems(3))
+        handler = CLng("&h" & li.subItems(3))
         If handler <> 0 And Err.Number = 0 Then
             hProcess = OpenProcess(PROCESS_ALL_ACCESS, False, pid)
             List2.AddItem "UpdateConfig(" & Hex(hProcess) & "," & Hex(handler) & ") = " & CreateRemoteThread(hProcess, ByVal 0, 0, handler, arg, 0, hThread)
@@ -1100,7 +1100,7 @@ Private Sub mnuUpdateConfig_Click()
     Dim pid As Long, hProcess As Long, handler As Long, hThread As Long, arg As Long
     If liProc Is Nothing Then Exit Sub
     pid = CLng("&h" & liProc.Text)
-    handler = CLng("&h" & liProc.SubItems(3))
+    handler = CLng("&h" & liProc.subItems(3))
     If handler = 0 Then Exit Sub
     If Err.Number = 0 Then
          hProcess = OpenProcess(PROCESS_ALL_ACCESS, False, pid)
@@ -1140,7 +1140,7 @@ Private Sub HandleConfig(msg As String, spid As String)
                 pid = CLng("&h" & spid)
                 For Each li In lvProc.ListItems
                     If li.Tag = pid Then
-                        li.SubItems(3) = cmd(2)
+                        li.subItems(3) = cmd(2)
                         Exit For
                     End If
                 Next
@@ -1255,7 +1255,7 @@ Private Sub RecieveTextMessage(lParam As Long)
         If ignoreit(temp) Then Exit Sub
         
         Set li = lv.ListItems.Add(, , pid)
-        li.SubItems(1) = temp
+        li.subItems(1) = temp
         li.EnsureVisible
         
         If Len(txtDumpAt.Text) > 0 Then
@@ -1285,8 +1285,8 @@ Private Sub IncrementLastCount()
     Dim v As Long
     On Error Resume Next
     i = lv.ListItems.count
-    v = CLng(lv.ListItems(i).SubItems(2))
-    lv.ListItems(i).SubItems(2) = v + 1
+    v = CLng(lv.ListItems(i).subItems(2))
+    lv.ListItems(i).subItems(2) = v + 1
 End Sub
 
 'Function LogAlloc(pid, temp)
@@ -1386,19 +1386,19 @@ Private Sub TabStrip1_Click()
     List2.Visible = Not lvProc.Visible
 End Sub
 
-Private Sub txtArgs_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub txtArgs_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, y As Single)
     On Error Resume Next
     txtArgs = data.Files(1)
     DeterminePEFileStats txtArgs
 End Sub
 
-Private Sub txtDll_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub txtDll_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, y As Single)
     On Error Resume Next
     txtDll = data.Files(1)
     DeterminePEFileStats txtDll
 End Sub
 
-Private Sub txtPacked_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub txtPacked_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, y As Single)
     On Error Resume Next
     txtPacked = data.Files(1)
     DeterminePEFileStats txtPacked

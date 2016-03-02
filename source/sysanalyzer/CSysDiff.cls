@@ -62,10 +62,10 @@ Dim Tasks1 As Collection
 Dim Tasks2 As Collection
 Dim ChangedTasks As Collection
 
-Dim liProc As ListItem
-Dim liExplorer As ListItem
-Dim liIE As ListItem
-Dim explorerPopup As Boolean
+'Dim liProc As ListItem
+'Dim liExplorer As ListItem
+'Dim liIE As ListItem
+'Dim explorerPopup As Boolean
 
 Public shutDown As Boolean
 

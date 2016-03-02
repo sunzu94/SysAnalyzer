@@ -49,6 +49,7 @@ Private Sub Class_Initialize()
      push HKLM_vals, "\Software\Microsoft\Windows\CurrentVersion\Runonce"
      push HKLM_vals, "\Software\Microsoft\Windows\CurrentVersion\Run"
      push HKLM_vals, "\Software\Microsoft\Windows\CurrentVersion\RunServices"
+     push HKLM_vals, "\Software\Microsoft\Windows\Currentversion\Policies\Explorer\Run\"
      
      'enum keys
      push HKLM_keys, "\SOFTWARE\Microsoft\Internet Explorer\Extensions"

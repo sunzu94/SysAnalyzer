@@ -64,7 +64,7 @@ Property Get ConnectionString() As String
 End Property
 
 Sub BuildConnectionString(dbServer As dbServers, dbName As String, Optional server As String, _
-                          Optional Port = 3306, Optional user As String, Optional pass As String)
+                          Optional Port = 3306, Optional User As String, Optional pass As String)
     
     Dim dbPath As String
     Dim baseString As String
@@ -85,15 +85,15 @@ Sub BuildConnectionString(dbServer As dbServers, dbName As String, Optional serv
             baseString = "Driver={SQL Server};Server=" & server & ";Database=____;"
         Case JetAccess2k
             baseString = "Provider=Microsoft.Jet.OLEDB.4.0;Data Source=____;" & _
-                         "User Id=" & user & ";" & _
+                         "User Id=" & User & ";" & _
                          "Password=" & pass & ";"
                          blnInlineAuth = True
     End Select
                          
         
     If Not blnInlineAuth Then
-        If user <> Empty Then baseString = baseString & "Uid:" & user & ";"
-        If pass <> Empty Then baseString = baseString & "Pwd:" & user & ";"
+        If User <> Empty Then baseString = baseString & "Uid:" & User & ";"
+        If pass <> Empty Then baseString = baseString & "Pwd:" & User & ";"
     End If
        
     '%AP% is like enviromental variable for app.path i am lazy :P
@@ -119,7 +119,7 @@ Function OpenConnection(Optional cLoc As CursorLocationEnum = adUseServer, Optio
    
    objCon.CursorLocation = cLoc
    objRs.LockType = cLock
-   objCon.Mode = cMode
+   objCon.mode = cMode
    objCon.Open strConn
    
    objRs.ActiveConnection = objCon
@@ -195,7 +195,7 @@ End Function
 
 Function SingleAryOfRecords(strSql As String, strFieldName As String, Optional rsIn As Recordset = Nothing) As Variant()
     Dim rs As Recordset
-    Dim X As Integer
+    Dim x As Integer
     Dim i As Integer
     
     Dim ret() As Variant
@@ -208,8 +208,8 @@ Function SingleAryOfRecords(strSql As String, strFieldName As String, Optional r
     
     If rs.EOF And rs.BOF Then Exit Function
     
-    X = rs.RecordCount
-    ReDim ret(X)
+    x = rs.RecordCount
+    ReDim ret(x)
     
     While Not rs.EOF
         ret(i) = RsField(strFieldName, rs)
@@ -255,7 +255,7 @@ End Sub
 
 Sub Insert(tblName, fields, ParamArray params())
 
-    Dim sSql As String, sTmp As String, i As Integer, X
+    Dim sSql As String, sTmp As String, i As Integer, x
     'dim iOpened As Boolean
     Dim values()
     

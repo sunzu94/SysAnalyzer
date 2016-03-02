@@ -487,6 +487,7 @@ char msgbuf[0x1001];
 
 int msg(char *Buffer){
   
+  if(!IsWindow(hServer)) hServer=0;
   if(hServer==0) FindVBWindow();
   
   COPYDATASTRUCT cpStructData;

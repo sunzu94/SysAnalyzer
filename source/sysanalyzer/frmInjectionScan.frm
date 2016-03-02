@@ -301,11 +301,11 @@ Sub FindStealthInjections(pid As Long, pName As String)
             'End If
             
             Set li = lv.ListItems.Add(, , pad(pid))
-            li.SubItems(1) = pad(cMem.BaseAsHexString)
-            li.SubItems(2) = pad(Hex(cMem.size))
-            li.SubItems(3) = cMem.MemTypeAsString()
-            li.SubItems(4) = cMem.ProtectionAsString()
-            li.SubItems(5) = pName
+            li.subItems(1) = pad(cMem.BaseAsHexString)
+            li.subItems(2) = pad(Hex(cMem.size))
+            li.subItems(3) = cMem.MemTypeAsString()
+            li.subItems(4) = cMem.ProtectionAsString()
+            li.subItems(5) = pName
             
             'If VBA.Left(pi.ReadMemory2(cMem.pid, cMem.Base, 2), 2) = "MZ" Then
             If isInject Then
@@ -313,7 +313,7 @@ Sub FindStealthInjections(pid As Long, pName As String)
             End If
 
             Set li.Tag = cMem
-            li.SubItems(6) = entropy
+            li.subItems(6) = entropy
         End If
         
 nextone:
@@ -351,8 +351,8 @@ End Sub
 
 Private Sub Form_Resize()
     On Error Resume Next
-    Frame1.top = Me.Height - 400 - Frame1.Height - (TitleBarHeight(Me) - 255)
-    lv.Height = Frame1.top - 600
+    Frame1.Top = Me.Height - 400 - Frame1.Height - (TitleBarHeight(Me) - 255)
+    lv.Height = Frame1.Top - 600
     lv.Width = Me.Width - lv.Left - 200
     pb.Width = lv.Width
     pb2.Width = lv.Width
@@ -360,6 +360,10 @@ End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
     abort = True
+    Dim li As ListItem
+    For Each li In lv.ListItems
+        If IsObject(li.Tag) Then Set li = Nothing
+    Next
 End Sub
 
 Private Sub lv_DblClick()
@@ -373,9 +377,9 @@ Private Sub mnuSave_Click()
     On Error Resume Next
     pid = CLng(selli.Text)
     'f = InputBox("Save file as: ", , UserDeskTopFolder & "\" & pid & "_" & selli.SubItems(1) & ".mem")
-    f = frmDlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save As:", , Me, pid & "_" & Trim(selli.SubItems(1)) & ".mem")
+    f = frmDlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save As:", , Me, pid & "_" & Trim(selli.subItems(1)) & ".mem")
     If Len(f) = 0 Then Exit Sub
-    If pi.DumpMemory(pid, Trim(selli.SubItems(1)), Trim(selli.SubItems(2)), f) Then
+    If pi.DumpMemory(pid, Trim(selli.subItems(1)), Trim(selli.subItems(2)), f) Then
         MsgBox "File successfully saved"
     Else
         MsgBox "Error saving file: " & Err.Description
@@ -398,8 +402,8 @@ Private Sub mnuSaveAll_Click()
     
     For Each li In lv.ListItems
         pid = CLng(li.Text)
-        f = saveDir & "\" & pid & "_" & Trim(li.SubItems(1)) & ".mem"
-        If pi.DumpMemory(pid, Trim(li.SubItems(1)), Trim(li.SubItems(2)), f) Then
+        f = saveDir & "\" & pid & "_" & Trim(li.subItems(1)) & ".mem"
+        If pi.DumpMemory(pid, Trim(li.subItems(1)), Trim(li.subItems(2)), f) Then
             i = i + 1
         Else
             e = e & "Error dumping " & f & vbCrLf
@@ -477,7 +481,7 @@ Private Sub mnuStrings_Click()
     On Error Resume Next
     pid = CLng(selli.Text)
     f = fso.GetFreeFileName(Environ("temp"), ".bin")
-    If pi.DumpMemory(pid, Trim(selli.SubItems(1)), Trim(selli.SubItems(2)), f) Then
+    If pi.DumpMemory(pid, Trim(selli.subItems(1)), Trim(selli.subItems(2)), f) Then
         LaunchStrings f, True
     Else
         MsgBox "Error saving file: " & Err.Description
@@ -490,9 +494,9 @@ Private Sub mnuView_Click()
     Dim pid As Long
     Dim Base 'As Long
     On Error Resume Next
-    Base = Trim(selli.SubItems(1))
+    Base = Trim(selli.subItems(1))
     pid = CLng(selli.Text)
-    s = pi.ReadMemory2(pid, Base, CLng("&h" & Trim(selli.SubItems(2))))
+    s = pi.ReadMemory2(pid, Base, CLng("&h" & Trim(selli.subItems(2))))
     If Len(s) = 0 Then
         MsgBox "Failed to readmemory?"
         Exit Sub
@@ -504,7 +508,7 @@ End Sub
 
 
 Private Sub lv_ItemClick(ByVal Item As MSComctlLib.ListItem)
-    Text1 = Item.SubItems(5)
+    Text1 = Item.subItems(5)
     Set selli = Item
 End Sub
 

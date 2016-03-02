@@ -568,7 +568,7 @@ Option Explicit
 '         Place, Suite 330, Boston, MA 02111-1307 USA
 '
 
-Private Capturing As Boolean
+Private shutDown As Boolean
 Private Declare Function SetCapture Lib "user32" (ByVal hwnd As Long) As Long
 Private Declare Function ReleaseCapture Lib "user32" () As Long
 
@@ -752,6 +752,14 @@ Private Sub mnuSaveApiLog_Click()
     apilog = UserDeskTopFolder & "\api.log"
     If fso.FileExists(apilog) Then fso.DeleteFile apilog
     fso.writeFile apilog, GetAllElements(lvAPILog)
+End Sub
+
+Private Sub mnuSaveDirWatch_Click()
+    On Error Resume Next
+    Dim dirlog As String
+    dirlog = UserDeskTopFolder & "\dirWatch.log"
+    If fso.FileExists(dirlog) Then fso.DeleteFile dirlog
+    fso.writeFile dirlog, GetAllElements(lvDirWatch)
 End Sub
 
 Private Sub Form_Load()
@@ -1214,13 +1222,13 @@ Private Sub mnuSearch_Click()
     
 End Sub
 
-Function GetActiveLV(Optional Index As Long = -1) As ListView
+Function GetActiveLV(Optional index As Long = -1) As ListView
 
     Dim active_lv As ListView
     
-    If Index = -1 Then Index = SSTab1.TabIndex
+    If index = -1 Then index = SSTab1.TabIndex
     
-    Select Case Index
+    Select Case index
         Case 0: Set active_lv = lvProcesses.mainLV
         Case 1: Set active_lv = lvPorts.mainLV
         Case 2: Set active_lv = lvProcessDllList
@@ -1284,7 +1292,8 @@ Private Sub tmrCountDown_Timer()
         Unload frmAnalyzeProcess
         
         If SSTab1.TabVisible(5) Then mnuSaveApiLog_Click
-    
+        If lvDirWatch.ListItems.count > 0 Then mnuSaveApiLog_Click
+        
         ret() = GetSystemDataReport()
         
         If lvProcesses.ListItems.count < 1 Then
@@ -1397,6 +1406,8 @@ Private Sub Form_Unload(Cancel As Integer)
     On Error Resume Next
     Dim f
     
+    shutDown = True
+    diff.shutDown = True
     SaveFormSizeAnPosition Me
     tmrCountDown.Enabled = False
      
@@ -1416,17 +1427,19 @@ Private Sub Form_Unload(Cancel As Integer)
         If Not isIde() Then
             subclass.DetatchMessage frmApiLogger.hwnd, WM_COPYDATA
         End If
-        If lvAPILog.ListItems.count > 0 Then mnuSaveApiLog_Click
     End If
+    
+    If lvAPILog.ListItems.count > 0 Then mnuSaveApiLog_Click
+    If lvDirWatch.ListItems.count > 0 Then mnuSaveDirWatch_Click
     
     Set subclass = Nothing
     
     For Each f In Forms
         Unload f
     Next
-    
-    diff.shutDown = True
 
+    ado.CloseConnection
+    
     Set fso = Nothing
     Set dlg = Nothing
     Set hash = Nothing
@@ -1434,7 +1447,19 @@ Private Sub Form_Unload(Cancel As Integer)
     Set known = Nothing
     Set ado = Nothing
     Set apiDataManager = Nothing
+    Set reg = Nothing
+    Set watchDirs = Nothing
+    Set cApiData = Nothing
+    Set cLogData = Nothing
     
+    Set liProc = Nothing
+    Set liDirWatch = Nothing
+    Set liDriver = Nothing
+    Set liRegMon = Nothing
+    Set liTask = Nothing
+    Set liProcDllList = Nothing
+
+    Close 'no args = all file handles
     'Unload Me
     End
     
@@ -1449,14 +1474,14 @@ Private Sub mnuDataReport_Click()
     ShowDataReport
 End Sub
 
-Public Sub mnuToolItem_Click(Index As Integer)
+Public Sub mnuToolItem_Click(index As Integer)
     
     'show1, show2, diff, - , take1, take2, - , startover
     
     Dim c As String
     
     With diff
-        Select Case Index
+        Select Case index
             Case 0: .ShowBaseSnap
             Case 1: .ShowSnap2
             Case 2: .ShowDiffReport
@@ -1479,7 +1504,7 @@ Public Sub mnuToolItem_Click(Index As Integer)
         End Select
     End With
     
-    Select Case Index
+    Select Case index
         Case 0: c = "Showing base snapshot"
         Case 1: c = "Showing snapshot 2"
         Case 2: c = "Showing snapshot diff"
@@ -1488,7 +1513,7 @@ Public Sub mnuToolItem_Click(Index As Integer)
     End Select
     
     If lastViewMode <= 5 Then
-        lastViewMode = Index
+        lastViewMode = index
     Else
         lastViewMode = -1
     End If
@@ -1510,6 +1535,8 @@ Private Sub subclass_MessageReceived(hwnd As Long, wMsg As Long, wParam As Long,
     
     On Error Resume Next
     
+    If shutDown Then Exit Sub
+    
     If wMsg = WM_COPYDATA Then
         If RecieveTextMessage(lParam, msg) Then
             Debug.Print "subclass msg: " & hwnd & " " & msg
@@ -1526,11 +1553,12 @@ Private Sub subclass_MessageReceived(hwnd As Long, wMsg As Long, wParam As Long,
                 
             ElseIf hwnd = frmApiLogger.hwnd Then
             
-                apiDataManager.HandleApiMessage msg '5.18.12
+                'apiDataManager.HandleApiMessage msg '5.18.12 not actually used yet...
                 If ignoreAPILOG Then Exit Sub
                 'If AnyOfTheseInstr(msg, txtApiIgnore) Then Exit Sub
                 If KeyExistsInCollection(cApiData, msg) Then Exit Sub 'some antispam..
                 On Error Resume Next
+                If cApiData.count > 1000 Then Set cApiData = New Collection
                 cApiData.Add msg, msg
                 lvAPILog.ListItems.Add , , msg
                 
@@ -1557,6 +1585,7 @@ Private Sub subclass_MessageReceived(hwnd As Long, wMsg As Long, wParam As Long,
                 If KeyExistsInCollection(cLogData, msg) Then Exit Sub 'antispam
                                     
                 On Error Resume Next 'logging
+                If cLogData.count > 1000 Then Set cLogData = New Collection
                 cLogData.Add msg, msg
                 tmp = Split(msg, ":", 2) 'format=  action:file
                 tmp(1) = Trim(tmp(1))
@@ -1565,6 +1594,7 @@ Private Sub subclass_MessageReceived(hwnd As Long, wMsg As Long, wParam As Long,
                     size = FileLen(CStr(tmp(1)))
                     If InStr(1, tmp(0), "mod", vbTextCompare) > 0 Then
                         saved = SafeFileCopy(CStr(tmp(1)), "DirWatch")
+                        'todo: if saved failed que to try again...
                     End If
                 End If
                     
@@ -1586,6 +1616,8 @@ Function SafeFileCopy(org As String, subfolder As String) As Boolean
     Dim tmp
     Dim size As Long
     Dim ext As String
+    Dim foundMD5 As String
+    Dim curMD5 As String
     
     i = 1
     p = UserDeskTopFolder & "\" & subfolder & "\"
@@ -1600,6 +1632,15 @@ Function SafeFileCopy(org As String, subfolder As String) As Boolean
     If AnyOfTheseInstr(ext, "exe,scr,cpl,bat,com,pdf,doc") Then f = f & "_"
     
     tmp = f
+    curMD5 = hash.HashFile(CStr(tmp))
+    If fso.FileExists(p & "\" & tmp) Then
+        foundMD5 = hash.HashFile(p & "\" & tmp)
+        If curMD5 = foundMD5 Then
+            SafeFileCopy = True
+            Exit Function
+        End If
+    End If
+    
     While fso.FileExists(p & "\" & tmp)
         tmp = f & IIf(VBA.Right(f, 1) = "_", "", "_") & i
         i = i + 1
@@ -1694,7 +1735,7 @@ Private Sub mnuKillProcess_Click()
     On Error Resume Next
     If liProc Is Nothing Then Exit Sub
     If diff.CProc.TerminateProces(CLng(liProc.Text)) Then
-        lvProcesses.ListItems.Remove liProc.Index
+        lvProcesses.ListItems.Remove liProc.index
         MsgBox "Process Killed", vbInformation
     Else
         MsgBox "Unable to kill Process", vbInformation

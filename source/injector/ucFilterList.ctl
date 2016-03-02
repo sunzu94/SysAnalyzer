@@ -277,18 +277,7 @@ Function AddItem(txt, ParamArray subItems()) As ListItem
 End Function
 
 Sub Clear()
-
     If m_Locked Then Exit Sub
-    
-    Dim li As ListItem
-    For Each li In lv.ListItems
-        If IsObject(li.Tag) Then Set li.Tag = Nothing
-    Next
-    
-    For Each li In lvFilter.ListItems
-        If IsObject(li.Tag) Then Set li.Tag = Nothing
-    Next
-    
     lv.ListItems.Clear
     lvFilter.ListItems.Clear
 End Sub
@@ -780,7 +769,16 @@ Private Function isIde() As Boolean
 out: isIde = Err
 End Function
 
-Private Sub UserControl_Terminate()
-    m_Locked = False
-    Me.Clear
-End Sub
+
+
+
+
+
+
+
+
+
+
+
+
+
