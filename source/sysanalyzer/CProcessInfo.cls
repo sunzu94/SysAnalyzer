@@ -1319,12 +1319,35 @@ retNow:
     
 End Function
 
+Public Function EnumNamedPipes(Optional addTo As Collection) As Collection
+    
+    Dim tmp() As String, t
+    Dim c As Collection
+    
+    tmp() = fso.GetFolderFiles("\\.\pipe\")
+    
+    If addTo Is Nothing Then
+        Set c = New Collection
+    Else
+        Set c = addTo
+    End If
+    
+    For Each t In tmp
+        c.Add t, t
+    Next
+    
+    Set EnumNamedPipes = c
+
+End Function
+
 Function EnumTasks() As Collection
     
     Dim c As New Collection
     Dim pth As String, cnt As Long
     Dim objTaskService, objTaskFolder
-
+    
+    On Error Resume Next
+    
     'Vista+ use Scheduled Tasks API v2
     Set objTaskService = CreateObject("Schedule.Service")
     If Not objTaskService Is Nothing Then

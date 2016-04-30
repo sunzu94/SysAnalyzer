@@ -63,6 +63,7 @@ Private Sub Class_Initialize()
     'and  HKLM\Software\Microsoft\Windows NT\CurrentVersion\Windows\Load,AppInit_DLLs
     push HKLM_singleval, "\Software\Microsoft\Windows NT\CurrentVersion\Windows,AppInit_DLLs"
     push HKLM_singleval, "\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon,Userinit"
+    'Software\Microsoft\Windows NT\CurrentVersion\Winlogon\shell -- Nymaim
     
 End Sub
 

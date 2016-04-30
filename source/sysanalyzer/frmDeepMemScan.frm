@@ -204,6 +204,13 @@ Private Sub cmdSearch_Click()
       
 End Sub
 
+Sub InitilizeFor(pid As Long)
+    
+    lvProcs.FilterColumn = 1
+    lvProcs.Filter = pid
+    Me.Visible = True
+    
+End Sub
 
 Sub ScanMemory(pid As Long, pName As String, sFind As String)
     

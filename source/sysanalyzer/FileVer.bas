@@ -736,7 +736,7 @@ End Function
 
 Function GetAllElements(lv As ListView) As String
     Dim ret() As String, i As Integer, tmp As String
-    Dim li As ListItem
+    Dim li As ListItem, dd As CProcessDllDiff, c As Collection, f
 
     For i = 1 To lv.ColumnHeaders.count
         tmp = tmp & lv.ColumnHeaders(i).Text & vbTab
@@ -746,11 +746,23 @@ Function GetAllElements(lv As ListView) As String
     push ret, String(50, "-")
 
     For Each li In lv.ListItems
+        
         tmp = li.Text & vbTab
         For i = 1 To lv.ColumnHeaders.count - 1
             tmp = tmp & li.subItems(i) & vbTab
         Next
         push ret, tmp
+        
+        If lv.name = "lvProcessDllList" Then
+            Set dd = li.Tag
+            If diff.DisplayMode = dm_snap1 Then Set c = dd.dlls1
+            If diff.DisplayMode = dm_snap2 Then Set c = dd.dlls2
+            If diff.DisplayMode = dm_diff Then Set c = dd.ChangedDlls
+            For Each f In c
+                push ret, vbTab & f
+            Next
+        End If
+        
     Next
 
     GetAllElements = Join(ret, vbCrLf)

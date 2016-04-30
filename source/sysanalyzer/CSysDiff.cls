@@ -62,6 +62,11 @@ Dim Tasks1 As Collection
 Dim Tasks2 As Collection
 Dim ChangedTasks As Collection
 
+Dim Pipes1 As Collection
+Dim Pipes2 As Collection
+Dim ChangedPipes As Collection
+
+
 'Dim liProc As ListItem
 'Dim liExplorer As ListItem
 'Dim liIE As ListItem
@@ -84,7 +89,7 @@ Sub ShowBaseSnap(Optional FirstTabOnly = False)
         Exit Sub
     End If
     DisplayMode = dm_snap1
-    ShowSnapShot Processes1, Ports1, Services1, Mutex1, Tasks1, Drivers1, CReg.Snap1, FirstTabOnly
+    ShowSnapShot Processes1, Ports1, Services1, Mutex1, Tasks1, Pipes1, Drivers1, CReg.Snap1, FirstTabOnly
 End Sub
 
 Sub ShowSnap2()
@@ -93,7 +98,7 @@ Sub ShowSnap2()
         Exit Sub
     End If
     DisplayMode = dm_snap2
-    ShowSnapShot Processes2, ports2, Services2, Mutex2, Tasks2, Drivers2, CReg.Snap2
+    ShowSnapShot Processes2, ports2, Services2, Mutex2, Tasks2, Pipes2, Drivers2, CReg.Snap2
 End Sub
 
 
@@ -111,7 +116,7 @@ Sub DoSnap1()
     frmMain.lvMutex.Clear
     
     frmMain.Display = "Taking SnapShot 1"
-    frmMain.pb.max = 7
+    frmMain.pb.max = 8
     frmMain.pb.value = 0
     
     Sleep 100
@@ -147,6 +152,11 @@ Sub DoSnap1()
     DoEvents
     frmMain.Display = "Enumerating tasks..."
     Set Tasks1 = CProc.EnumTasks()
+    frmMain.pb.value = frmMain.pb.value + 1
+    If shutDown Then Exit Sub
+    
+    frmMain.Display = "Enumerating named pipes..."
+    Set Pipes1 = CProc.EnumNamedPipes()
     frmMain.pb.value = frmMain.pb.value + 1
     If shutDown Then Exit Sub
     
@@ -236,6 +246,11 @@ Sub DoSnap2()
     Set Tasks2 = CProc.EnumTasks()
     frmMain.pb.value = frmMain.pb.value + 1
     If shutDown Then Exit Sub
+    
+    frmMain.Display = "Enumerating named pipes..."
+    Set Pipes2 = CProc.EnumNamedPipes()
+    frmMain.pb.value = frmMain.pb.value + 1
+    If shutDown Then Exit Sub
 
     frmMain.Display = "Enumerating registry keys..."
     DoEvents
@@ -290,6 +305,7 @@ Sub ShowDiffReport()
     Set ChangedDrivers = New Collection
     Set ChangedMutexes = New Collection
     Set ChangedTasks = New Collection
+    Set ChangedPipes = New Collection
     
     Dim dd As CProcessDllDiff
     Dim t As CTaskElem
@@ -329,6 +345,13 @@ Sub ShowDiffReport()
         dd.DiffDlls
     Next
     
+    For Each drv In Pipes2
+        If Not KeyExistsInCollection(Pipes1, CStr(drv)) Then
+            ChangedPipes.Add drv
+        End If
+        If shutDown Then Exit Sub
+    Next
+    
     Dim c1 As Collection
     Dim c2 As Collection
     
@@ -359,14 +382,16 @@ Sub ShowDiffReport()
     Next
 
     ShowSnapShot ChangedProcesses, ChangedPorts, ChangedServices, ChangedMutexes, _
-                 ChangedTasks, ChangedDrivers, CReg.GetDifferences
+                 ChangedTasks, ChangedPipes, ChangedDrivers, CReg.GetDifferences
 
 
 End Sub
 
 
 Private Sub ShowSnapShot(procs As Collection, ports As Collection, servcs As Collection, _
-                        mutexes As Collection, tasks As Collection, Optional drivers As Collection, _
+                        mutexes As Collection, tasks As Collection, _
+                        pipes As Collection, _
+                        Optional drivers As Collection, _
                         Optional regSnap As Collection, Optional FirstTabOnly = False)
    
     Dim proc As CProcess
@@ -550,6 +575,11 @@ next_driver:
         Set li = frmMain.lvTasks.ListItems.Add(, , cte.name)
         li.subItems(1) = cte.exe
         Set li.Tag = cte
+        If shutDown Then Exit Sub
+    Next
+    
+    For Each d In pipes
+        Set li = frmMain.lvPipes.AddItem(d)
         If shutDown Then Exit Sub
     Next
     

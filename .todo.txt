@@ -1,7 +1,10 @@
 
+ - 'Software\Microsoft\Windows NT\CurrentVersion\Winlogon\shell -- Nymaim
+ - apilog add marker to alloc for analysts to ignore
+ - right click on process, inject api dll
+ - for new dlls in process, grab the dlls not just count
  - enumMutexes keeps taking longer and longer in IDE each run..leak?
  - process dlls tab, list on left to select process, one listview on right for current, snapshot dlls of more than current two targets
- - main process tab right click debug
  - javascript w/debugger to automate? or access to classes for memscrape? or seperate tool?
  - search all selected processes memory maps for string (from main processes tab)
  - api_log hook CryptGenKey,CryptDeriveKey, CryptImportKey 

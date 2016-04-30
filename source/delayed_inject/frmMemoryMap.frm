@@ -10,15 +10,14 @@ Begin VB.Form frmMemoryMap
    ScaleHeight     =   6165
    ScaleWidth      =   11655
    StartUpPosition =   2  'CenterScreen
-   Begin sysAnalyzer_2.ucFilterList lv2 
-      Height          =   3930
-      Left            =   1215
+   Begin APiLogger.ucFilterList lv2 
+      Height          =   4110
+      Left            =   900
       TabIndex        =   2
-      Top             =   450
-      Visible         =   0   'False
-      Width           =   8385
-      _ExtentX        =   14790
-      _ExtentY        =   6932
+      Top             =   405
+      Width           =   8430
+      _ExtentX        =   14870
+      _ExtentY        =   7250
    End
    Begin VB.ListBox List1 
       Height          =   1035
@@ -128,8 +127,8 @@ Public Sub ShowDlls(pid As Long) 'x64 ok.
     Set c = pi.GetProcessModules(pid)
     
     For Each cm In c
-        Set li = lv2.AddItem(cm.HexBase)
-        li.subItems(1) = cm.HexSize
+        Set li = lv2.AddItem(cm.hexBase)
+        li.subItems(1) = cm.hexSize
         li.subItems(2) = cm.path
         
         #If isSysanalyzer = 1 Then
@@ -202,7 +201,7 @@ Public Sub ShowMemoryMap(pid As Long) 'now x64 compatiabled...
         Then
             If cMem.Protection = PAGE_EXECUTE_READWRITE And cMem.MemType <> MEM_IMAGE Then
                 SetLiColor li, vbRed
-                If VBA.Left(pi.ReadMemory2(cMem.pid, cMem.Base, 2), 2) = "MZ" Then
+                If VBA.Left(pi.ReadMemory2(cMem.pid, cMem.base, 2), 2) = "MZ" Then
                     List1.AddItem cMem.BaseAsHexString & " is RWE but not part of an image (CONFIRMED INJECTION)"
                 Else
                     List1.AddItem cMem.BaseAsHexString & " is RWE but not part of an image..possible injection"
@@ -233,7 +232,7 @@ Private Sub Form_Load()
     mnuPopup2.Visible = False
     Me.Icon = frmMain.Icon
     lv2.FilterColumn = 2
-    lv2.SetColumnHeaders "Base,Size,Module*"
+    lv2.SetColumnHeaders "Base,Size,Module"
     lv.ColumnHeaders(5).Width = lv.Width - lv.ColumnHeaders(5).Left - 350
     lv2.Move lv.Left, lv.Top, lv.Width, lv.Height
     'lv2.ColumnHeaders(3).Width = lv2.Width - lv2.ColumnHeaders(3).Left - 350
@@ -406,7 +405,7 @@ End Sub
 Private Sub mnuViewMemory_Click()
     If selli Is Nothing Then Exit Sub
     Dim s As String
-    Dim Base As Long
+    Dim base As Long
     On Error Resume Next
     
     'Base = CLng("&h" & selli.Text)

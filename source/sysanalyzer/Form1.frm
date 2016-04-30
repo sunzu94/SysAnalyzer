@@ -24,16 +24,17 @@ Begin VB.Form frmMain
       _ExtentY        =   9446
       _Version        =   393216
       Style           =   1
-      Tabs            =   9
-      Tab             =   2
-      TabsPerRow      =   10
+      Tabs            =   10
+      TabsPerRow      =   11
       TabHeight       =   520
       ShowFocusRect   =   0   'False
       TabCaption(0)   =   "Running Processes"
       TabPicture(0)   =   "Form1.frx":5C12
-      Tab(0).ControlEnabled=   0   'False
+      Tab(0).ControlEnabled=   -1  'True
       Tab(0).Control(0)=   "fraProc"
+      Tab(0).Control(0).Enabled=   0   'False
       Tab(0).Control(1)=   "lvProcesses"
+      Tab(0).Control(1).Enabled=   0   'False
       Tab(0).ControlCount=   2
       TabCaption(1)   =   "Open Ports"
       TabPicture(1)   =   "Form1.frx":5C2E
@@ -42,11 +43,9 @@ Begin VB.Form frmMain
       Tab(1).ControlCount=   1
       TabCaption(2)   =   "Process Dlls"
       TabPicture(2)   =   "Form1.frx":5C4A
-      Tab(2).ControlEnabled=   -1  'True
-      Tab(2).Control(0)=   "lvProcessDllList"
-      Tab(2).Control(0).Enabled=   0   'False
-      Tab(2).Control(1)=   "lvProcessDlls"
-      Tab(2).Control(1).Enabled=   0   'False
+      Tab(2).ControlEnabled=   0   'False
+      Tab(2).Control(0)=   "lvProcessDlls"
+      Tab(2).Control(1)=   "lvProcessDllList"
       Tab(2).ControlCount=   2
       TabCaption(3)   =   "Loaded Drivers"
       TabPicture(3)   =   "Form1.frx":5C66
@@ -78,6 +77,20 @@ Begin VB.Form frmMain
       Tab(8).ControlEnabled=   0   'False
       Tab(8).Control(0)=   "lvTasks"
       Tab(8).ControlCount=   1
+      TabCaption(9)   =   "Pipes"
+      TabPicture(9)   =   "Form1.frx":5D0E
+      Tab(9).ControlEnabled=   0   'False
+      Tab(9).Control(0)=   "lvPipes"
+      Tab(9).ControlCount=   1
+      Begin sysAnalyzer_2.ucFilterList lvPipes 
+         Height          =   4875
+         Left            =   -74910
+         TabIndex        =   15
+         Top             =   405
+         Width           =   11310
+         _ExtentX        =   19950
+         _ExtentY        =   8599
+      End
       Begin sysAnalyzer_2.ucFilterList lvRegKeys 
          Height          =   4740
          Left            =   -74865
@@ -98,7 +111,7 @@ Begin VB.Form frmMain
       End
       Begin sysAnalyzer_2.ucFilterList lvProcessDlls 
          Height          =   4785
-         Left            =   3150
+         Left            =   -71850
          TabIndex        =   12
          Top             =   465
          Width           =   8250
@@ -107,7 +120,7 @@ Begin VB.Form frmMain
       End
       Begin MSComctlLib.ListView lvProcessDllList 
          Height          =   4740
-         Left            =   90
+         Left            =   -74910
          TabIndex        =   11
          Top             =   465
          Width           =   3030
@@ -142,7 +155,7 @@ Begin VB.Form frmMain
       End
       Begin sysAnalyzer_2.ucFilterList lvProcesses 
          Height          =   4470
-         Left            =   -74955
+         Left            =   45
          TabIndex        =   10
          Top             =   420
          Width           =   10140
@@ -170,7 +183,7 @@ Begin VB.Form frmMain
       Begin VB.Frame fraProc 
          BorderStyle     =   0  'None
          Height          =   390
-         Left            =   -74865
+         Left            =   135
          TabIndex        =   4
          Top             =   4785
          Width           =   10035
@@ -326,6 +339,9 @@ Begin VB.Form frmMain
       End
       Begin VB.Menu mnuShowMemoryMap 
          Caption         =   "Memory Map"
+      End
+      Begin VB.Menu mnuStringSearch 
+         Caption         =   "Memory Search"
       End
       Begin VB.Menu mnuScanProcForStealthInjects 
          Caption         =   "RWE Mem Scan"
@@ -728,6 +744,14 @@ Private Sub mnuHelpFile_Click()
     End If
 End Sub
 
+Private Sub mnuStringSearch_Click()
+    If liProc Is Nothing Then Exit Sub
+    Dim pid As Long
+    On Error Resume Next
+    pid = CLng(liProc.Text)
+    If pid <> 0 Then frmDeepMemScan.InitilizeFor pid
+End Sub
+
 Private Sub mnuTrainingVideo1_Click()
     LaunchWebPage "https://www.youtube.com/watch?v=OPXwKChdO4c"
 End Sub
@@ -781,12 +805,13 @@ Private Sub Form_Load()
         
     If DirWatchActive Then cmdDirWatch.Caption = "Stop Filesystem Monitor"
         
-    lvMutex.SetColumnHeaders "PID,Name*"
+    lvMutex.SetColumnHeaders "PID,Name*", "750"
     lvDrivers.SetColumnHeaders "Driver File,Company Name,Description", "4470,2205"
     lvProcesses.SetColumnHeaders "PID,ParentPID,User,Path*", "810,1005,1665"
     lvProcessDlls.SetColumnHeaders "DLL Path,Company Name,File Description", "4080,2175"
     lvPorts.SetColumnHeaders "Port,PID,Type,Path*", "735,750,690"
     lvRegKeys.SetColumnHeaders "Path,Value*", "4530"
+    lvPipes.SetColumnHeaders "Name*"
     
     LvSizeLastColumn lvProcessDllList
     
@@ -1292,7 +1317,7 @@ Private Sub tmrCountDown_Timer()
         Unload frmAnalyzeProcess
         
         If SSTab1.TabVisible(5) Then mnuSaveApiLog_Click
-        If lvDirWatch.ListItems.count > 0 Then mnuSaveApiLog_Click
+        If lvDirWatch.ListItems.count > 0 Then mnuSaveDirWatch_Click
         
         ret() = GetSystemDataReport()
         
