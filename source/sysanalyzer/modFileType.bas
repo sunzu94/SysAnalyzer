@@ -109,6 +109,16 @@ hell:
     End If
 End Function
 
+Function hpad(ByVal v, Optional l As Long = 8)
+    On Error GoTo hell
+    Dim x As Long
+    v = Trim(v)
+    hpad = Right("00000000" & v, l)
+    Exit Function
+hell:
+    hpad = v
+End Function
+
 Function rpad(v, Optional l As Long = 10)
     On Error GoTo hell
     Dim x As Long

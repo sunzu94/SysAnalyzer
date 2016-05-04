@@ -5,7 +5,7 @@ Begin VB.Form frmMemSearchResults
    Caption         =   "Memory Search Results"
    ClientHeight    =   8640
    ClientLeft      =   60
-   ClientTop       =   345
+   ClientTop       =   630
    ClientWidth     =   15375
    LinkTopic       =   "Form1"
    ScaleHeight     =   8640
@@ -98,6 +98,15 @@ Begin VB.Form frmMemSearchResults
       Top             =   90
       Width           =   1635
    End
+   Begin VB.Menu mnuPopup 
+      Caption         =   "mnuPopup"
+      Begin VB.Menu mnuSave 
+         Caption         =   "Save"
+      End
+      Begin VB.Menu mnuSaveAll 
+         Caption         =   "Save All"
+      End
+   End
 End
 Attribute VB_Name = "frmMemSearchResults"
 Attribute VB_GlobalNameSpace = False
@@ -126,7 +135,7 @@ Sub LoadSearchResults(c As Collection)   'of CMemory with searchoffsetcsv field 
         li.Text = pad(CountOccurances(m.SearchOffsetCSV, ",") + 1)
         li.subItems(1) = pad(m.pid)
         li.subItems(2) = m.ProtectionAsString
-        li.subItems(3) = pad(m.BaseAsHexString)
+        li.subItems(3) = hpad(m.BaseAsHexString)
         li.subItems(4) = pad(Hex(m.size))
     Next
     
@@ -138,6 +147,7 @@ End Sub
 
 Private Sub Form_Load()
     LvSizeLastColumn lvOffset
+    mnuPopup.Visible = False
 End Sub
 
 Private Sub lvAlloc_ColumnClick(ByVal ColumnHeader As MSComctlLib.ColumnHeader)
@@ -170,6 +180,10 @@ Private Sub lvAlloc_ItemClick(ByVal Item As MSComctlLib.ListItem)
     
 End Sub
 
+Private Sub lvAlloc_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+    If Button = 2 Then PopupMenu mnuPopup
+End Sub
+
 Private Sub lvOffset_ItemClick(ByVal Item As MSComctlLib.ListItem)
     
     On Error Resume Next
@@ -179,3 +193,61 @@ Private Sub lvOffset_ItemClick(ByVal Item As MSComctlLib.ListItem)
     he.scrollTo o
     
 End Sub
+
+Private Sub mnuSave_Click()
+    Dim fPath As String, includePid As Boolean
+    
+    includePid = isMultiProcessScan()
+    If selMem Is Nothing Then Exit Sub
+    If Not fso.FileExists(dumpFile) Then Exit Sub
+    
+    fPath = dlg.SaveDialog(AllFiles, , , , , IIf(includePid, selMem.pid & "_", Empty) & selMem.AllocBaseAsHexString & ".mem")
+    If Len(fPath) = 0 Then Exit Sub
+    
+    If fso.FileExists(fPath) Then Kill fPath
+    FileCopy dumpFile, fPath
+    
+End Sub
+
+Private Sub mnuSaveAll_Click()
+    Dim fDir As String, fPath As String
+    Dim li As ListItem, includePid As Boolean
+    
+    includePid = isMultiProcessScan()
+    If lvAlloc.ListItems.count = 0 Then Exit Sub
+    
+    fDir = dlg.FolderDialog()
+    If Len(fDir) = 0 Then Exit Sub
+    
+    For Each li In lvAlloc.ListItems
+        
+        lvAlloc_ItemClick li
+        
+        If selMem Is Nothing Then GoTo nextone
+        If Not fso.FileExists(dumpFile) Then GoTo nextone
+        
+        fPath = fDir & "\" & IIf(includePid, selMem.pid & "_", Empty) & selMem.AllocBaseAsHexString & ".mem"
+        If fso.FileExists(fPath) Then Kill fPath
+        FileCopy dumpFile, fPath
+        
+nextone:
+    Next
+    
+End Sub
+
+Function isMultiProcessScan() As Boolean
+    Dim li As ListItem
+    Dim basePid As Long
+    
+    isMultiProcessScan = True
+    Exit Function
+    
+'    If lvAlloc.ListItems.count = 0 Then Exit Function
+'    basePid = lvAlloc.ListItems(1).subItems(1)
+'    For Each li In lvAlloc.ListItems
+'        If basePid <> li.subItems(1) Then
+'            isMultiProcessScan = True
+'            Exit Function
+'        End If
+'    Next
+End Function
