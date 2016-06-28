@@ -14,6 +14,13 @@ typedef unsigned int uint;
 // To ensure correct resolution of symbols, add Psapi.lib to TARGETLIBS
 // and compile with -DPSAPI_VERSION=1
 
+/*
+	6.28.16 - dump now chunks large allocs to prevent hang
+ 
+	todo: watchdog thread to prevent hangs? (sysanalyzer waits indef for this to exit..)
+
+*/
+
 bool FileExists(char* szPath)
 {
   DWORD dwAttrib = GetFileAttributes(szPath);
@@ -284,8 +291,29 @@ int dump(int pid, __int64 base, __int64 size, char* out_file){
 		printf("Error: cannot open pid %x\n", pid);
 		return 1;
 	}
+	
+	SIZE_T bytesRead;
+	int maxSz = 1000000; //10mb
+	int cnt = 1;         //loop iter
+	int m = 0;           //modulus / remainder
 
-	void* mem = malloc(size);
+	__int64 curBase = base;
+	__int64 bufsz = size;
+
+	if(bufsz > maxSz){
+		cnt = bufsz / maxSz;
+		m = bufsz % maxSz;
+		bufsz = maxSz;
+	}
+	
+	FILE* fp = fopen(out_file,"wb");
+
+	if(fp==0){
+		printf("Error: cannot create out file %s\n", out_file);
+		return 1;
+	}
+
+	void* mem = malloc(bufsz);
 
 	if (mem == NULL)
 	{
@@ -294,23 +322,46 @@ int dump(int pid, __int64 base, __int64 size, char* out_file){
 		return 1;
 	}
 
-	SIZE_T bytesRead;
-	if( ReadProcessMemory(h,(void*)base,mem,size,&bytesRead) == 0){
-		printf("Error: Failed to read memory from process base=%llx, size=%x\n",base,size);
-		CloseHandle(h);
-		free(mem);
-		return 1;
+	for(int i=1; i <= cnt; i++){
+		
+		if( ReadProcessMemory(h,(void*)curBase, mem, bufsz, &bytesRead) == 0){
+			printf("Error: Failed to read memory from process base=%llx, size=%x, i=%d/%d\n",curBase,bufsz , i, cnt);
+			CloseHandle(h);
+			free(mem);
+			return 1;
+		}
+
+		if( bytesRead != bufsz){
+			printf("Error: Read size did not match requested size base=%llx, size=%x, i=%d/%d\n",curBase,bufsz, i, cnt);
+			CloseHandle(h);
+			free(mem);
+			return 1;
+		}
+		
+		curBase += bufsz;
+		fwrite(mem,1,bufsz,fp);
 	}
 
-	if( bytesRead != size){
-		printf("Error: Read size did not match requested size base=%llx, size=%x\n",base,size);
-		CloseHandle(h);
-		free(mem);
-		return 1;
+	if(m != 0){ //modulus
+		
+		if( ReadProcessMemory(h,(void*)curBase, mem, m, &bytesRead) == 0){
+			printf("Error: modulo Failed to read memory from process base=%llx, size=%x\n",curBase, m);
+			CloseHandle(h);
+			free(mem);
+			return 1;
+		}
+
+		if( bytesRead != m){
+			printf("Error: modulo Read size did not match requested size base=%llx, size=%x\n",curBase, m);
+			CloseHandle(h);
+			free(mem);
+			return 1;
+		}
+
+		fwrite(mem,1,m,fp);
+
 	}
 
-	FILE* fp = fopen(out_file,"wb");
-	fwrite(mem,1,size,fp);
 	fclose(fp);
 	printf("Dump saved to %s\n", out_file);
 
@@ -318,6 +369,7 @@ int dump(int pid, __int64 base, __int64 size, char* out_file){
 	free(mem);
 	return 0;
 }
+
 
 int DumpProcess( DWORD processID, char* dumpPath )
 {

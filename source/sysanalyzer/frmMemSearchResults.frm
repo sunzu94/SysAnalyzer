@@ -135,7 +135,7 @@ Sub LoadSearchResults(c As Collection)   'of CMemory with searchoffsetcsv field 
         li.Text = pad(CountOccurances(m.SearchOffsetCSV, ",") + 1)
         li.subItems(1) = pad(m.pid)
         li.subItems(2) = m.ProtectionAsString
-        li.subItems(3) = hpad(m.BaseAsHexString)
+        li.subItems(3) = hpad(m.AllocBaseAsHexString)
         li.subItems(4) = pad(Hex(m.size))
     Next
     

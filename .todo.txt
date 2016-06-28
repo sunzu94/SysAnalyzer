@@ -1,4 +1,8 @@
 
+ - wizard -> external -> add entries to hosts file (inputbox with csv support)
+ - rwe memdumps reset imagebase (section dump fix already applied)
+ - x64helper second thread for watchDog timeout monitor?
+ - memscan string - rt click copy list
  - 'Software\Microsoft\Windows NT\CurrentVersion\Winlogon\shell -- Nymaim
  - apilog add marker to alloc for analysts to ignore
  - right click on process, inject api dll

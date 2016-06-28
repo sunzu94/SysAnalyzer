@@ -44,8 +44,8 @@ Begin VB.Form frmMain
       TabCaption(2)   =   "Process Dlls"
       TabPicture(2)   =   "Form1.frx":5C4A
       Tab(2).ControlEnabled=   0   'False
-      Tab(2).Control(0)=   "lvProcessDlls"
-      Tab(2).Control(1)=   "lvProcessDllList"
+      Tab(2).Control(0)=   "lvProcessDllList"
+      Tab(2).Control(1)=   "lvProcessDlls"
       Tab(2).ControlCount=   2
       TabCaption(3)   =   "Loaded Drivers"
       TabPicture(3)   =   "Form1.frx":5C66
@@ -351,6 +351,9 @@ Begin VB.Form frmMain
       End
       Begin VB.Menu mnuKillProcess 
          Caption         =   "Kill"
+      End
+      Begin VB.Menu mnuKillAll 
+         Caption         =   "Kill All"
       End
       Begin VB.Menu mnuDebug 
          Caption         =   "Debug"
@@ -691,6 +694,7 @@ Private Sub lvPorts_ItemClick(ByVal Item As MSComctlLib.ListItem)
 End Sub
 
 Private Sub lvPorts_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+    mnuKillAll.Enabled = Not (Len(lvPorts.Filter) = 0)
     If Button = 2 Then PopupMenu mnuProcessesPopup
 End Sub
 
@@ -742,6 +746,32 @@ Private Sub mnuHelpFile_Click()
     Else
         LaunchWebPage "http://sandsprite.com/iDef/SysAnalyzer/"
     End If
+End Sub
+
+Private Sub mnuKillAll_Click()
+    Dim fl As ucFilterList
+    Dim lv As ListView, li As ListItem
+    Dim i As Long, pid As Long, isPort As Boolean
+    
+    On Error Resume Next
+    
+    If SSTab1.Tab = 0 Then
+        Set fl = lvProcesses
+    Else
+        Set fl = lvPorts
+        isPort = True
+    End If
+    
+    Set lv = fl.currentLV 'option only enabled for a filtered list..
+    
+    For i = lv.ListItems.count To 1 Step -1
+        Set li = lv.ListItems(i)
+        pid = CLng(IIf(isPort, li.subItems(1), li.Text))
+        If diff.CProc.TerminateProces(pid) Then
+            lv.ListItems.Remove li.index
+        End If
+    Next
+    
 End Sub
 
 Private Sub mnuStringSearch_Click()
@@ -1708,6 +1738,7 @@ Private Function RecieveTextMessage(lParam As Long, msg As String) As Boolean
 End Function
 
 Private Sub lvProcesses_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+    mnuKillAll.Enabled = Not (Len(lvProcesses.Filter) = 0)
     If Button = 2 Then PopupMenu mnuProcessesPopup
 End Sub
 
