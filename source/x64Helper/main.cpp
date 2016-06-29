@@ -16,10 +16,28 @@ typedef unsigned int uint;
 
 /*
 	6.28.16 - dump now chunks large allocs to prevent hang
+	        - added watchdog thread to prevent hangs..(13 sec)
  
-	todo: watchdog thread to prevent hangs? (sysanalyzer waits indef for this to exit..)
 
 */
+
+DWORD WINAPI WatchDogThread( LPVOID lpParam ) 
+{ 
+	int timeout = 13; //seconds
+	for(int i=0; i < timeout; i++) Sleep(1000);
+	printf("Error: Watchdog timeout\n");
+	ExitProcess(0);
+}
+
+HANDLE startWatchDog(){
+	DWORD dwThreadId = 0;
+	HANDLE hThread = CreateThread(NULL, 0, WatchDogThread, 0, 0, &dwThreadId);  
+	if (hThread == NULL){
+		printf("failed to launch watchdog thread?\n");
+		return 0;
+	}
+	return hThread;
+}
 
 bool FileExists(char* szPath)
 {
@@ -498,7 +516,8 @@ int main(int argc, char* argv[] )
 	if( argv[1][0] == '-') argv[1][0] = '/'; //standardize
 
 	EnableSeDebug();
-
+	HANDLE hWatchDog = startWatchDog();
+	
 	// /inject decimal_pid dll_path
 	if(strstr(argv[1],"/inject") > 0 ){ 
 		if(argc!=4) usage(3);
@@ -594,6 +613,9 @@ int main(int argc, char* argv[] )
 		usage();
 	}
 
+	TerminateThread(hWatchDog,0);
+	CloseHandle(hWatchDog);
+	
 	if( IsDebuggerPresent() ){
 		printf("press any key to exit...");
 		getch();

@@ -2,6 +2,25 @@
 #include <conio.h>
 #include <stdio.h>
 
+DWORD WINAPI WatchDogThread( LPVOID lpParam ) 
+{ 
+	int timeout = 13; //seconds
+	for(int i=0; i < timeout; i++) Sleep(1000);
+	printf("Error: Watchdog timeout\n");
+	ExitProcess(0);
+}
+
+HANDLE startWatchDog(){
+	DWORD dwThreadId = 0;
+	HANDLE hThread = CreateThread(NULL, 0, WatchDogThread, 0, 0, &dwThreadId);  
+	if (hThread == NULL){
+		printf("failed to launch watchdog thread?\n");
+		return 0;
+	}
+	return hThread;
+}
+
+
 int dump(int pid, __int64 base, __int64 size, char* out_file){
 
 	HANDLE h = OpenProcess(PROCESS_VM_READ, FALSE, pid);
@@ -118,9 +137,12 @@ void main(void){
 	void* mem = malloc(maxSz);
 	memset(mem, 'A', maxSz);
 	
-	char* test = "c:\\test\\test.bin";
-	char* real = "c:\\test\\real.bin";
+	char* test = "c:\\test.bin";
+	char* real = "c:\\real.bin";
 
+	HANDLE hWatchDog = startWatchDog();
+
+	//*
 	unlink(real);
 	unlink(test);
 
@@ -129,8 +151,18 @@ void main(void){
 	FILE* fp = fopen(real,"wb");
 	fwrite(mem,1,maxSz,fp);
 	fclose(fp);
+	//*/
 
 	//printf("real=%x test=%x\n", FileSize(real), FileSize(test));
+
+	
+	//while(1) Sleep(1);
+	
+
 	getch();
+
+	TerminateThread(hWatchDog,0);
+	CloseHandle(hWatchDog);
+
 
 }
