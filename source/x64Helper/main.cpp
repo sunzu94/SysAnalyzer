@@ -429,6 +429,16 @@ int DumpProcess( DWORD processID, char* dumpPath )
     return rv;
 }
 
+bool IsProcHandleValid( HANDLE hProc )
+{
+   if( hProc == 0 ) return false;
+   // Just check signaled state of the process handle, it will become signaled whenever the process exits (must have SYNCRONIZE rights)
+   const DWORD RetVal = WaitForSingleObject( hProc, 0 );
+   if( RetVal == WAIT_FAILED ) return false; 
+   return ( RetVal == WAIT_TIMEOUT );
+}
+
+//bug fix: had endless loop if process exited after OpenProcess succeeded 7-23-16 dz
 int memMap(int pid, char* pth)
 {
 
@@ -437,7 +447,7 @@ int memMap(int pid, char* pth)
 	int rv=0;
 
     hProcess = OpenProcess( PROCESS_QUERY_INFORMATION |
-                            PROCESS_VM_READ,
+                            PROCESS_VM_READ | SYNCHRONIZE,
                             FALSE, pid );
     if (NULL == hProcess){
 		printf("Error: failed to open process..");
@@ -475,7 +485,9 @@ int memMap(int pid, char* pth)
 				    "%llX,%llX,%llX,%lX,%lX,%lX,%lX,%s\r\n",
 				    va, mbi.AllocationBase, mbi.RegionSize, mbi.AllocationProtect, mbi.Type, mbi.Protect, mbi.State, mod);      
 		}
-
+		
+		if(!IsProcHandleValid(hProcess)) break;
+		if(mbi.RegionSize < 1) break;
 		va += mbi.RegionSize;
 		//printf("%d) %.16llX\r\n", i++, va);
 

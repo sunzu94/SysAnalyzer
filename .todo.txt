@@ -1,3 +1,5 @@
+rwe mem scan not working from dll pane
+
 
  - wizard -> external -> add entries to hosts file (inputbox with csv support)
  - rwe memdumps reset imagebase (section dump fix already applied)

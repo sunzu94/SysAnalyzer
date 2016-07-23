@@ -26,6 +26,17 @@ Public InitialProtection As MemAccess
 Public ModuleName As String
 Public SearchOffsetCSV As String 'set in frmMemoryMap and used by frmMemSearchResults
 
+Public Function IsAddressInRange(address As Long) As Boolean
+    Dim maxOffset As Long
+    maxOffset = Me.Base + Me.size
+        
+    If address >= Me.Base And address <= maxOffset Then
+        AddressInRange = True
+        Exit Function
+    End If
+    
+End Function
+
 Public Function BaseAsHexString()
     If isx64 Then BaseAsHexString = Base Else BaseAsHexString = Hex(Base)
 End Function

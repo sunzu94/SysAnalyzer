@@ -604,6 +604,9 @@ Begin VB.Form frmWizard
       Begin VB.Menu mnuRWEScanSingle 
          Caption         =   "RWE Memory Scan One"
       End
+      Begin VB.Menu mnuStringMemScan 
+         Caption         =   "String Memory Scan"
+      End
       Begin VB.Menu mnuSpacer2 
          Caption         =   "-"
       End
@@ -905,6 +908,10 @@ End Sub
 
 Private Sub mnuScanForUnknownMods_Click()
     ScanForUnknownMods lblDisplay
+End Sub
+
+Private Sub mnuStringMemScan_Click()
+    frmDeepMemScan.Show
 End Sub
 
 Private Sub txtBinary_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, y As Single)

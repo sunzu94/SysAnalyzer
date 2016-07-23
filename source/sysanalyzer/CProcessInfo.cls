@@ -219,6 +219,7 @@ Private Declare Function AdjustTokenPrivileges Lib "advapi32.dll" (ByVal TokenHa
 
 'Private Declare Function GetProcAddress Lib "kernel32" (ByVal hModule As Long, ByVal lpProcName As String) As Long
 Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
+Private Declare Function WaitForSingleObject Lib "kernel32" (ByVal hHandle As Long, ByVal dwMilliseconds As Long) As Long
 
 Private Declare Function GetProcessImageFileNameA Lib "PSAPI.DLL" _
         (ByVal hProcess As Long, _
@@ -237,7 +238,7 @@ Private Declare Function WTSQuerySessionInformation _
     ByVal hServer As Long, _
     ByVal sessionID As Long, _
     ByVal WTSInfoClass As Long, _
-    ByRef Address As Long, _
+    ByRef address As Long, _
     ByRef pBytesReturned As Long _
 ) As Long
 
@@ -656,10 +657,10 @@ Function GetProcessUser(pid As Long) As String
     
 End Function
 
-Function DumpProcess(pid As Long, fpath As String) As Boolean
+Function DumpProcess(pid As Long, fPath As String) As Boolean
     
     If x64.IsProcess_x64(pid) = r_64bit Then
-        DumpProcess = x64.DumpProcess(pid, fpath)
+        DumpProcess = x64.DumpProcess(pid, fPath)
         Exit Function
     End If
     
@@ -669,26 +670,26 @@ Function DumpProcess(pid As Long, fpath As String) As Boolean
     Set col = GetProcessModules(pid)
     Set cmod = col(1)
 
-    DumpProcess = DumpProcessMemory(pid, cmod.Base, cmod.size, fpath)
+    DumpProcess = DumpProcessMemory(pid, cmod.Base, cmod.size, fPath)
     
 End Function
 
-Function DumpMemory(pid As Long, ByVal hex_start As String, hex_size As String, ByVal fpath As String) As Boolean
+Function DumpMemory(pid As Long, ByVal hex_start As String, hex_size As String, ByVal fPath As String) As Boolean
     
     Dim s As Long, l As Long
     
     If x64.IsProcess_x64(pid) = r_64bit Then
         hex_start = Replace(hex_start, "`", Empty)
-        DumpMemory = x64.DumpMemory(pid, Trim(hex_start), Trim(hex_size), fpath)
+        DumpMemory = x64.DumpMemory(pid, Trim(hex_start), Trim(hex_size), fPath)
     Else
         s = CLng("&h" & Trim(hex_start))
         l = CLng("&h" & Trim(hex_size))
-        DumpMemory = DumpProcessMemory(pid, s, l, fpath)
+        DumpMemory = DumpProcessMemory(pid, s, l, fPath)
     End If
     
 End Function
 
-Function DumpProcessMemory(pid As Long, start As Long, Length As Long, fpath As String) As Boolean
+Function DumpProcessMemory(pid As Long, start As Long, Length As Long, fPath As String) As Boolean
    
     Dim pHandle As Long
     Dim b() As Byte
@@ -705,9 +706,9 @@ Function DumpProcessMemory(pid As Long, start As Long, Length As Long, fpath As 
     ReadProcessMemory pHandle, start, b(0), Length, Length
     CloseHandle pHandle
     
-    If Dir(fpath) <> "" Then Kill fpath
+    If Dir(fPath) <> "" Then Kill fPath
     
-    Open fpath For Binary As f
+    Open fPath For Binary As f
     Put f, , b()
     Close f
     DumpProcessMemory = True
@@ -889,6 +890,19 @@ Private Sub Class_Initialize()
     SeDebugEnabled = GetSeDebug()
 End Sub
 
+'Just check signaled state of the process handle, it will become signaled whenever the process exits
+'handle must have SYNCHRONIZE rights...
+Private Function IsProcHandleValid(hProc As Long) As Boolean
+   If hProc = 0 Then Exit Function
+   Dim rv As Long
+   Const WAIT_FAILED = &HFFFFFFFF
+   Const WAIT_TIMEOUT = &H102
+   rv = WaitForSingleObject(hProc, 0)
+   If rv = WAIT_FAILED Then Exit Function
+   If rv = WAIT_TIMEOUT Then IsProcHandleValid = True
+End Function
+
+'bug fix: if process exited this loop was endless..7.23.16
 Function GetMemoryMap(pid As Long) As Collection 'of CMem
 
     Dim hProc As Long
@@ -904,7 +918,7 @@ Function GetMemoryMap(pid As Long) As Collection 'of CMem
         Exit Function
     End If
 
-    hProc = OpenProcess(CLng(PROCESS_QUERY_INFORMATION Or PROCESS_VM_READ), False, pid)
+    hProc = OpenProcess(CLng(PROCESS_QUERY_INFORMATION Or PROCESS_VM_READ Or SYNCHRONIZE), False, pid)
     If hProc = 0 Then
         Set GetMemoryMap = ret
         x = GetLastError
@@ -912,6 +926,8 @@ Function GetMemoryMap(pid As Long) As Collection 'of CMem
     End If
            
     Do While cur < &H7FFEFFFF
+    
+         If Not IsProcHandleValid(hProc) Then Exit Do
          x = VirtualQueryEx(hProc, cur, meminfo, LenB(meminfo))
          
          If meminfo.state <> MEM_FREE Then
@@ -935,6 +951,7 @@ Function GetMemoryMap(pid As Long) As Collection 'of CMem
             
         End If
         
+        If meminfo.RegionSize <= 1 Then Exit Do
         cur = cur + meminfo.RegionSize
         DoEvents
         'sleep 10

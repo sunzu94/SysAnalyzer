@@ -157,7 +157,7 @@ End Sub
 Private Sub cmdSearch_Click()
     
     Dim cp As CProcess
-    Dim c As Collection
+    'Dim c As Collection
     Dim s As String
     Dim li As ListItem
     Dim pid As Long
@@ -169,8 +169,8 @@ Private Sub cmdSearch_Click()
     If Len(txtFind) = 0 Then Exit Sub
 
     Set results = New Collection
-    Set c = pi.GetRunningProcesses()
-    pb.max = c.count
+    'Set c = pi.GetRunningProcesses()
+    pb.max = lvProcs.currentLV.ListItems.count
     pb.value = 1
     abort = False
     totalScanned = 0

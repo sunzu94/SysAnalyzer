@@ -2,12 +2,12 @@ VERSION 5.00
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Begin VB.Form frmAnalyzeProcess 
    Caption         =   "Analyze Process"
-   ClientHeight    =   4455
+   ClientHeight    =   4380
    ClientLeft      =   60
    ClientTop       =   345
    ClientWidth     =   10065
    LinkTopic       =   "Form1"
-   ScaleHeight     =   4455
+   ScaleHeight     =   4380
    ScaleWidth      =   10065
    StartUpPosition =   2  'CenterScreen
    Begin VB.Frame fraPB 
@@ -195,7 +195,7 @@ Public Function AnalyzeProcess(pid As Long) ', Optional memoryMapOnly As Boolean
     
     Dim dllName As String
     Dim i As Long
-    
+        
     For Each cmod In col
     
         If known.Loaded And known.Ready Then
@@ -203,12 +203,14 @@ Public Function AnalyzeProcess(pid As Long) ', Optional memoryMapOnly As Boolean
                 DoEvents 'we already took a memory dump of the main exe..
             Else
                 If known.isFileKnown(cmod.path) <> exact_match Then
+                    AddLine "Unknown or Changed Dll Dumping: " & pHex(cmod.Base) & ": " & cmod.path
                     push rep, "Dumping: " & pHex(cmod.Base) & vbTab & cmod.path
                     dllName = fso.FileNameFromPath(cmod.path)
                     If Len(dllName) = 0 Then dllName = pHex(cmod.Base) & ".dll"
                     dllName = pFolder & "\" & dllName & ".dmp"
                     proc.DumpProcessMemory pid, cmod.Base, cmod.size, dllName
                     qdf.QuickDumpFix dllName
+                    AddLine "Doing String dump.."
                     doStringDump fso.GetBaseName(dllName), dllName
                 End If
             End If
@@ -303,6 +305,7 @@ Private Sub doStringDump(ByVal baseFileName As String, dmpPath As String)
             End If
         End If
 nextone:
+        DoEvents
     Next
     
     push extracts, "Raw Strings: (" & cst.FilteredCount & " lines filtered out)"

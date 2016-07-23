@@ -33,7 +33,7 @@ Attribute VB_Exposed = False
 
 Dim d As New RegExp
 Dim mc As MatchCollection
-Dim m As Match
+Dim m As match
 Dim ret() As String
 
 Dim filtered() As String
@@ -51,7 +51,7 @@ Public Function GetFiltered() As String
 End Function
 
 'searchs for the string specified, returns csv list of offsets found at
-Function SearchOffsetsToCSV(fpath As String, ByVal find As String) As String
+Function SearchOffsetsToCSV(fPath As String, ByVal find As String) As String
     On Error GoTo hell
     
     Dim f As Long, pointer As Long
@@ -64,14 +64,14 @@ Function SearchOffsetsToCSV(fpath As String, ByVal find As String) As String
     Erase filtered
     Erase ret
     
-    If Not fso.FileExists(fpath) Then GoTo hell
+    If Not fso.FileExists(fPath) Then GoTo hell
     
     d.Pattern = find
     d.Global = True
     d.IgnoreCase = True
     
     ReDim buf(9000)
-    Open fpath For Binary Access Read As f
+    Open fPath For Binary Access Read As f
     
     Do While pointer < LOF(f)
         pointer = Seek(f)
@@ -107,7 +107,7 @@ hell:
 End Function
 
 
-Function ExtractStrings(fpath As String) As String
+Function ExtractStrings(fPath As String) As String
     On Error GoTo hell
     
     Dim f As Long, pointer As Long
@@ -120,8 +120,8 @@ Function ExtractStrings(fpath As String) As String
     
     f = FreeFile
     
-    If Not fso.FileExists(fpath) Then
-        MsgBox "File not found: " & fpath, vbExclamation
+    If Not fso.FileExists(fPath) Then
+        MsgBox "File not found: " & fPath, vbExclamation
         GoTo done
     End If
     
@@ -130,13 +130,13 @@ Function ExtractStrings(fpath As String) As String
     d.Pattern = "[\w0-9 /?.\-_=+$\\@!*\(\)#%~`\^&\|\{\}\[\]:;'""<>\,]{" & minStrLen & ",}"
     d.Global = True
     
-    push ret, "File: " & fso.FileNameFromPath(fpath)
-    push ret, "MD5:  " & LCase(hash.HashFile(fpath))
-    push ret, "Size: " & FileLen(fpath) & vbCrLf
+    push ret, "File: " & fso.FileNameFromPath(fPath)
+    push ret, "MD5:  " & LCase(hash.HashFile(fPath))
+    push ret, "Size: " & FileLen(fPath) & vbCrLf
     push ret, "Ascii Strings:" & vbCrLf & String(75, "-")
     
     ReDim buf(9000)
-    Open fpath For Binary Access Read As f
+    Open fPath For Binary Access Read As f
     
     Do While pointer < LOF(f)
         pointer = Seek(f)
@@ -145,6 +145,7 @@ Function ExtractStrings(fpath As String) As String
         If x < 9000 Then ReDim buf(x)
         Get f, , buf()
         Search buf
+        DoEvents
     Loop
     
     push ret, ""
@@ -163,6 +164,7 @@ Function ExtractStrings(fpath As String) As String
         If x < 9000 Then ReDim buf(x)
         Get f, , buf()
         Search buf
+        DoEvents
     Loop
     
     Close f
@@ -180,7 +182,7 @@ done:
 
 End Function
 
-Private Sub Search(buf() As Byte, Optional base As Long)
+Private Sub Search(buf() As Byte, Optional Base As Long)
     Dim b As String
     
     b = StrConv(buf, vbUnicode)
@@ -189,7 +191,7 @@ Private Sub Search(buf() As Byte, Optional base As Long)
     For Each m In mc
     
         If OffsetsOnly Then
-            push ret(), m.FirstIndex + base
+            push ret(), m.FirstIndex + Base
         Else
             If FilterResults Then
                 If Not Filter(m.value) Then
@@ -240,15 +242,15 @@ Private Function Filter(x As String) As Boolean
     If InStr(x, "http://") > 0 Then
         Filter = False
     ElseIf toManySpecialChars(x) Then
-        If IsIde() Then f = vbTab & vbTab & "(SpecialCharsFilter)"
+        If isIde() Then f = vbTab & vbTab & "(SpecialCharsFilter)"
         push filtered, x & f
         Filter = True
     ElseIf toManyRepeats(x) Then
-        If IsIde() Then f = vbTab & vbTab & "(RepeatFilter)"
+        If isIde() Then f = vbTab & vbTab & "(RepeatFilter)"
         push filtered, x & f
         Filter = True
     ElseIf toManyNumbers(x) Then
-        If IsIde() Then f = vbTab & vbTab & "(NumberFilter)"
+        If isIde() Then f = vbTab & vbTab & "(NumberFilter)"
         push filtered, x & f
         Filter = True
     Else

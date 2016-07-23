@@ -32,6 +32,7 @@ Option Explicit
 '         this program; if not, write to the Free Software Foundation, Inc., 59 Temple
 '         Place, Suite 330, Boston, MA 02111-1307 USA
 Dim HKCU_vals() As String
+Dim HKCU_keys() As String
 Dim HKLM_vals() As String
 Dim HKLM_keys() As String
 Dim HKLM_singleval() As String
@@ -45,6 +46,9 @@ Private Sub Class_Initialize()
      push HKCU_vals, "\Software\Microsoft\Windows\CurrentVersion\Runonce"
      push HKCU_vals, "\Software\Microsoft\Windows\CurrentVersion\Run"
      
+     'enum keys
+     push HKCU_keys, "\SOFTWARE\Microsoft\Active Setup\Installed Components"
+      
      'enum values
      push HKLM_vals, "\Software\Microsoft\Windows\CurrentVersion\Runonce"
      push HKLM_vals, "\Software\Microsoft\Windows\CurrentVersion\Run"
@@ -56,6 +60,7 @@ Private Sub Class_Initialize()
      push HKLM_keys, "\SOFTWARE\Microsoft\Internet Explorer\Explorer Bars"
      push HKLM_keys, "\SYSTEM\CurrentControlSet\Services"
      push HKLM_keys, "\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options"
+     push HKLM_keys, "\SOFTWARE\Microsoft\Active Setup\Installed Components"
      
      'Example of a key which may change (not added new) which we currently dont have code for...
     '[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon]
@@ -100,6 +105,16 @@ Private Sub DoSnap(Optional isSnap1 As Boolean = True)
             End If
         Next
         
+        For i = 0 To UBound(HKCU_keys)
+            r() = reg.EnumKeys(HKCU_keys(i))
+            If Not AryIsEmpty(r) Then
+                For j = 0 To UBound(r)
+                    k = "HKCU" & HKCU_keys(i) & "-->" & r(j)
+                    c.Add k, k
+                Next
+            End If
+        Next
+        
         reg.hive = HKEY_LOCAL_MACHINE
         
         For i = 0 To UBound(HKLM_vals)
@@ -116,7 +131,7 @@ Private Sub DoSnap(Optional isSnap1 As Boolean = True)
             r() = reg.EnumKeys(HKLM_keys(i))
             If Not AryIsEmpty(r) Then
                 For j = 0 To UBound(r)
-                    k = "Hklm" & HKLM_keys(i) & "-->" & r(j)
+                    k = "HKLM" & HKLM_keys(i) & "-->" & r(j)
                     c.Add k, k
                 Next
             End If
