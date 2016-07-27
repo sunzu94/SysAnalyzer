@@ -1,5 +1,7 @@
 rwe mem scan not working from dll pane
-
+CProcessInfo.DumpProcessMemory chunk mem read/filewrite
+apilogger add magic to start of thunk table for id
+liproc is not valid for filtered lists necessairly..popup rwe scan list must work differently..
 
  - wizard -> external -> add entries to hosts file (inputbox with csv support)
  - rwe memdumps reset imagebase (section dump fix already applied)

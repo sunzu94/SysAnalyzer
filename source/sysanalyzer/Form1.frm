@@ -45,7 +45,9 @@ Begin VB.Form frmMain
       TabPicture(2)   =   "Form1.frx":5C4A
       Tab(2).ControlEnabled=   0   'False
       Tab(2).Control(0)=   "lvProcessDllList"
+      Tab(2).Control(0).Enabled=   0   'False
       Tab(2).Control(1)=   "lvProcessDlls"
+      Tab(2).Control(1).Enabled=   0   'False
       Tab(2).ControlCount=   2
       TabCaption(3)   =   "Loaded Drivers"
       TabPicture(3)   =   "Form1.frx":5C66
@@ -600,6 +602,7 @@ Dim liDriver As ListItem
 Dim liRegMon As ListItem
 Dim liTask As ListItem
 Dim liProcDllList As ListItem
+Dim activePID As Long
 
 Dim tickCount As Long
 Dim seconds As Long
@@ -680,17 +683,10 @@ End Sub
 
 
 Private Sub lvPorts_ItemClick(ByVal Item As MSComctlLib.ListItem)
-    Dim pid As Long, li As ListItem
     On Error Resume Next
     'select the appropirate liProc for this port process, so we can use its right click menu..
-    pid = CLng(Item.subItems(1))
-    If pid = 0 Then Exit Sub
-    For Each li In lvProcesses.ListItems
-        If Trim(li.Text) = pid Then
-            Set liProc = li
-            Exit For
-        End If
-    Next
+    activePID = CLng(Item.subItems(1))
+    SetProcessMenus activePID
 End Sub
 
 Private Sub lvPorts_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
@@ -757,9 +753,11 @@ Private Sub mnuKillAll_Click()
     
     If SSTab1.Tab = 0 Then
         Set fl = lvProcesses
-    Else
+    ElseIf SSTab1.Tab = 1 Then
         Set fl = lvPorts
         isPort = True
+    Else
+        Set fl = lvProcessDllList
     End If
     
     Set lv = fl.currentLV 'option only enabled for a filtered list..
@@ -775,11 +773,8 @@ Private Sub mnuKillAll_Click()
 End Sub
 
 Private Sub mnuStringSearch_Click()
-    If liProc Is Nothing Then Exit Sub
-    Dim pid As Long
     On Error Resume Next
-    pid = CLng(liProc.Text)
-    If pid <> 0 Then frmDeepMemScan.InitilizeFor pid
+    If activePID <> 0 Then frmDeepMemScan.InitilizeFor activePID
 End Sub
 
 Private Sub mnuTrainingVideo1_Click()
@@ -952,7 +947,6 @@ End Sub
 Private Sub lvProcessDllList_ItemClick(ByVal Item As MSComctlLib.ListItem)
     On Error Resume Next
     Dim dd As CProcessDllDiff
-    Dim pid As Long
     Dim li As ListItem
     
     Set liProcDllList = Item
@@ -962,14 +956,8 @@ Private Sub lvProcessDllList_ItemClick(ByVal Item As MSComctlLib.ListItem)
     dd.Display lvProcessDlls, diff.DisplayMode
     
     'so we can reuse its full right click menu...
-    pid = CLng(Item.Text)
-    If pid = 0 Then Exit Sub
-    For Each li In lvProcesses.ListItems
-        If Trim(li.Text) = pid Then
-            Set liProc = li
-            Exit For
-        End If
-    Next
+    activePID = CLng(Item.Text)
+    SetProcessMenus activePID
     
 End Sub
 
@@ -1032,12 +1020,24 @@ End Sub
 '
 'End Sub
 
+Sub SetProcessMenus(pid As Long)
+    Dim r As Boolean
+    r = diff.CProc.isProcessRunning(pid)
+    mnuAnalyze.Enabled = r
+    mnuShowProcessDlls.Enabled = r
+    mnuShowMemoryMap.Enabled = r
+    mnuStringSearch.Enabled = r
+    mnuScanProcForStealthInjects.Enabled = r
+    mnuDumpProcess.Enabled = r
+    mnuKillProcess.Enabled = r
+    mnuDebug.Enabled = r
+End Sub
+
 Private Sub mnuAnalyze_Click()
     
     On Error GoTo hell
-    If liProc Is Nothing Then Exit Sub
-    
-    frmAnalyzeProcess.AnalyzeProcess CLng(liProc.Text)
+
+    frmAnalyzeProcess.AnalyzeProcess activePID
     Unload frmAnalyzeProcess
     
     frmReportViewer.OpenAnalysisFolder UserDeskTopFolder
@@ -1078,8 +1078,6 @@ End Sub
 Private Sub mnuDebug_Click()
     On Error Resume Next
     Dim dbg As String, pid As Long, tmp() As String, a As Long
-    If liProc Is Nothing Then Exit Sub
-    pid = CLng(liProc.Text)
     reg.hive = HKEY_LOCAL_MACHINE
     dbg = reg.ReadValue("\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AeDebug", "Debugger")
     If Len(dbg) = 0 Then
@@ -1102,7 +1100,7 @@ Private Sub mnuDebug_Click()
 ''        dbg = Join(tmp, "")
 '
 '    Else
-        dbg = Replace(dbg, "%d", pid)
+        dbg = Replace(dbg, "%d", activePID)
 '    End If
     
     
@@ -1150,19 +1148,27 @@ Private Sub mnuKnownFiles_Click()
 End Sub
 
 Private Sub mnuLaunchStrings_Click()
-    If liProc Is Nothing Then Exit Sub
     Dim f As String
     On Error Resume Next
-    f = liProc.subItems(3)
+    Dim cp As CProcess
+
+    If Not diff.GetCachedProcess(activePID, cp) Then
+        activePID = 0
+        Exit Sub
+    End If
+    
+    f = cp.fullpath
     LaunchStrings f, True
 End Sub
 
 Private Sub mnuProcCmdLine_Click()
     On Error Resume Next
-    If liProc Is Nothing Then Exit Sub
-    Dim c As String
-    c = diff.CProc.GetProcessCmdLine(CLng(liProc.Text))
-    MsgBox c, vbInformation
+    Dim cp As CProcess
+    If Not diff.GetCachedProcess(activePID, cp) Then
+        activePID = 0
+        Exit Sub
+    End If
+    MsgBox cp.CmdLine, vbInformation
 End Sub
 
 Private Sub mnuRegMonCopyLine_Click()
@@ -1203,11 +1209,17 @@ Private Sub mnuSaveDriver_Click()
 End Sub
 
 Private Sub mnuSaveToAnalysisFolder_Click()
-    If liProc Is Nothing Then Exit Sub
     Dim f As String, f2 As String
     On Error Resume Next
     
-    f = liProc.subItems(3)
+    Dim cp As CProcess
+
+    If Not diff.GetCachedProcess(activePID, cp) Then
+        activePID = 0
+        Exit Sub
+    End If
+    
+    f = cp.fullpath
     If Not fso.FileExists(f) Then
         MsgBox "File not found: " & f
     Else
@@ -1228,16 +1240,15 @@ Private Sub mnuScanForUnknownMods_Click()
 End Sub
 
 Private Sub mnuScanProcForStealthInjects_Click()
-    If liProc Is Nothing Then Exit Sub
-    Dim pid As Long, path As String
     On Error Resume Next
-    pid = CLng(liProc.Text)
-    'If diff.CProc.x64.IsProcess_x64(pid) <> r_32bit Then
-    '    MsgBox x64Error, vbInformation
-    '    Exit Sub
-    'End If
-    path = liProc.subItems(3)
-    frmInjectionScan.FindStealthInjections pid, path
+    Dim cp As CProcess
+
+    If Not diff.GetCachedProcess(activePID, cp) Then
+        activePID = 0
+        Exit Sub
+    End If
+
+    frmInjectionScan.FindStealthInjections activePID, cp.fullpath
 End Sub
 
 Private Sub mnuScanProcsForDll_Click()
@@ -1300,14 +1311,7 @@ Function GetActiveLV(Optional index As Long = -1) As ListView
 End Function
 
 Private Sub mnuShowMemoryMap_Click()
-    If liProc Is Nothing Then Exit Sub
-    Dim pid As Long
-    pid = CLng(liProc.Text)
-'    If diff.CProc.x64.IsProcess_x64(pid) <> r_32bit Then
-'        MsgBox x64Error, vbInformation
-'        Exit Sub
-'    End If
-    frmMemoryMap.ShowMemoryMap pid
+    frmMemoryMap.ShowMemoryMap activePID
 End Sub
 
 Private Sub mnuStealthInjScan_Click()
@@ -1744,54 +1748,48 @@ End Sub
 
 Sub lvProcesses_ItemClick(ByVal Item As MSComctlLib.ListItem)
     Set liProc = Item
+    activePID = CLng(Item.Text)
+    SetProcessMenus activePID
 End Sub
 
 Private Sub mnuDumpProcess_Click()
-    If liProc Is Nothing Then Exit Sub
 
     'MsgBox dlg.SaveDialog(AllFiles) 'threadlocks for unknown reason...
+    Dim cp As CProcess
 
-    Dim pid As Long
+    If Not diff.GetCachedProcess(activePID, cp) Then
+        activePID = 0
+        Exit Sub
+    End If
 
-    pid = CLng(liProc.Text)
-    'If diff.CProc.x64.IsProcess_x64(pid) <> r_32bit Then
-    '    MsgBox x64Error, vbInformation
-    '    Exit Sub
-    'End If
-    
     Dim pth As String
-    pth = fso.FileNameFromPath(liProc.subItems(3)) & ".dmp"
-    'pth = InputBox("Enter path to dump file as:", , UserDeskTopFolder & "\" & pth)
+    pth = fso.FileNameFromPath(cp.fullpath) & ".dmp"
     pth = frmDlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save Dump as", , Me, pth)
     If Len(pth) = 0 Then Exit Sub
 
-    diff.CProc.DumpProcess pid, pth 'x64 safe...
-    
-'    Dim cmod As CModule
-'    Dim col As Collection
-'
-'    Set col = diff.CProc.GetProcessModules(pid)
-'    Set cmod = col(1)
-'
-'
-'    Call diff.CProc.DumpProcessMemory(pid, cmod.Base, cmod.size, pth)
+    diff.CProc.DumpProcess activePID, pth 'x64 safe...
 
 End Sub
 
 Private Sub mnuCopyProcessPath_Click()
     On Error Resume Next
-    If liProc Is Nothing Then Exit Sub
     Dim pth As String
-    pth = liProc.subItems(3)
+    Dim cp As CProcess
+
+    If Not diff.GetCachedProcess(activePID, cp) Then
+        activePID = 0
+        Exit Sub
+    End If
+
+    pth = cp.fullpath
     Clipboard.Clear
     Clipboard.SetText pth
 End Sub
 
 Private Sub mnuKillProcess_Click()
     On Error Resume Next
-    If liProc Is Nothing Then Exit Sub
-    If diff.CProc.TerminateProces(CLng(liProc.Text)) Then
-        lvProcesses.ListItems.Remove liProc.index
+    If diff.CProc.TerminateProces(activePID) Then
+        'todo: find which process list is visible and remove.. lvProcesses.ListItems.Remove liProc.index
         MsgBox "Process Killed", vbInformation
     Else
         MsgBox "Unable to kill Process", vbInformation
@@ -1799,15 +1797,20 @@ Private Sub mnuKillProcess_Click()
 End Sub
 
 Private Sub mnuProcessFileProps_Click()
-    
-    If liProc Is Nothing Then Exit Sub
-    
+        
     Dim path As String
     Dim fsize As String
 
     On Error Resume Next
 
-    path = liProc.subItems(3)
+    Dim cp As CProcess
+
+    If Not diff.GetCachedProcess(activePID, cp) Then
+        activePID = 0
+        Exit Sub
+    End If
+
+    path = cp.fullpath
     fsize = "FileSize: " & FileLen(path) & vbCrLf & String(70, "-") & vbCrLf
 
     path = QuickInfo(path)
@@ -1818,11 +1821,8 @@ Private Sub mnuProcessFileProps_Click()
 End Sub
 
 Private Sub mnuShowProcessDlls_Click()
-    If liProc Is Nothing Then Exit Sub
     On Error Resume Next
-    Dim pid As Long
-    pid = CLng(liProc.Text)
-    frmMemoryMap.ShowDlls pid
+    frmMemoryMap.ShowDlls activePID
 End Sub
  
  

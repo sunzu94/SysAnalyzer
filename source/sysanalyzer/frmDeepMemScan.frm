@@ -218,6 +218,7 @@ Sub ScanMemory(pid As Long, pName As String, sFind As String)
     Dim tmp As String
     Dim m As CMemory
     Dim found As Boolean
+    Dim isx64 As Boolean
     
     On Error Resume Next
     
@@ -226,9 +227,10 @@ Sub ScanMemory(pid As Long, pName As String, sFind As String)
 
     pb2.max = c.count
     pb2.value = 0
-
+    
+    isx64 = (pi.x64.IsProcess_x64(pid) = r_64bit)
     tmp = fso.GetFreeFileName(Environ("temp"), ".bin")
-    List1.AddItem rpad(pid, 6) & pName & " Allocs:" & c.count
+    List1.AddItem rpad(pid, 6) & pName & IIf(isx64, " *64 ", "") & " Allocs:" & c.count
     
     For Each m In c
         If abort Then Exit Sub

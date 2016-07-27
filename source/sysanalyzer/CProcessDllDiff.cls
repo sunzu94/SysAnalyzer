@@ -50,6 +50,7 @@ Function DiffDlls() As Collection
     Dim cmod As CModule
     
     Set ChangedDlls = New Collection
+    If dlls2 Is Nothing Then Exit Function
     
     For Each cmod In dlls2
         If Not objKeyExistsInCollection(dlls1, cmod.path) Then 'keys were added in GetProcessModules

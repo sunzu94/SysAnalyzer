@@ -44,7 +44,7 @@ Option Explicit
 ' x64 safe functions..
 '    DumpProcess, DumpMemory, GetProcessModules, EnumDrivers, GetRunningProcesses,  GetMemoryMap, ReadMemory2
 '
-' x64 unsafe: ReadMemory
+' x64 unsafe: ReadMemory, DumpProcessMemory
 
 Private Declare Function GetTickCount Lib "kernel32" () As Long
 
@@ -657,10 +657,10 @@ Function GetProcessUser(pid As Long) As String
     
 End Function
 
-Function DumpProcess(pid As Long, fPath As String) As Boolean
+Function DumpProcess(pid As Long, fpath As String) As Boolean
     
     If x64.IsProcess_x64(pid) = r_64bit Then
-        DumpProcess = x64.DumpProcess(pid, fPath)
+        DumpProcess = x64.DumpProcess(pid, fpath)
         Exit Function
     End If
     
@@ -670,53 +670,96 @@ Function DumpProcess(pid As Long, fPath As String) As Boolean
     Set col = GetProcessModules(pid)
     Set cmod = col(1)
 
-    DumpProcess = DumpProcessMemory(pid, cmod.Base, cmod.size, fPath)
+    DumpProcess = DumpProcessMemory(pid, cmod.Base, cmod.size, fpath)
     
 End Function
 
-Function DumpMemory(pid As Long, ByVal hex_start As String, hex_size As String, ByVal fPath As String) As Boolean
+Function DumpMemory(pid As Long, ByVal hex_start As String, hex_size As String, ByVal fpath As String) As Boolean
     
     Dim s As Long, l As Long
     
     If x64.IsProcess_x64(pid) = r_64bit Then
         hex_start = Replace(hex_start, "`", Empty)
-        DumpMemory = x64.DumpMemory(pid, Trim(hex_start), Trim(hex_size), fPath)
+        DumpMemory = x64.DumpMemory(pid, Trim(hex_start), Trim(hex_size), fpath)
     Else
         s = CLng("&h" & Trim(hex_start))
         l = CLng("&h" & Trim(hex_size))
-        DumpMemory = DumpProcessMemory(pid, s, l, fPath)
+        DumpMemory = DumpProcessMemory(pid, s, l, fpath)
     End If
     
 End Function
 
-Function DumpProcessMemory(pid As Long, start As Long, Length As Long, fPath As String) As Boolean
-   
+'7.26.16: now large allocs are dumped in chunks...
+Function DumpProcessMemory(pid As Long, start As Long, Length As Long, fpath As String) As Boolean
+
     Dim pHandle As Long
     Dim b() As Byte
-    Dim f As Long
+    Dim f As Long, i As Long
     On Error GoTo hell
     
-    f = FreeFile
+    Dim maxSz As Long, cnt As Long, m As Long, bufsz As Long, curBase As Long, readLen As Long
     
-    ReDim b(Length + 1)
-        
+    bufsz = Length + 1
+    curBase = start
+    
+    maxSz = 1000000 '10mb
+    cnt = 1 'loop iter
+    m = 0 'modulus / remainder
+    
+    If bufsz > maxSz Then
+        cnt = bufsz / maxSz
+        m = bufsz Mod maxSz
+        bufsz = maxSz
+    End If
+    
+    f = FreeFile
+    ReDim b(1 To bufsz)
     pHandle = OpenProcess(PROCESS_VM_READ, False, pid)
     If pHandle = 0 Then Exit Function
+
+    If Dir(fpath) <> "" Then Kill fpath
+    Open fpath For Binary As f
     
-    ReadProcessMemory pHandle, start, b(0), Length, Length
+    For i = 1 To cnt
+        If ReadProcessMemory(pHandle, curBase, b(1), bufsz, readLen) = 0 Then
+            GoTo cleanup
+        End If
+        
+        If readLen <> bufsz Then
+            GoTo cleanup
+        End If
+        
+        curBase = curBase + bufsz
+        Put f, , b()
+    Next
+    
+    If m <> 0 Then
+        
+        ReDim b(1 To m)
+        
+        If ReadProcessMemory(pHandle, curBase, b(1), m, readLen) = 0 Then
+            GoTo cleanup
+        End If
+        
+        If readLen <> m Then
+            GoTo cleanup
+        End If
+
+        Put f, , b()
+    End If
+    
+    
     CloseHandle pHandle
-    
-    If Dir(fPath) <> "" Then Kill fPath
-    
-    Open fPath For Binary As f
-    Put f, , b()
     Close f
     DumpProcessMemory = True
-    
     Exit Function
+
+cleanup:
+    CloseHandle pHandle
+    Close f
 hell:
     DumpProcessMemory = False
-    
+
 End Function
 
 'for x64 processes assumes start is hex string, length can be hexstring or long..
@@ -1011,6 +1054,11 @@ Public Function GetParentProcessId(ByVal pid As Long) As Long
     Call NtQueryInformationProcess(hProcess, ProcessBasicInformation, PBI, Len(PBI), ByVal 0&)
     GetParentProcessId = PBI.InheritedFromUniqueProcessId
     CloseHandle hProcess
+End Function
+
+Function isProcessRunning(pid As Long) As Boolean
+    Dim cp As CProcess
+    isProcessRunning = GetProcess(pid, cp)
 End Function
 
 Function GetProcess(pid As Long, cp As CProcess) As Boolean

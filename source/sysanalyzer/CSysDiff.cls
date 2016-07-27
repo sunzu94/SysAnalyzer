@@ -82,6 +82,31 @@ End Enum
 
 Public DisplayMode As DisplayModes
     
+Function GetCachedProcess(pid As Long, cp As CProcess) As Boolean
+    
+    Set cp = Nothing
+    If Processes1 Is Nothing Then Exit Function
+    
+    For Each cp In Processes1
+        If cp.pid = pid Then
+            GetCachedProcess = True
+            Exit Function
+        End If
+    Next
+    
+    If Processes2 Is Nothing Then Exit Function
+    
+    For Each cp In Processes2
+        If cp.pid = pid Then
+            GetCachedProcess = True
+            Exit Function
+        End If
+    Next
+    
+    Set cp = Nothing
+    
+End Function
+
 
 Sub ShowBaseSnap(Optional FirstTabOnly = False)
     If Processes1 Is Nothing Then
