@@ -180,6 +180,11 @@ int __stdcall EnumMutex(char* outPath){
 
 }
 
+/*
+=============================================================================================
+ v2 functions do not use temp files and save directly to vb6 collections instead 8.20.16 -dz
+=============================================================================================
+*/
 
 void addStr(_CollectionPtr p , char* str){
 	_variant_t vv;
@@ -253,3 +258,106 @@ int __stdcall EnumMutex2(_CollectionPtr *pColl){
 }
 
 
+void GetTaskDetails2(wchar_t* buf, int bufSize, ITaskScheduler *pITS, LPCWSTR lpcwszTaskName)
+{
+  
+  HRESULT hr = S_OK;
+  ITask *pITask = 0;
+  wchar_t tmp[500];
+
+  hr = pITS->Activate(lpcwszTaskName, IID_ITask, (IUnknown**) &pITask);
+  
+  if (FAILED(hr))
+  {
+     _snwprintf(tmp, sizeof(tmp), L"Failed calling ITaskScheduler::Activate; error = 0x%x\n",hr);
+	 wcsncat(buf, tmp, bufSize);
+     return;
+  }
+
+  LPWSTR lpwszApplicationName;
+  hr = pITask->GetApplicationName(&lpwszApplicationName);
+
+  if (FAILED(hr))
+  {
+     _snwprintf(tmp, sizeof(tmp), L"Failed calling ITask::GetApplicationName error = 0x%x\n", hr);
+	 wcsncat(buf, tmp, bufSize);
+     lpwszApplicationName = 0;
+  }
+
+  LPWSTR lpwszParameters;
+  hr = pITask->GetParameters(&lpwszParameters);
+
+  if (FAILED(hr))
+  {
+     _snwprintf(tmp, sizeof(tmp),  L"Failed calling ITask::GetApplicationName error = 0x%x\n", hr);
+	 wcsncat(buf, tmp, bufSize);
+	 lpwszParameters = 0;
+  }
+
+  pITask->Release();
+
+  if(lpwszApplicationName){
+	  _snwprintf(tmp, sizeof(tmp),  L"\t-Exe: %s\n", lpwszApplicationName);
+	  wcsncat(buf, tmp, bufSize);
+	  CoTaskMemFree(lpwszApplicationName);
+  }
+
+  if(lpwszParameters){
+	  _snwprintf(tmp, sizeof(tmp),  L"\t-Params: %s\n", lpwszParameters);
+	  wcsncat(buf, tmp, bufSize);
+	  CoTaskMemFree(lpwszParameters);
+  }
+
+}
+
+int __stdcall EnumTasks2(_CollectionPtr *pColl){
+  
+  int cnt=0;
+  HRESULT hr = S_OK;
+  ITaskScheduler *pITS;
+  wchar_t buf[700];
+  char b2[700];
+
+  if(pColl==0 || *pColl == 0) return -4;
+
+  //dont call this from a vb utilized dll no need..
+  //hr = CoInitialize(NULL); 
+  //if (FAILED(hr)) return hr;
+
+  hr = CoCreateInstance(CLSID_CTaskScheduler,
+						  NULL,
+						  CLSCTX_INPROC_SERVER,
+						  IID_ITaskScheduler,
+						  (void **) &pITS);
+
+  if (FAILED(hr)) return -1;
+  
+  IEnumWorkItems *pIEnum;
+  hr = pITS->Enum(&pIEnum);
+  if (FAILED(hr)) return -2;
+  
+  LPWSTR *lpwszNames;
+  DWORD dwFetchedTasks = 0;
+  while (SUCCEEDED(pIEnum->Next(TASKS_TO_RETRIEVE, &lpwszNames, &dwFetchedTasks)) && (dwFetchedTasks != 0))
+  {
+
+	while (dwFetchedTasks)
+    {
+	   memset(buf,0, sizeof(buf));
+       _snwprintf(buf, sizeof(buf)-1, L"%s\n", lpwszNames[--dwFetchedTasks]);
+	   GetTaskDetails2(buf, sizeof(buf)-1 , pITS, lpwszNames[dwFetchedTasks]);
+       CoTaskMemFree(lpwszNames[dwFetchedTasks]);
+	   
+	   memset(b2,0, sizeof(b2));
+	   if( wcstombs(b2, buf, sizeof(b2)-1) > 0){
+			addStr(*pColl,b2);
+	   }
+	   cnt++;
+    }
+    CoTaskMemFree(lpwszNames);
+  }
+  
+  pITS->Release();
+  pIEnum->Release();
+  return cnt;
+}

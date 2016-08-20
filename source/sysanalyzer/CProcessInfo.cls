@@ -284,6 +284,7 @@ Private Declare Function WTSEnumerateProcesses _
 Private Declare Sub WTSFreeMemory Lib "wtsapi32.dll" _
    (ByVal pMemory As Long)
 
+Private Declare Function EnumTasks2 Lib "EnumMutex.dll" (ByRef col As Collection) As Long
 Private Declare Function EnumMutex2 Lib "EnumMutex.dll" (ByRef col As Collection) As Long
 Private Declare Function EnumMutex Lib "EnumMutex.dll" (ByVal dirPath As String) As Long
 Private Declare Function EnumTasksDll Lib "EnumMutex.dll" Alias "EnumTasks" (ByVal dirPath As String) As Long
@@ -1514,6 +1515,8 @@ Function EnumTasks() As Collection
     Dim c As New Collection
     Dim pth As String, cnt As Long
     Dim objTaskService, objTaskFolder
+    Dim tmp As New Collection
+    Dim x
     
     On Error Resume Next
     
@@ -1523,11 +1526,19 @@ Function EnumTasks() As Collection
     If Not IsObject(objTaskService) Then
         'xp and lower use use Scheduled Tasks API v1
         If FindEnumMutexDll() Then
-            pth = Environ("temp") & "\enumTasks.txt"
-            If fso.FileExists(pth) Then Kill pth
-            cnt = EnumTasksDll(pth)
-            XPEnumTasks fso.ReadFile(pth), c
-            Kill pth
+            
+            cnt = EnumTasks2(tmp)
+            For Each x In tmp
+                ParseXPTaskEntry x, c
+            Next
+        
+'            'old way using temp file...
+'            pth = Environ("temp") & "\enumTasks.txt"
+'            If fso.FileExists(pth) Then Kill pth
+'            cnt = EnumTasksDll(pth)
+'            XPEnumTasks fso.ReadFile(pth), c
+'            Kill pth
+             
         End If
     Else
         Call objTaskService.Connect
@@ -1539,31 +1550,39 @@ Function EnumTasks() As Collection
     
 End Function
 
-Private Function XPEnumTasks(data As String, ByRef c As Collection)
+Private Function ParseXPTaskEntry(x, ByRef c As Collection)
     
     Dim t As CTaskElem
-    Dim tmp() As String
-    Dim x, y
+    Dim y
     
-    'data = Replace(data, vbLf, vbCrLf)
-    tmp = Split(data, Chr(5))
-    
-    For Each x In tmp
-        If Len(x) > 0 Then
-            y = Split(x, vbCrLf)
-            If UBound(y) >= 2 Then
-                Set t = New CTaskElem
-                t.name = y(0)
-                t.path = y(0)
-                t.exe = Replace(y(1), vbTab & "-Exe: ", Empty)
-                t.args = Replace(y(2), vbTab & "-Params: ", Empty)
-                t.genHashCode
-                If Not objKeyExistsInCollection(c, t.hashCode) Then c.Add t, t.hashCode
-            End If
+    If Len(x) > 0 Then
+        y = Split(x, vbLf)
+        If UBound(y) >= 2 Then
+            Set t = New CTaskElem
+            t.name = y(0)
+            t.path = y(0)
+            t.exe = Replace(y(1), vbTab & "-Exe: ", Empty)
+            t.args = Replace(y(2), vbTab & "-Params: ", Empty)
+            t.genHashCode
+            c.Add t
         End If
-    Next
-    
+    End If
+        
 End Function
+
+'Private Function XPEnumTasks(ByVal data As String, ByRef c As Collection)
+'
+'    Dim tmp() As String
+'    Dim x
+'
+'    data = Replace(data, vbCrLf, vbLf)
+'    tmp = Split(data, Chr(5))
+'
+'    For Each x In tmp
+'        ParseXPTaskEntry x, c
+'    Next
+'
+'End Function
 
 Private Function VistaEnumTasks(objTaskFolder, ByRef c As Collection)
 

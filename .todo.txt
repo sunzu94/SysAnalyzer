@@ -1,7 +1,6 @@
-rwe mem scan not working from dll pane
-CProcessInfo.DumpProcessMemory chunk mem read/filewrite
 apilogger add magic to start of thunk table for id
-liproc is not valid for filtered lists necessairly..popup rwe scan list must work differently..
+enummutex use collection not temp file
+if new dlls dropped scan processes for them as part of report.
 
  - wizard -> external -> add entries to hosts file (inputbox with csv support)
  - rwe memdumps reset imagebase (section dump fix already applied)
@@ -12,12 +11,10 @@ liproc is not valid for filtered lists necessairly..popup rwe scan list must wor
  - right click on process, inject api dll
  - for new dlls in process, grab the dlls not just count
  - enumMutexes keeps taking longer and longer in IDE each run..leak?
- - process dlls tab, list on left to select process, one listview on right for current, snapshot dlls of more than current two targets
  - javascript w/debugger to automate? or access to classes for memscrape? or seperate tool?
- - search all selected processes memory maps for string (from main processes tab)
  - api_log hook CryptGenKey,CryptDeriveKey, CryptImportKey 
  - api_log: x64 VirtualAlloc no longer flows to VirtualAllocEx apparently...
- - apilog does not work with .net exes
+ - apilog does not always work with .net exes
  - rwe mem scan - option to save with PE header for easy (auto rebased) disassembly?
  
  check all forms to account for BIG win8 title bars..
@@ -25,8 +22,6 @@ liproc is not valid for filtered lists necessairly..popup rwe scan list must wor
  diff/enum desktops, screen shot new ones? ref: CmdDesktopSwitch
  sniffhit make sure run as admin on win7+
  dirwatch data in sysanalyzer not saved after report generated..
-
- if new dlls dropped scan processes for them as part of report.
 
  apilogger - option to follow injections/new processes
            - ability to exclude certain proocesses from logging?

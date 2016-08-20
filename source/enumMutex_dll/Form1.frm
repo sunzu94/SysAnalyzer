@@ -9,6 +9,14 @@ Begin VB.Form Form1
    ScaleHeight     =   7875
    ScaleWidth      =   12705
    StartUpPosition =   3  'Windows Default
+   Begin VB.CommandButton Command5 
+      Caption         =   "Api2"
+      Height          =   405
+      Left            =   1320
+      TabIndex        =   9
+      Top             =   7080
+      Width           =   1095
+   End
    Begin VB.CommandButton Command4 
       Caption         =   "Api2"
       Height          =   435
@@ -100,6 +108,7 @@ Private Declare Function EnumMutex Lib "EnumMutex.dll" (ByVal dirPath As String)
 Private Declare Function EnumTasks Lib "EnumMutex.dll" (ByVal dirPath As String) As Long
 Private Declare Function GetVersion Lib "kernel32" () As Long
 
+Private Declare Function EnumTasks2 Lib "EnumMutex.dll" (ByRef col As Collection) As Long
 Private Declare Function EnumMutex2 Lib "EnumMutex.dll" (ByRef col As Collection) As Long
 Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
 Private Declare Function FreeLibrary Lib "kernel32" (ByVal hLibModule As Long) As Long
@@ -271,9 +280,10 @@ End Function
 
 
 
-Function StdEnumTasks() As Collection
+Function StdEnumTasks(Optional xpFileLess As Boolean = False) As Collection
     
     Dim c As New Collection
+    Dim x
     
     If (GetVersion() And &HFF&) >= 6 Then
         'Vista+ use Scheduled Tasks API v2
@@ -283,19 +293,46 @@ Function StdEnumTasks() As Collection
         VistaEnumTasks objTaskFolder, c
     Else
         'xp and lower use use Scheduled Tasks API v1
-        Const pth = "c:\test.txt"
-        If FileExists(pth) Then Kill pth
-        cnt = EnumTasks(pth)
-        XPEnumTasks ReadFile(pth), c
+        If xpFileLess Then
+            Dim tmp As New Collection
+            cnt = EnumTasks2(tmp)
+            For Each x In tmp
+                ParseXPTaskEntry x, c
+            Next
+        Else
+            Const pth = "c:\test.txt"
+            If FileExists(pth) Then Kill pth
+            cnt = EnumTasks(pth)
+            XPEnumTasks ReadFile(pth), c
+        End If
     End If
     
     Set StdEnumTasks = c
     
 End Function
 
-Function XPEnumTasks(data As String, ByRef c As Collection)
+Function ParseXPTaskEntry(x, ByRef c As Collection)
     
     Dim t As CTaskElem
+    
+    If Len(x) > 0 Then
+        y = Split(x, vbLf)
+        If UBound(y) >= 2 Then
+            Set t = New CTaskElem
+            t.name = y(0)
+            t.path = y(0)
+            t.exe = Replace(y(1), vbTab & "-Exe: ", Empty)
+            t.args = Replace(y(2), vbTab & "-Params: ", Empty)
+            t.genHashCode hash
+            c.Add t
+        End If
+    End If
+        
+End Function
+
+Function XPEnumTasks(data As String, ByRef c As Collection)
+    
+    
     Dim tmp() As String
     Dim x
     
@@ -303,18 +340,7 @@ Function XPEnumTasks(data As String, ByRef c As Collection)
     tmp = Split(data, Chr(5))
     
     For Each x In tmp
-        If Len(x) > 0 Then
-            y = Split(x, vbCrLf)
-            If UBound(y) >= 2 Then
-                Set t = New CTaskElem
-                t.name = y(0)
-                t.path = y(0)
-                t.exe = Replace(y(1), vbTab & "-Exe: ", Empty)
-                t.args = Replace(y(2), vbTab & "-Params: ", Empty)
-                t.genHashCode hash
-                c.Add t
-            End If
-        End If
+        ParseXPTaskEntry x, c
     Next
     
 End Function
@@ -371,6 +397,22 @@ Function ColToAry(c As Collection) As String()
     
     ColToAry = r()
 End Function
+
+Private Sub Command5_Click()
+    Dim tasks As Collection
+    Dim t As CTaskElem
+    Dim tmp() As String
+    
+    Set tasks = StdEnumTasks(True)
+    Me.Caption = tasks.Count & " tasks found - " & Now
+    
+    For Each t In tasks
+        push tmp, t.getDump()
+    Next
+    
+    Text1 = Join(tmp, vbCrLf)
+    
+End Sub
 
 Private Sub Form_Load()
     Dim dll As String
