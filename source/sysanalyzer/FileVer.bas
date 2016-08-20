@@ -75,11 +75,16 @@ Private Declare Function VerQueryValue Lib "Version.dll" Alias "VerQueryValueA" 
 Private Declare Function GetSystemDirectory Lib "kernel32" Alias "GetSystemDirectoryA" (ByVal path As String, ByVal cbBytes As Long) As Long
 Private Declare Sub MoveMemory Lib "kernel32" Alias "RtlMoveMemory" (Dest As Any, ByVal Source As Long, ByVal Length As Long)
 Private Declare Function lstrcpy Lib "kernel32" Alias "lstrcpyA" (ByVal lpString1 As String, ByVal lpString2 As Long) As Long
-Public Declare Function FindWindow Lib "user32" Alias "FindWindowA" (ByVal lpClassName As String, ByVal lpWindowName As String) As Long
+Public Declare Function FindWindow Lib "user32" Alias "FindWindowA" (ByVal lpClassname As String, ByVal lpWindowName As String) As Long
 Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (hpvDest As Any, hpvSource As Any, ByVal cbCopy As Long)
 Public Declare Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteA" (ByVal hwnd As Long, ByVal lpOperation As String, ByVal lpFile As String, ByVal lpParameters As String, ByVal lpDirectory As String, ByVal nShowCmd As Long) As Long
-
-
+Public Declare Function SetForegroundWindow Lib "user32" (ByVal hwnd As Long) As Long
+Public Declare Function GetForegroundWindow Lib "user32" () As Long
+Public Declare Function GetClassName Lib "user32" Alias "GetClassNameA" (ByVal hwnd As Long, ByVal lpClassname As String, ByVal nMaxCount As Long) As Long
+Public Declare Function ShowWindow Lib "user32" (ByVal hwnd As Long, ByVal nCmdShow As Long) As Long
+Private Declare Function EnumChildWindows Lib "user32" (ByVal hWndParent As Long, ByVal lpEnumFunc As Long, ByVal lParam As Long) As Long
+                    
+                     
 Public Type FILEPROPERTIE
     CompanyName As String
     FileDescription As String
@@ -165,6 +170,20 @@ Private Type WSAData
     lpVendorInfo As Long
 End Type
 
+Enum eWindowStates
+    SW_HIDE = 0  'Hides the window and activates another window.
+    SW_MAXIMIZE = 3 'Maximizes the specified window.
+    SW_MINIMIZE = 6 'Minimizes the specified window and activates the next top-level window in the z-order.
+    SW_RESTORE = 9  'Activates and displays the window. If the window is minimized or maximized, the system restores it to its original size and position. An application should specify this flag when restoring a minimized window.
+    SW_SHOW = 5     'Activates the window and displays it in its current size and position.
+    SW_SHOWMAXIMIZED = 3 'Activates the window and displays it as a maximized window.
+    SW_SHOWMINIMIZED = 2 'Activates the window and displays it as a minimized window.
+    SW_SHOWMINNOACTIVE = 7 'Displays the window as a minimized window. This value is similar to SW_SHOWMINIMIZED, except the window is not activated.
+    SW_SHOWNA = 8  'Displays the window in its current size and position. This value is similar to SW_SHOW, except the window is not activated.
+    SW_SHOWNOACTIVATE = 4 'Displays a window in its most recent size and position. This value is similar to SW_SHOWNORMAL, except the window is not activated.
+    SW_SHOWNORMAL = 1
+End Enum
+
 Private Declare Function socket Lib "ws2_32.dll" (ByVal af As Long, ByVal s_type As Long, ByVal Protocol As Long) As Long
 Private Declare Function closesocket Lib "ws2_32.dll" (ByVal s As Long) As Long
 Private Declare Function WSAIoctl Lib "ws2_32.dll" (ByVal s As Long, ByVal dwIoControlCode As Long, lpvInBuffer As Any, ByVal cbInBuffer As Long, lpvOutBuffer As Any, ByVal cbOutBuffer As Long, lpcbBytesReturned As Long, lpOverlapped As Long, lpCompletionRoutine As Long) As Long
@@ -173,6 +192,8 @@ Private Declare Function WSAStartup Lib "ws2_32.dll" (ByVal wVR As Long, lpWSAD 
 Private Declare Function GetShortPathName Lib "kernel32" Alias "GetShortPathNameA" (ByVal lpszLongPath As String, ByVal lpszShortPath As String, ByVal cchBuffer As Long) As Long
 
 Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
+
+Dim childWindows As Collection
 
 Sub LaunchWebPage(url)
     ShellExecute 0, "open", CStr(url), 0, 0, 1
@@ -194,10 +215,12 @@ Function CountOccurances(it, find) As Integer
     CountOccurances = UBound(tmp)
 End Function
 
-Public Sub AlwaysOnTop(f As Form, Optional SetOnTop As Boolean = True)
+Public Sub AlwaysOnTop(f As Form, Optional SetOnTop As Boolean = True, Optional inIde2 As Boolean = False)
     Dim lflag As Long, tx As Long, ty As Long
      
-    If isIde() Then Exit Sub 'we dont need this in our way when were debugging...
+    If isIde() Then
+        If Not inIde2 Then Exit Sub 'we dont need this in our way when were debugging...
+    End If
     
     tx = Screen.TwipsPerPixelX
     ty = Screen.TwipsPerPixelY
@@ -1031,5 +1054,101 @@ Private Function RandomInteger(Optional Lowerbound As Integer = 3, Optional Uppe
     RandomInteger = Int((Upperbound - Lowerbound + 1) * rnd + Lowerbound)
 End Function
  
+Function RegisteredBrowser() As String
+    Dim reg As New vbDevKit.clsRegistry2
+    Dim tmp As String, a
+    reg.hive = HKEY_CURRENT_USER
+    tmp = reg.ReadValue("\Software\Classes\http\shell\open\command", "")
+    a = InStr(1, tmp, ".exe", vbTextCompare)
+    If a > 0 Then tmp = Mid(tmp, 1, a + 3)
+    tmp = Trim(Replace(tmp, """", Empty))
+    If fso.FileExists(tmp) Then
+        RegisteredBrowser = tmp
+    End If
+End Function
+
+Function isBrowserRunning()
+    Dim c As Collection
+    Dim p As CProcess
+    Dim found As Boolean
+    
+    Set c = diff.CProc.GetRunningProcesses()
+    For Each p In c
+        If InStr(1, p.path, "opera", vbTextCompare) > 0 Then found = True
+        If InStr(1, p.path, "chrome", vbTextCompare) > 0 Then found = True
+        If InStr(1, p.path, "firefox", vbTextCompare) > 0 Then found = True
+        If InStr(1, p.path, "iexplore", vbTextCompare) > 0 Then found = True
+        If found Then
+            isBrowserRunning = True
+            Exit Function
+        End If
+    Next
+        
+End Function
+
+
+Sub LaunchGoatBrowser()
+
+    Dim f As String
+    Dim b As String
+    Dim pid As Long
+    Dim w As CWindow
+    Dim h1 As Long
+    Dim h2 As Long
+    
+    f = App.path
+    If isIde Then
+        f = fso.GetParentFolder(f)
+        f = fso.GetParentFolder(f)
+    End If
+    f = f & "\goat.html"
+    If Not fso.FileExists(f) Then Exit Sub
+    f = "file://" & f
+
+    b = RegisteredBrowser
+    If Not fso.FileExists(b) Then Exit Sub
+    
+    h1 = GetForegroundWindow()
+    pid = Shell("""" & b & """ """ & f & """", vbMinimizedFocus)
+
+    Set childWindows = New Collection
+    x = EnumChildWindows(0, AddressOf EnumChildProc, ByVal 0&)
+    
+    For Each w In childWindows
+        If w.ProcessPID = pid Then
+            If w.WindowState <> SW_MINIMIZE Then
+                Debug.Print "PID Minimized: " & w.WndClass & " State: " & w.WindowStateString
+                w.MinimizeWindow
+            End If
+            Exit For
+        End If
+    Next
+    
+    'if there was already a browser window running..the one we spawned may have just sent it a message
+    'to load a new tab and show itself..if this is the case..we will minimize it too..
+    'this is a stupid amount of shit to be aware of for such a simple task..
+    '(and set self topmost did not fixit, firefox is a fuck nut)
+    h2 = GetForegroundWindow()
+    If h1 <> h2 Then
+        Set w = New CWindow
+        w.hwnd = h2
+        Debug.Print "Minimized: " & w.WndClass & " State: " & w.WindowStateString
+        w.MinimizeWindow
+        w.WindowState = SW_MINIMIZE
+        Debug.Print "State: " & w.WindowStateString
+    End If
+    
+    'now we will let it initilize..we dont want to catch its early file system or mutex activity...
+    'Sleep 1200
+    
+End Sub
  
- 
+Private Function EnumChildProc(ByVal hwnd As Long, ByVal lParam As Long) As Long
+    Dim c As New CWindow
+    c.hwnd = hwnd
+    If Not IsObject(childWindows) Then Set childWindows = New Collection
+    childWindows.Add c 'module level collection object...
+    EnumChildProc = 1  'continue enum
+End Function
+
+

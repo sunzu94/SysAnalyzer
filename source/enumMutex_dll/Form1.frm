@@ -109,7 +109,7 @@ Private Declare Function EnumTasks Lib "EnumMutex.dll" (ByVal dirPath As String)
 Private Declare Function GetVersion Lib "kernel32" () As Long
 
 Private Declare Function EnumTasks2 Lib "EnumMutex.dll" (ByRef col As Collection) As Long
-Private Declare Function EnumMutex2 Lib "EnumMutex.dll" (ByRef col As Collection) As Long
+Private Declare Function EnumMutex2 Lib "EnumMutex.dll" (ByRef col As Collection, Optional ByVal doEventsCallBack As Long = 0) As Long
 Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
 Private Declare Function FreeLibrary Lib "kernel32" (ByVal hLibModule As Long) As Long
 
@@ -379,12 +379,17 @@ End Function
 
 Private Sub Command4_Click()
     Dim c As New Collection
+    Dim d As Date
     
+    d = Now
+    'If EnumMutex2(c, AddressOf myCallBack) < 1 Then
     If EnumMutex2(c) < 1 Then
         MsgBox "Failed!"
     Else
        Text1 = Join(ColToAry(c), vbCrLf)
     End If
+    
+    Me.Caption = "Complete " & DateDiff("s", d, Now) & " seconds"
     
 End Sub
 

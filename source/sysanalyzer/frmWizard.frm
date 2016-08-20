@@ -1021,7 +1021,7 @@ End Sub
 
 
 Private Sub Form_Load()
-      
+                   
     On Error GoTo hell
     
     Dim c As Collection
@@ -1043,6 +1043,14 @@ Private Sub Form_Load()
     
     mnuPopup.Visible = False
     chkFilterHostOnly.value = CInt(GetMySetting("chkFilterHostOnly.Value", 1))
+    
+    If Not isBrowserRunning() Then
+        'we do this on form startup and no on launch to take advantage of the natural user delay of them
+        'configuring the for the run. This gives the browser time to full initilize and get its bs out of the way
+        'otherwise we would catch some of this startup traffic in our logging as extra noise..it is important to have
+        'a goat browser window open to catch injectors which are common enough to warrent it.
+        LaunchGoatBrowser
+    End If
     
     START_TIME = Now
     DebugLogFile = UserDeskTopFolder & "\debug.log"
@@ -1206,8 +1214,11 @@ Sub cmdStart_Click()
         procWatchPID = Shell(procWatch & " /log=" & UserDeskTopFolder & "\ProcWatch.log", vbMinimizedNoFocus)
     End If
 
+    'LaunchGoatBrowser
+    
     Dim baseName As String 'save a copy of the main malware executable for analysis folder..
     Dim saveAs As String
+    Dim h As Long
     
     baseName = "sample_" & fso.FileNameFromPath(txtBinary)
     If Len(baseName) = 0 Then baseName = "sample"

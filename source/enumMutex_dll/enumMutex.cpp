@@ -13,6 +13,9 @@
 
 #define TASKS_TO_RETRIEVE          5
 
+//Public Sub vb_stdout(ByVal lpMsg As Long)
+typedef void (__stdcall *vbCallback)(char*);
+
 
 BOOL APIENTRY DllMain( HANDLE hModule, DWORD  ul_reason_for_call,  LPVOID lpReserved){ 
 	//if(ul_reason_for_call==1){
@@ -113,7 +116,7 @@ int __stdcall EnumTasks(char* outPath){
   return cnt;
 }
 
-
+//todo: grab the bug fixes from v2 to speed up and prevent can not close error in debug mode. ignore callback 
 int __stdcall EnumMutex(char* outPath){
 	
 	int cnt=0;
@@ -192,10 +195,12 @@ void addStr(_CollectionPtr p , char* str){
 	p->Add(&vv.GetVARIANT());
 }
 
-int __stdcall EnumMutex2(_CollectionPtr *pColl){
-	
+int __stdcall EnumMutex2(_CollectionPtr *pColl, void* doEventsCallback){
+		
 	int cnt=0;
 	char buf[600];
+	NTSTATUS rv;
+    vbCallback doEvents = (vbCallback)doEventsCallback; 
 
 	if(pColl==0 || *pColl == 0) return -4;
 
@@ -221,35 +226,51 @@ int __stdcall EnumMutex2(_CollectionPtr *pColl){
 
 	for (ULONG i = 0; i < *p; i++){
 
-            HANDLE hObject;
+            HANDLE hObject = 0;
 			OBJECT_BASIC_INFORMATION obi;
             HANDLE hProcess = OpenProcess(PROCESS_DUP_HANDLE, FALSE, h[i].ProcessId);
 
-			if (ZwDuplicateObject(hProcess, HANDLE(h[i].Handle), NtCurrentProcess(), &hObject, 0, 0, DUPLICATE_SAME_ATTRIBUTES)!= STATUS_SUCCESS){ 
-                continue;
-			}
+			if(hProcess == 0)
+				continue;
 
-            ZwQueryObject(hObject, ObjectBasicInformation, &obi, sizeof obi, &n);
+			//kept getting NtClose was called on a handle that was protected from close via NtSetInformationObject.
+			//also this is much faster by eliminating the DUPLICATE_SAME_ATTRIBUTES flag..no need to use the doevents callback?
+			if (ZwDuplicateObject(hProcess, HANDLE(h[i].Handle), NtCurrentProcess(), &hObject, 0, 0, /*DUPLICATE_SAME_ATTRIBUTES*/ NULL)!= STATUS_SUCCESS) 
+                continue;
+
+            rv = ZwQueryObject(hObject, ObjectBasicInformation, &obi, sizeof obi, &n);
+			
+			if(!NT_SUCCESS(rv)) 
+				continue;
 
             n = obi.TypeInformationLength + 2;
             POBJECT_TYPE_INFORMATION oti = POBJECT_TYPE_INFORMATION(new CHAR[n]);
-            ZwQueryObject(hObject, ObjectTypeInformation, oti, n, &n);
+            rv = ZwQueryObject(hObject, ObjectTypeInformation, oti, n, &n);
             
+			if(!NT_SUCCESS(rv)) 
+				continue;
+
 			if(oti[0].Name.Length > 0 && wcscmp(oti[0].Name.Buffer,L"Mutant")==0){
 				n = obi.NameInformationLength == 0 ? MAX_PATH * sizeof (WCHAR) : obi.NameInformationLength;
 				POBJECT_NAME_INFORMATION oni = POBJECT_NAME_INFORMATION(new CHAR[n]);
-				NTSTATUS rv = ZwQueryObject(hObject, ObjectNameInformation, oni, n, &n);
+				rv = ZwQueryObject(hObject, ObjectNameInformation, oni, n, &n);
 				if (NT_SUCCESS(rv)){
 					if(oni[0].Name.Length > 0){
-						_snprintf(buf, sizeof(buf)-1, "%ld %.*ws", h[i].ProcessId, oni[0].Name.Length / 2, oni[0].Name.Buffer);
+						_snprintf(buf, sizeof(buf)-1, "%ld %ls", h[i].ProcessId, oni[0].Name.Buffer);
 						addStr(*pColl,buf);
 						cnt++;
 					}
 				}
 			}
+			
+			//_snprintf(buf, sizeof(buf), "i=%d hObject=%x hProcess=%x\r\n",i,hObject,hProcess);
+			//OutputDebugString(buf);
 
-            CloseHandle(hObject);
-            CloseHandle(hProcess);              
+			if( (int)doEvents != 0 && i > 0 && i%5 == 0 ) 
+				doEvents("");
+
+            if(hObject !=0) CloseHandle(hObject);
+            if(hProcess!=0) CloseHandle(hProcess);              
     }
 
     delete [] p;

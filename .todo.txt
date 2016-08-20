@@ -1,5 +1,3 @@
-apilogger add magic to start of thunk table for id
-enummutex use collection not temp file
 if new dlls dropped scan processes for them as part of report.
 
  - wizard -> external -> add entries to hosts file (inputbox with csv support)
@@ -7,9 +5,7 @@ if new dlls dropped scan processes for them as part of report.
  - x64helper second thread for watchDog timeout monitor?
  - memscan string - rt click copy list
  - 'Software\Microsoft\Windows NT\CurrentVersion\Winlogon\shell -- Nymaim
- - apilog add marker to alloc for analysts to ignore
  - right click on process, inject api dll
- - for new dlls in process, grab the dlls not just count
  - enumMutexes keeps taking longer and longer in IDE each run..leak?
  - javascript w/debugger to automate? or access to classes for memscrape? or seperate tool?
  - api_log hook CryptGenKey,CryptDeriveKey, CryptImportKey 

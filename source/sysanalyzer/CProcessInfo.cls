@@ -285,7 +285,7 @@ Private Declare Sub WTSFreeMemory Lib "wtsapi32.dll" _
    (ByVal pMemory As Long)
 
 Private Declare Function EnumTasks2 Lib "EnumMutex.dll" (ByRef col As Collection) As Long
-Private Declare Function EnumMutex2 Lib "EnumMutex.dll" (ByRef col As Collection) As Long
+Private Declare Function EnumMutex2 Lib "EnumMutex.dll" (ByRef col As Collection, Optional ByVal doEventsCallBack As Long = 0) As Long
 Private Declare Function EnumMutex Lib "EnumMutex.dll" (ByVal dirPath As String) As Long
 Private Declare Function EnumTasksDll Lib "EnumMutex.dll" Alias "EnumTasks" (ByVal dirPath As String) As Long
 Private Declare Function GetVersion Lib "kernel32" () As Long
