@@ -82,6 +82,10 @@ End Enum
 
 Public DisplayMode As DisplayModes
     
+'used for the right click menus..some options are only for a running process like dllmap
+'but some are valid even after terminated like fileproperties, or cmdline the entry is not removed
+'when the process dies, maybe it should turn red..but anyway we may need to use cached data
+'so this function helps us.
 Function GetCachedProcess(pid As Long, cp As CProcess) As Boolean
     
     Set cp = Nothing

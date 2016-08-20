@@ -13,9 +13,13 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
 
+'8.5.16 - added .net, assembly, winsxs, apppatch, and wbem directories
+
 Dim fso2 As New CFileSystem2
 
-Public Ready As Boolean
+Private m_Ready As Boolean
+
+Public Disabled As Boolean
 Public Loaded As Boolean
 Public abort As Boolean
 Public HideKnownInDisplays As Boolean
@@ -30,6 +34,18 @@ Enum matchModes
     not_found = 1
     hash_changed = 2
 End Enum
+    
+Property Get Ready() As Boolean
+    
+    If Disabled Then
+        Ready = False
+        Exit Property
+    End If
+    
+    Ready = m_Ready
+    
+End Property
+
     
 Function TotalRecords() As Long
     On Error Resume Next
@@ -47,6 +63,7 @@ Function BuildDB()
     Dim tmp() As String
     Dim f
     Dim win As String
+    Dim winBase As String
     Dim max
     Dim i
     Dim pcent
@@ -63,23 +80,15 @@ Function BuildDB()
     
     'ado.OpenConnection adUseClient, adModeReadWrite, adLockOptimistic
     
-    tmp = fso.GetFolderFiles(win, "*.dll")
-    addDir tmp, win, "*.dll"
-    If abort Then GoTo cleanup
+    winBase = win
     
-    tmp = fso.GetFolderFiles(win, "*.exe")
-    addDir tmp, win, "*.exe"
+    AddBothDllsAndExes win
     If abort Then GoTo cleanup
     
     If Right(win, 1) <> "\" Then win = win & "\"
     win = win & "System32"
     
-    tmp = fso.GetFolderFiles(win, "*.dll")
-    addDir tmp, win, "*.dll"
-    If abort Then GoTo cleanup
-
-    tmp = fso.GetFolderFiles(win, "*.exe")
-    addDir tmp, win, "*.exe"
+    AddBothDllsAndExes win
     If abort Then GoTo cleanup
 
     tmp = fso.GetFolderFiles(win, "*.acm")
@@ -93,25 +102,50 @@ Function BuildDB()
     tmp = fso.GetFolderFiles(win, "*.ime")
     addDir tmp, win, "*.ime"
     If abort Then GoTo cleanup
-
+        
     win = win & "\drivers"
     tmp = fso.GetFolderFiles(win)
     addDir tmp, win, "*.*"
     If abort Then GoTo cleanup
 
     win = "c:\program files"
-    tmp = fso2.GetFolderFiles(win, "*.exe", , True)
-    addDir tmp, win, "*.exe"
+    AddBothDllsAndExes win
+    If abort Then GoTo cleanup
+    
+    AddBothDllsAndExes winBase & "\Microsoft.NET"
+    If abort Then GoTo cleanup
+    
+    AddBothDllsAndExes winBase & "\assembly"
     If abort Then GoTo cleanup
 
-    tmp = fso2.GetFolderFiles(win, "*.dll", , True)
-    addDir tmp, win, "*.dll"
+    AddBothDllsAndExes winBase & "\WinSxS"
+    If abort Then GoTo cleanup
     
+    AddBothDllsAndExes winBase & "\AppPatch"
+    If abort Then GoTo cleanup
+    
+    AddBothDllsAndExes winBase & "\system32\wbem\"
+    If abort Then GoTo cleanup
+    
+
     
 cleanup:
     'ado.CloseConnection
     
 End Function
+
+Private Sub AddBothDllsAndExes(baseDir As String, Optional recursive As Boolean = True)
+
+    Dim tmp() As String
+    
+    tmp = fso2.GetFolderFiles(baseDir, "*.exe", True, recursive)
+    addDir tmp, baseDir, "*.exe"
+    If abort Then Exit Sub
+    
+    tmp = fso2.GetFolderFiles(baseDir, "*.dll", True, recursive)
+    addDir tmp, baseDir, "*.dll"
+    
+End Sub
 
 Private Function addDir(ary, d, filt As String)
     Dim f, i As Long, pcent As Long, max As Long
@@ -136,14 +170,14 @@ Private Function addDir(ary, d, filt As String)
 
 End Function
 
-Function recordExists(fpath As String, fhash As String) As Boolean
+Function recordExists(fPath As String, fhash As String) As Boolean
     
     Dim rs As Recordset
     
     On Error GoTo hell
     
     If Not initilized Then Class_Initialize
-    Set rs = ado.ReturnRecordSet("Select * from tblFiles where path='" & fpath & "' and hash='" & fhash & "'")
+    Set rs = ado.ReturnRecordSet("Select * from tblFiles where path='" & fPath & "' and hash='" & fhash & "'")
      
     If rs.EOF And rs.BOF Then GoTo hell
     
@@ -158,21 +192,23 @@ Function isFileKnown(fp) As matchModes
     
     Dim rs As Recordset
     Dim fhash As String
-    Dim fpath As String
+    Dim fPath As String
     
     On Error GoTo hell
     
-    fpath = CStr(fp)
+    fPath = CStr(fp)
+    
+    If Disabled Then isFileKnown = not_found
     
     If Not initilized Then Class_Initialize
     If ado.ActiveCon.state = 0 Then ado.ActiveCon.Open
     
-    Set rs = ado.ActiveCon.Execute("Select * from tblFiles where path like '" & fpath & "'")
+    Set rs = ado.ActiveCon.Execute("Select * from tblFiles where path like '" & fPath & "'")
     
     
     If rs.EOF And rs.BOF Then GoTo hell
     
-    fhash = hash.HashFile(fpath, md5, HexFormat)
+    fhash = hash.HashFile(fPath, md5, HexFormat)
     
     If rs("hash") <> fhash Then
         isFileKnown = hash_changed
@@ -187,39 +223,39 @@ hell:
     
 End Function
 
-Function Update(fpath As String) As String
+Function Update(fPath As String) As String
     On Error Resume Next
     If Not initilized Then Class_Initialize
-    ado.Execute "Delete from tblFiles where path='" & fpath & "'"
-    AddKnown fpath
+    ado.Execute "Delete from tblFiles where path='" & fPath & "'"
+    AddKnown fPath
 End Function
 
-Function AddKnown(fpath As String)
+Function AddKnown(fPath As String)
 
     'tblFIles: autoid;name;path;version;trusted,hash
     On Error Resume Next
     
     If Not initilized Then Class_Initialize
-    If Not fso.FileExists(fpath) Then Exit Function
+    If Not fso.FileExists(fPath) Then Exit Function
         
     Dim name, version, fhash
     
     'If InStr(fpath, "modem") > 0 Then Stop
     
-    fpath = Replace(fpath, "\\", "\")
-    name = fso.FileNameFromPath(fpath)
-    version = FileInfo(fpath).FileVersion
-    fhash = hash.HashFile(fpath, md5, HexFormat)
+    fPath = Replace(fPath, "\\", "\")
+    name = fso.FileNameFromPath(fPath)
+    version = FileInfo(fPath).FileVersion
+    fhash = hash.HashFile(fPath, md5, HexFormat)
     
     If Len(version) = 0 Then version = "None"
     
     
-    If Len(fhash) > 0 And Not recordExists(fpath, CStr(fhash)) Then
-        ado.Insert "tblFiles", "name,path,version,trusted,hash", name, fpath, version, 1, fhash
+    If Len(fhash) > 0 And Not recordExists(fPath, CStr(fhash)) Then
+        ado.Insert "tblFiles", "name,path,version,trusted,hash", name, fPath, version, 1, fhash
     End If
     
     If Err.Number > 0 Then
-        Debug.Print "Error AddKnown file=" & fpath & " desc= " & Err.Description
+        Debug.Print "Error AddKnown file=" & fPath & " desc= " & Err.Description
     End If
     
 End Function
@@ -238,10 +274,10 @@ Private Sub Class_Initialize()
     End If
     
     If Not fso.FileExists(db) Then
-        Ready = False
+        m_Ready = False
         MsgBox "Could not locate database file: " & db
     Else
-        Ready = True
+        m_Ready = True
         ado.BuildConnectionString Access, db
         ado.OpenConnection adUseClient, adModeReadWrite, adLockOptimistic
         If TotalRecords > 0 Then Loaded = True

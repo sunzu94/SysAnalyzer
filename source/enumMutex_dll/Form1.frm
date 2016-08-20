@@ -9,6 +9,14 @@ Begin VB.Form Form1
    ScaleHeight     =   7875
    ScaleWidth      =   12705
    StartUpPosition =   3  'Windows Default
+   Begin VB.CommandButton Command4 
+      Caption         =   "Api2"
+      Height          =   435
+      Left            =   1320
+      TabIndex        =   8
+      Top             =   6300
+      Width           =   1095
+   End
    Begin VB.CommandButton cmdEnumTasks 
       Caption         =   "EnumTasks"
       Height          =   420
@@ -92,9 +100,14 @@ Private Declare Function EnumMutex Lib "EnumMutex.dll" (ByVal dirPath As String)
 Private Declare Function EnumTasks Lib "EnumMutex.dll" (ByVal dirPath As String) As Long
 Private Declare Function GetVersion Lib "kernel32" () As Long
 
+Private Declare Function EnumMutex2 Lib "EnumMutex.dll" (ByRef col As Collection) As Long
+Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
+Private Declare Function FreeLibrary Lib "kernel32" (ByVal hLibModule As Long) As Long
+
 Dim c1 As Collection
 Dim c2 As Collection
 Dim hash As New CWinHash
+Dim hDll As Long
 
 Private Sub cmdEnumTasks_Click()
 
@@ -338,3 +351,34 @@ Function VistaEnumTasks(objTaskFolder, ByRef c As Collection)
 
 End Function
 
+Private Sub Command4_Click()
+    Dim c As New Collection
+    
+    If EnumMutex2(c) < 1 Then
+        MsgBox "Failed!"
+    Else
+       Text1 = Join(ColToAry(c), vbCrLf)
+    End If
+    
+End Sub
+
+Function ColToAry(c As Collection) As String()
+    Dim x, r() As String
+    
+    For Each x In c
+        push r, x
+    Next
+    
+    ColToAry = r()
+End Function
+
+Private Sub Form_Load()
+    Dim dll As String
+    dll = App.path & "\EnumMutex.dll"
+    hDll = LoadLibrary(dll)
+    If hDll = 0 Then Text1 = "Could not load: " & dll
+End Sub
+
+Private Sub Form_Unload(Cancel As Integer)
+    FreeLibrary hDll
+End Sub

@@ -3,4 +3,5 @@ LIBRARY EnumMutex
       EXPORTS
 		EnumMutex
 		EnumTasks
+		EnumMutex2
         

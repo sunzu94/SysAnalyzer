@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
 Object = "{BDC217C8-ED16-11CD-956C-0000C04E4C0A}#1.1#0"; "TABCTL32.OCX"
 Begin VB.Form frmMain 
    Caption         =   "SysAnalyzer"
@@ -45,9 +45,7 @@ Begin VB.Form frmMain
       TabPicture(2)   =   "Form1.frx":5C4A
       Tab(2).ControlEnabled=   0   'False
       Tab(2).Control(0)=   "lvProcessDllList"
-      Tab(2).Control(0).Enabled=   0   'False
       Tab(2).Control(1)=   "lvProcessDlls"
-      Tab(2).Control(1).Enabled=   0   'False
       Tab(2).ControlCount=   2
       TabCaption(3)   =   "Loaded Drivers"
       TabPicture(3)   =   "Form1.frx":5C66
@@ -526,6 +524,9 @@ Begin VB.Form frmMain
    End
    Begin VB.Menu mnuKnownDB 
       Caption         =   "KnownDB"
+      Begin VB.Menu mnuKnownDBDisable 
+         Caption         =   "Disable"
+      End
       Begin VB.Menu mnuKnownFiles 
          Caption         =   "Build Known File DB"
       End
@@ -772,6 +773,11 @@ Private Sub mnuKillAll_Click()
     
 End Sub
 
+Private Sub mnuKnownDBDisable_Click()
+    mnuKnownDBDisable.Checked = Not mnuKnownDBDisable.Checked
+    known.Disabled = mnuKnownDBDisable.Checked
+End Sub
+
 Private Sub mnuStringSearch_Click()
     On Error Resume Next
     If activePID <> 0 Then frmDeepMemScan.InitilizeFor activePID
@@ -852,6 +858,9 @@ Private Sub Form_Load()
         mnuHideKnown.Checked = True
         mnuListUnknown.Enabled = True 'this gets all displayed dlls automatically, only makes sense with hideknown enabled..
     End If
+    
+    mnuKnownDBDisable.Checked = CBool(GetMySetting("mnuKnownDBDisable", "False"))
+    known.Disabled = mnuKnownDBDisable.Checked
     
     Dim alv As ListView, i As Long
     For i = 0 To 6
@@ -992,7 +1001,7 @@ Private Sub mnuAddSelDrivertoKnownDB_Click()
     Dim ret() As String
     Dim tmp As String
     
-    push ret, GetAllText(lvDrivers, , True)
+    push ret, GetAllText(lvDrivers.currentLV, , True)
     
     tmp = Join(ret, vbCrLf)
     tmp = Replace(tmp, vbCrLf & vbCrLf, vbCrLf)
@@ -1390,11 +1399,11 @@ Private Sub mnuListUnknown_Click()
     Dim ret() As String
     Dim tmp As String
     
-    push ret, GetAllText(lvProcesses, 3)
-    push ret, GetAllText(lvPorts, 3)
+    push ret, GetAllText(lvProcesses.currentLV, 3)
+    push ret, GetAllText(lvPorts.currentLV, 3)
     'push ret, GetAllText(lvExplorer)
     'push ret, GetAllText(lvIE)
-    push ret, GetAllText(lvDrivers)
+    push ret, GetAllText(lvDrivers.currentLV)
     
     tmp = Join(ret, vbCrLf)
     tmp = Replace(tmp, vbCrLf & vbCrLf, vbCrLf)
@@ -1469,7 +1478,8 @@ Private Sub Form_Unload(Cancel As Integer)
     diff.shutDown = True
     SaveFormSizeAnPosition Me
     tmrCountDown.Enabled = False
-     
+    SaveMySetting "mnuKnownDBDisable", CStr(mnuKnownDBDisable.Checked)
+    
     If DirWatchActive Then DirWatchCtl False
     
     If procWatchPID <> 0 Then

@@ -113,8 +113,11 @@ bool __cdecl InitHookEngine(void){
 	
 	if(initilized) return true;
 	
+	char* mem_marker = "APIHOOKS";
+	int len_marker = strlen(mem_marker);
 	UINT sz = MAX_HOOKS * (JUMP_WORST * 3);
-	
+	sz +=len_marker;
+
 	//try to get a 32bit safe allocation address...
 	//g_pBridgeBuffer = (BYTE *)VirtualAlloc((void*)0x11000000 , sz, MEM_RESERVE | MEM_COMMIT , 0x40);
 
@@ -128,6 +131,10 @@ bool __cdecl InitHookEngine(void){
 	
 	memset(g_pBridgeBuffer, 0 , sz);
 	memset(&g_HookInfo[0], 0, sizeof(struct _HOOK_INFO) * MAX_HOOKS);
+
+	memcpy(g_pBridgeBuffer, mem_marker, len_marker);
+	g_CurrentBridgeBufferSize += len_marker;
+
 	initilized = true;
 	return true;
 }
