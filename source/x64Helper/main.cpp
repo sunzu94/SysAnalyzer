@@ -528,7 +528,7 @@ int main(int argc, char* argv[] )
 	if( argv[1][0] == '-') argv[1][0] = '/'; //standardize
 
 	EnableSeDebug();
-	HANDLE hWatchDog = startWatchDog();
+	//HANDLE hWatchDog = startWatchDog(); //still getting hangs once in a while..monitor external :-\
 	
 	// /inject decimal_pid dll_path
 	if(strstr(argv[1],"/inject") > 0 ){ 
@@ -625,8 +625,8 @@ int main(int argc, char* argv[] )
 		usage();
 	}
 
-	TerminateThread(hWatchDog,0);
-	CloseHandle(hWatchDog);
+	//TerminateThread(hWatchDog,0);
+	//CloseHandle(hWatchDog);
 	
 	if( IsDebuggerPresent() ){
 		printf("press any key to exit...");

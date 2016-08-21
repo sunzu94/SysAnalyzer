@@ -243,21 +243,21 @@ Function IsProcess_x64(pid As Long) As results
     
 End Function
 
-Function WillRunAsx64Process(fpath As String) As Boolean
+Function WillRunAsx64Process(fPath As String) As Boolean
         Dim r As results
-        r = isExe_x64(fpath)
+        r = isExe_x64(fPath)
         If r = r_64bit Then WillRunAsx64Process = True
         If r = r_32bit Then
-            If isExeDotNetAnyCpu(fpath) And isWindows64Bit Then WillRunAsx64Process = True
+            If isExeDotNetAnyCpu(fPath) And isWindows64Bit Then WillRunAsx64Process = True
         End If
 End Function
 
-Function isExeDotNetAnyCpu(fpath As String) As Boolean
+Function isExeDotNetAnyCpu(fPath As String) As Boolean
     Dim pe As New CPEEditor
-    If pe.LoadFile(fpath) Then isExeDotNetAnyCpu = pe.isDotNetAnyCpu
+    If pe.LoadFile(fPath) Then isExeDotNetAnyCpu = pe.isDotNetAnyCpu
 End Function
 
-Function isExe_x64(fpath As String) As results
+Function isExe_x64(fPath As String) As results
     On Error GoTo hell
     Dim h As Long
     Dim b As Byte
@@ -271,7 +271,7 @@ Function isExe_x64(fpath As String) As results
     
     DisableRedir
     h = FreeFile
-    Open fpath For Binary Access Read As h
+    Open fPath For Binary Access Read As h
     
     
     Get h, , b
@@ -378,7 +378,7 @@ Public Function x64Inject(pid As Long, ByVal dll As String, out_injLog As String
     End If
     
     dll = GetShortName(dll)
-    out_injLog = GetCommandOutput(helperPath & " /inject " & pid & " " & dll)
+    out_injLog = GetCommandOutput(helperPath & " /inject " & pid & " " & dll, 15)
     
     If InStr(1, out_injLog, "Error:", vbTextCompare) > 0 Then
         Exit Function
@@ -428,7 +428,7 @@ Public Function x64StartWithDll(exePath As String, ByVal dll As String, out_injL
     dll = GetShortName(dll)
     exePath = GetShortName(exePath)
     
-    out_injLog = GetCommandOutput(helperPath & " /startwdll " & exePath & " " & dll)
+    out_injLog = GetCommandOutput(helperPath & " /startwdll " & exePath & " " & dll, 15)
     
     If InStr(1, out_injLog, "Error:", vbTextCompare) > 0 Then
         Exit Function
@@ -538,7 +538,7 @@ Function GetMemoryMap(pid As Long) As Collection 'of Cmemory
     If Not HelperEnabled Then GoTo hell
     
     tmp = fso.GetFreeFileName(Environ("temp"))
-    x = GetCommandOutput(helperPath & " /memmap " & pid & " " & tmp)
+    x = GetCommandOutput(helperPath & " /memmap " & pid & " " & tmp, 25)
     'x = ReadFile("c:\x64_memmap.txt")
     
     If InStr(1, x, "Error:", vbTextCompare) > 0 Then
@@ -594,7 +594,7 @@ Function GetProcessModules(pid As Long) As Collection
     
     If Not HelperEnabled Then GoTo hell
  
-    x = GetCommandOutput(helperPath & " /dlls " & pid)
+    x = GetCommandOutput(helperPath & " /dlls " & pid, 15)
     'dlls = ReadFile("D:\__share\sample.txt")
     
     If InStr(1, x, "Error:", vbTextCompare) > 0 Then
@@ -636,16 +636,16 @@ Private Function writeFile(path, it) As Boolean 'this one should be binary safe.
 hell: writeFile = False
 End Function
 
-Function DumpProcess(pid As Long, ByVal fpath As String) As Boolean
+Function DumpProcess(pid As Long, ByVal fPath As String) As Boolean
     
     Dim x As String
     
     If Not HelperEnabled Then Exit Function
     
     'fpath = GetShortName(fpath)
-    If FileExists(fpath) Then Kill fpath
+    If FileExists(fPath) Then Kill fPath
     
-    x = GetCommandOutput(helperPath & " /dumpprocess " & pid & " """ & fpath & """")
+    x = GetCommandOutput(helperPath & " /dumpprocess " & pid & " """ & fPath & """", 15)
     
     If InStr(1, x, "Error:", vbTextCompare) > 0 Then
         Exit Function
@@ -655,15 +655,15 @@ Function DumpProcess(pid As Long, ByVal fpath As String) As Boolean
     
 End Function
 
-Function DumpMemory(pid As Long, hex_start As String, hex_size As String, ByVal fpath As String) As Boolean
+Function DumpMemory(pid As Long, hex_start As String, hex_size As String, ByVal fPath As String) As Boolean
     Dim x As String
     
     If Not HelperEnabled Then Exit Function
     
     'fpath = GetShortName(fpath) 'x64helper seems to have a problem with short paths?
-    If FileExists(fpath) Then Kill fpath
+    If FileExists(fPath) Then Kill fPath
     
-    x = GetCommandOutput(helperPath & " /dumpmodule " & pid & " " & hex_start & " " & hex_size & " """ & fpath & """")
+    x = GetCommandOutput(helperPath & " /dumpmodule " & pid & " " & hex_start & " " & hex_size & " """ & fPath & """", 15)
     
     If InStr(1, x, "Error:", vbTextCompare) > 0 Then
         Exit Function

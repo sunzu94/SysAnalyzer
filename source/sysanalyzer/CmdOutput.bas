@@ -107,17 +107,31 @@ Private Declare Function OemToCharBuff _
 
 Private Declare Function DeactivateWindowTheme Lib "uxtheme" _
     Alias "SetWindowTheme" ( _
-    ByVal hWnd As Long, _
+    ByVal hwnd As Long, _
     Optional ByRef pszSubAppName As String = " ", _
     Optional ByRef pszSubIdList As String = " ") As Long
 
 Private Declare Function EnableTheming Lib "UxTheme.dll" (ByVal b As Boolean) As Long
 Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
 Private Declare Function GetProcAddress Lib "kernel32" (ByVal hModule As Long, ByVal lpProcName As String) As Long
-
+Private Declare Function TerminateProcess Lib "kernel32" (ByVal hProcess As Long, ByVal uExitCode As Long) As Long
 Private Declare Function OpenProcess Lib "kernel32" (ByVal dwDesiredAccess As Long, ByVal bInheritHandle As Long, ByVal dwProcessId As Long) As Long
 Private Declare Function WaitForSingleObject Lib "kernel32" (ByVal hHandle As Long, ByVal dwMilliseconds As Long) As Long
+Private Declare Function PeekNamedPipe Lib "kernel32" (ByVal hNamedPipe As Long, lpBuffer As Any, ByVal nBufferSize As Long, lpBytesRead As Long, lpTotalBytesAvail As Long, lpBytesLeftThisMessage As Long) As Long
+
 Private Const WAIT_TIMEOUT = &H102
+
+Public blnStdOut As Boolean
+Public blnStdErr As Boolean
+Public blnOEMConvert As Boolean
+Private optsInit As Boolean
+
+Private Sub init()
+    blnStdOut = True
+    blnStdErr = False
+    blnOEMConvert = True
+    optsInit = True
+End Sub
 
 Function ClassicTheme(f As Form)
     Dim h As Long
@@ -125,7 +139,7 @@ Function ClassicTheme(f As Form)
     If h = 0 Then Exit Function
     h = GetProcAddress(h, "SetWindowTheme")
     If h = 0 Then Exit Function 'windows 2000
-    DeactivateWindowTheme f.hWnd
+    DeactivateWindowTheme f.hwnd
 End Function
 
 
@@ -139,12 +153,7 @@ End Function
 '
 ' Returns:       String with STDOUT and/or STDERR output
 '
-Public Function GetCommandOutput( _
- sCommandLine As String, _
- Optional blnStdOut As Boolean = True, _
- Optional blnStdErr As Boolean = False, _
- Optional blnOEMConvert As Boolean = True _
-) As String
+Public Function GetCommandOutput(sCommandLine As String, Optional maxExecTime As Long = 0) As String
 
     Dim hPipeRead As Long, hPipeWrite1 As Long, hPipeWrite2 As Long
     Dim hCurProcess As Long
@@ -155,11 +164,13 @@ Public Function GetCommandOutput( _
     Dim sNewOutput As String
     Dim lBytesRead As Long
     Dim fTwoHandles As Boolean
-
+    Dim t1 As Date
     Dim lRet As Long
 
+    t1 = Now
     Const BUFSIZE = 1024      ' pipe buffer size
-
+    If Not optsInit Then init
+    
     ' At least one of them should be True, otherwise there's no point in calling the function
     If (Not blnStdOut) And (Not blnStdErr) Then
         Err.Raise 5         ' Invalid Procedure call or Argument
@@ -195,7 +206,7 @@ Public Function GetCommandOutput( _
     With si
         .cb = Len(si)
         .dwFlags = STARTF_USESHOWWINDOW Or STARTF_USESTDHANDLES
-        .wShowWindow = SW_HIDE          ' hide the window
+        .wShowWindow = SW_HIDE           ' hide the window
 
         If fTwoHandles Then
             .hStdOutput = hPipeWrite1
@@ -231,9 +242,14 @@ Public Function GetCommandOutput( _
             If WaitForSingleObject(pi.hProcess, 0) <> WAIT_TIMEOUT Then 'process has terminated..
                 Exit Do
             End If
-
-            If ReadFile(hPipeRead, baOutput(0), BUFSIZE, lBytesRead, ByVal 0&) = 0 Then
-                Exit Do
+            
+            Dim avail As Long, bleft As Long
+            If PeekNamedPipe(hPipeRead, ByVal 0&, 0, lBytesRead, avail, bleft) <> 0 Then
+                If avail > 0 Then
+                    If ReadFile(hPipeRead, baOutput(0), BUFSIZE, lBytesRead, ByVal 0&) = 0 Then
+                        Exit Do
+                    End If
+                End If
             End If
 
             If blnOEMConvert Then
@@ -247,6 +263,13 @@ Public Function GetCommandOutput( _
 
             GetCommandOutput = GetCommandOutput & sNewOutput
 
+            If maxExecTime > 0 Then
+                If DateDiff("s", t1, Now) > maxExecTime Then
+                    TerminateProcess pi.hProcess, -1
+                    Exit Do
+                End If
+            End If
+            
         Loop
 
         ' When the process terminates successfully, Err.LastDllError will be

@@ -1022,6 +1022,10 @@ End Sub
 
 Private Sub Form_Load()
                    
+    'Dim x
+    'x = GetCommandOutput("C:\Documents and Settings\david\Desktop\argv_test\Debug\argv_test.exe 1 2 3 taco", 10)
+    'MsgBox "haha!" & x
+    
     On Error GoTo hell
     
     Dim c As Collection
