@@ -1,3 +1,4 @@
+if stable, port timeout mechanism to proclib (peek pipe required)
 if new dlls dropped scan processes for them as part of report.
 
  - wizard -> external -> add entries to hosts file (inputbox with csv support)

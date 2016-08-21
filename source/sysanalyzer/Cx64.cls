@@ -212,6 +212,7 @@ Function IsProcess_x64(pid As Long) As results
     Dim h As Long
     
     Const PROCESS_QUERY_INFORMATION = (&H400)
+    Const PROCESS_QUERY_LIMITED_INFORMATION = (&H1000)
     
     If Not m_WindowsIs64Bit Then
         IsProcess_x64 = r_32bit
@@ -226,6 +227,7 @@ Function IsProcess_x64(pid As Long) As results
     End If
     
     h = OpenProcess(PROCESS_QUERY_INFORMATION, False, pid)
+    If h = 0 Then h = OpenProcess(PROCESS_QUERY_INFORMATION, False, pid)
     
     If h = 0 Then
         IsProcess_x64 = r_error

@@ -40,6 +40,14 @@ Option Explicit
 '  fixed GetProcessCmdLine
 '  Fixed GetUsername to work across more privledge levels/os
 '  added is64Bit, domain, fullpath, sessionID to CProcess
+'
+'7.26.16: now large allocs are dumped in chunks...
+'
+'8.21.16
+'  synced with proc_lib1/2 CProcessLib
+'  switched to EnumMutex2 / EnumTasks2 (collection based)
+
+
 
 ' x64 safe functions..
 '    DumpProcess, DumpMemory, GetProcessModules, EnumDrivers, GetRunningProcesses,  GetMemoryMap, ReadMemory2
@@ -1244,6 +1252,12 @@ Public Function InjectDLL(pid As Long, dllPath As String, Optional injLog As Str
     
     injLog = Empty
     
+    If Not FileExists(dllPath) Then
+        injLog = "DllPath not found: " & dllPath
+        GoTo hell
+    End If
+
+
     If Not GetProcess(pid, cp) Then
         injLog = "pid " & pid & " not found"
         GoTo hell
@@ -1319,6 +1333,16 @@ Public Function StartProcessWithDLL(exePath As String, dllPath As String, Option
     Const MEM_COMMIT = &H1000
     
     injLog = Empty
+    If Not FileExists(dllPath) Then
+        injLog = "DllPath not found: " & dllPath
+        GoTo hell
+    End If
+    
+    If Not FileExists(exePath) Then
+        injLog = "exePath not found: " & exePath
+        GoTo hell
+    End If
+    
     Set cp = New CProcess
     cp.fullpath = exePath
     cp.path = exePath
@@ -1791,3 +1815,89 @@ End Function
 '    RandomNum = GetTickCount
 '
 'End Function
+
+Public Function InjectData(pid As Long, data As String, Optional Base As Long = 0, Optional injLog As String, Optional cp As CProcess) As Boolean
+
+    Dim hProcess As Long
+    Dim lpfnLoadLib As Long
+    Dim ret As Long
+    Dim lpdllPath As Long
+    Dim pi As PROCESS_INFORMATION
+    Dim si As STARTUPINFO
+    Dim hThread As Long
+    Dim writeLen As Long
+    Dim b() As Byte
+    Dim bufLen As Long
+    Dim c As Collection
+    Dim found As Boolean
+    Dim rv As Boolean
+    
+    Const PAGE_READWRITE = 4
+    Const CREATE_SUSPENDED = &H4
+    Const MEM_COMMIT = &H1000
+    
+    injLog = Empty
+    
+    If Not GetProcess(pid, cp) Then
+        injLog = "pid " & pid & " not found"
+        GoTo hell
+    End If
+    
+    If cp.is64Bit Then
+        injLog = "Not implemented for x64 Processes"
+        GoTo hell
+    End If
+    
+    b() = StrConv(data, vbFromUnicode, LANG_US)
+    bufLen = UBound(b) + 1
+ 
+    hProcess = OpenProcess(PROCESS_ALL_ACCESS, False, pid)
+    injLog = injLog & "Opening PID: " & pid & " Process Handle=" & hProcess & vbCrLf
+    If hProcess = -1 Then GoTo hell
+     
+    lpdllPath = VirtualAllocEx(hProcess, ByVal Base, bufLen, MEM_COMMIT, ByVal PAGE_EXECUTE_READWRITE)
+    injLog = injLog & "Remote Allocation base: " & Hex(lpdllPath) & vbCrLf
+    If lpdllPath = 0 Then GoTo hell
+    
+    ret = WriteProcessBytes(hProcess, ByVal lpdllPath, b(0), bufLen, writeLen)
+    injLog = injLog & "WriteProcessMemory=" & ret & " BufLen=" & bufLen & " Bytes Written: " & writeLen & vbCrLf
+    If ret = 0 Then GoTo hell
+     
+    rv = True
+    
+hell:
+   CloseHandle hProcess
+   InjectData = rv
+    
+End Function
+
+Function OpenProcessHandle(pid As Long) As Long
+    OpenProcessHandle = OpenProcess(PROCESS_ALL_ACCESS, False, pid)
+End Function
+
+Function CloseProcessHandle(h As Long)
+    CloseHandle h
+End Function
+
+Public Function WriteProcessLong(ByVal hProcess As Long, ByVal lpBaseAddress As Long, ByVal sValue As Long) As Boolean
+    Dim ret As Long
+    If WriteProcessMemory(hProcess, lpBaseAddress, ByVal VarPtr(sValue), 4, ret) <> 0 Then WriteProcessLong = True
+End Function
+
+Function WriteProcessByte(hProc As Long, val As Byte, address As Long) As Boolean
+    Dim ret As Long, written As Long
+    If WriteProcessBytes(hProc, ByVal address, ByVal val, 1, written) <> 0 Then WriteProcessByte = True
+End Function
+
+Function ReadProcessLng(hProc As Long, address As Long, outVal As Long) As Boolean
+   
+    Dim b(4) As Byte, tmp As Long
+    outVal = 0
+    
+    If ReadProcessMemory(hProc, address, b(0), 4, 0) > 0 Then
+        CopyMemory tmp, b(0), 4
+        outVal = tmp
+        ReadProcessLng = True
+    End If
+ 
+End Function

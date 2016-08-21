@@ -107,6 +107,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine=".update_projects.bat"
 			/>
 		</Configuration>
 		<Configuration

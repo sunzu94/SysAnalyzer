@@ -529,7 +529,8 @@ int main(int argc, char* argv[] )
 
 	EnableSeDebug();
 	//HANDLE hWatchDog = startWatchDog(); //still getting hangs once in a while..monitor external :-\
-	
+	setvbuf(stdout, NULL, _IONBF, 0); //autoflush - allows external apps to read cmdline output in realtime..
+
 	// /inject decimal_pid dll_path
 	if(strstr(argv[1],"/inject") > 0 ){ 
 		if(argc!=4) usage(3);
