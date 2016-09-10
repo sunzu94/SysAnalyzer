@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
 Begin VB.Form Form2 
    Caption         =   "ApiLogger"
    ClientHeight    =   8055
@@ -645,7 +645,6 @@ End Function
 Private Sub cmdBrowse_Click(index As Integer)
     Dim f As String
     
-    
     f = dlg.OpenDialog(AllFiles, , "Open Executable to monitor", Me.hwnd)
     f = Replace(f, Chr(0), Empty)
     If Len(f) = 0 Then Exit Sub
@@ -682,7 +681,7 @@ Sub DeterminePEFileStats(f As String)
         If pe.is32Bit Then push r, "32 bit"
     End If
     
-    List2.AddItem Join(r, " ")
+    List2.AddItem Replace(Join(r, " "), "  ", " ")
     
 End Sub
 

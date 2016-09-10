@@ -32,6 +32,7 @@ Public is32Bit As Boolean
 Public isDotNet As Boolean
 Public isDotNetAnyCpu As Boolean
 Public dotNetVersion As String
+Public dotNetFullVersion As String
 
 Public EntryPoint As Long
 Public EntryPoint64 As Double
@@ -220,7 +221,7 @@ Enum eDATA_DIRECTORY
     Import_Address_Table = 12
     Delay_Import_Descriptor = 13
     CLI_Header = 14
-    reserved = 15
+    Reserved = 15
 End Enum
 
 Private Type MungeCurr
@@ -256,7 +257,7 @@ Function x64ToHex(v As Double) As String
     End If
 End Function
 
-Function LoadFile(fpath As String, Optional sections_csv As String) As Boolean
+Function LoadFile(fPath As String, Optional sections_csv As String) As Boolean
     On Error GoTo hell
         
         Dim i As Long
@@ -264,7 +265,7 @@ Function LoadFile(fpath As String, Optional sections_csv As String) As Boolean
         Dim udtSH As IMAGE_SECTION_HEADER
         Dim cli As Long
         
-        LoadedFile = fpath
+        LoadedFile = fPath
         isLoaded = False
         errMessage = Empty
         is64Bit = False
@@ -273,13 +274,13 @@ Function LoadFile(fpath As String, Optional sections_csv As String) As Boolean
         isDotNetAnyCpu = False
         MachineType = ""
         
-        If Not FileExists(fpath) Then Err.Raise 1
+        If Not FileExists(fPath) Then Err.Raise 1
             
         Set Sections = New Collection
 
         f = FreeFile
         
-        Open fpath For Binary Access Read As f
+        Open fPath For Binary Access Read As f
         Get f, , DOSHEADER
         Get f, DOSHEADER.e_lfanew + 1, NTHEADER
         
@@ -303,7 +304,7 @@ Function LoadFile(fpath As String, Optional sections_csv As String) As Boolean
         
         Close f
         LoadFile = True
-        myFile = fpath
+        myFile = fPath
         isLoaded = True
         
         GetDotNetAttributes cli
@@ -316,7 +317,7 @@ hell:
     Close f
     
     Select Case Err.Number
-        Case 1: errMessage = "File not found: " & fpath
+        Case 1: errMessage = "File not found: " & fPath
         Case 2: errMessage = "Invalid PE signature: " & NTHEADER.Signature
         Case Else: errMessage = Err.Description
     End Select
@@ -354,21 +355,20 @@ Private Function GetDotNetAttributes(cli As Long)
     Dim minor As Integer '2 bytes
     Dim flags As Long    '4 bytes
     Dim fs As Long, f As Long
+    Dim i As Long
+    
+    Dim metaData_size As Long
+    Dim metaData_rva As Long
+    Dim foff_metaData As Long
+    Dim verLen As Long
+    Dim b() As Byte
     
     Const COMIMAGE_FLAGS_32BITREQUIRED = 2
     
-    If cli = 0 Then Exit Function
-
-'    Dim hLib As Long
-'
-'    hLib = LoadLibrary("mscoree.dll")
-'    If hLib <> 0 Then
-'        If GetProcAddress(hLib, "GetFileVersion") <> 0 Then
-'            dotNetVersion = GetDotNetVersion()
-'        End If
-'        FreeLibrary hLib
-'    End If
+    On Error GoTo cleanup
     
+    If cli = 0 Then Exit Function
+      
     foff_cli = RvaToOffset(cli) + 1
     
     If foff_cli > 1 And foff_cli < FileLen(LoadedFile) Then
@@ -376,10 +376,6 @@ Private Function GetDotNetAttributes(cli As Long)
         isDotNet = True
         f = FreeFile
         Open LoadedFile For Binary As f
-        
-        'Get f, foff_cli + 4, major            'these must be the .net file format version num?
-        'Get f, foff_cli + 6, minor
-        'dotNetVersion = major & "." & minor
         
         If is32Bit Then 'is it really 32bit or is it AnyCpu?
             Get f, foff_cli + 16, flags
@@ -389,7 +385,28 @@ Private Function GetDotNetAttributes(cli As Long)
                 isDotNetAnyCpu = True
             End If
         End If
+
+        'now we try to determine the target framework it was compiled for...
+        Get f, foff_cli + 8, metaData_rva
+        Get f, foff_cli + 12, metaData_size
+
+        foff_metaData = RvaToOffset(metaData_rva)
+
+        foff_metaData = foff_metaData + 1
+        Get f, foff_metaData, fs
+        If fs <> &H424A5342 Then GoTo cleanup 'signature check
+         
+        Get f, foff_metaData + 12, verLen
         
+        If verLen > 1 And verLen < 20 Then
+            ReDim b(verLen)
+            Get f, , b()
+            dotNetFullVersion = Replace(StrConv(b, vbUnicode), Chr(0), Empty)
+            If Len(dotNetFullVersion) > 4 Then dotNetVersion = Left(dotNetFullVersion, 4) Else dotNetVersion = dotNetFullVersion
+        End If
+   
+cleanup:
+        On Error Resume Next
         Close f
         
     End If
@@ -397,6 +414,8 @@ Private Function GetDotNetAttributes(cli As Long)
     
 
 End Function
+
+
 
 Private Sub LoadSections(fhand As Long, numSections As Integer, Optional sections_csv As String)
     

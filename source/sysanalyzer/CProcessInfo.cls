@@ -65,8 +65,8 @@ Private Declare Function NtQuerySystemInformation Lib "ntdll.dll" ( _
     dwReserved As Long) As Long
 
 Private Type SYSTEM_MODULE_INFORMATION
-    reserved(1) As Long                'ULONG reserved[2];
-    Base As Long                       'PVOID Base;
+    Reserved(1) As Long                'ULONG reserved[2];
+    base As Long                       'PVOID Base;
     size As Long                       'ULONG Size;
     flags As Long                      'ULONG Flags;
     index As Integer                   'USHORT Index;
@@ -162,7 +162,7 @@ Enum MemAccess
         PAGE_WRITECOPY = &H8
 End Enum
 
-
+Private Const LANG_US = &H409
 Private Const FORMAT_MESSAGE_ALLOCATE_BUFFER = &H100
 Private Const FORMAT_MESSAGE_FROM_SYSTEM = &H1000
 Private Const ALL_ACCESS = &H1F0FFF
@@ -284,7 +284,7 @@ End Type
 
 Private Declare Function WTSEnumerateProcesses _
    Lib "wtsapi32.dll" Alias "WTSEnumerateProcessesA" _
-   (ByVal hServer As Long, ByVal reserved As Long, _
+   (ByVal hServer As Long, ByVal Reserved As Long, _
    ByVal version As Long, ByRef ppProcessInfo As Long, _
    ByRef pCount As Long _
    ) As Long
@@ -598,7 +598,7 @@ Function GetProcessModules(pid As Long) As Collection
          
         Set cmod = New CModule
         cmod.path = mfn
-        cmod.Base = lmi.lpBaseOfDll
+        cmod.base = lmi.lpBaseOfDll
         cmod.size = lmi.SizeOfImage
          
         On Error Resume Next
@@ -682,7 +682,7 @@ Function DumpProcess(pid As Long, fPath As String) As Boolean
     Set col = GetProcessModules(pid)
     Set cmod = col(1)
 
-    DumpProcess = DumpProcessMemory(pid, cmod.Base, cmod.size, fPath)
+    DumpProcess = DumpProcessMemory(pid, cmod.base, cmod.size, fPath)
     
 End Function
 
@@ -991,7 +991,7 @@ Function GetMemoryMap(pid As Long) As Collection 'of CMem
             Set cMem = New CMemory
             cMem.pid = pid
             cMem.size = meminfo.RegionSize
-            cMem.Base = cur
+            cMem.base = cur
             cMem.AllocBase = meminfo.AllocationBase
             cMem.InitialProtection = meminfo.InitialProtect
             cMem.MemType = meminfo.Type
@@ -1816,7 +1816,7 @@ End Function
 '
 'End Function
 
-Public Function InjectData(pid As Long, data As String, Optional Base As Long = 0, Optional injLog As String, Optional cp As CProcess) As Boolean
+Public Function InjectData(pid As Long, data As String, Optional base As Long = 0, Optional injLog As String, Optional cp As CProcess) As Boolean
 
     Dim hProcess As Long
     Dim lpfnLoadLib As Long
@@ -1855,7 +1855,7 @@ Public Function InjectData(pid As Long, data As String, Optional Base As Long = 
     injLog = injLog & "Opening PID: " & pid & " Process Handle=" & hProcess & vbCrLf
     If hProcess = -1 Then GoTo hell
      
-    lpdllPath = VirtualAllocEx(hProcess, ByVal Base, bufLen, MEM_COMMIT, ByVal PAGE_EXECUTE_READWRITE)
+    lpdllPath = VirtualAllocEx(hProcess, ByVal base, bufLen, MEM_COMMIT, ByVal PAGE_EXECUTE_READWRITE)
     injLog = injLog & "Remote Allocation base: " & Hex(lpdllPath) & vbCrLf
     If lpdllPath = 0 Then GoTo hell
     
