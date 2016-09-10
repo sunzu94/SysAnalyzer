@@ -18,7 +18,7 @@ Public isx64 As Boolean
 Public Base As Variant
 Public AllocBase As Variant
 
-Public size As Long
+Public size As Long             '<--for x64 this could be an x64 number as well right...
 Public MemType As MemoryTypes
 Public state As MemoryTypes
 Public Protection As MemAccess

@@ -49,6 +49,13 @@ Begin VB.Form frmMemoryMap
       Begin VB.Menu mnuSearchMemory 
          Caption         =   "Search"
       End
+      Begin VB.Menu mnuScanRWForMZ 
+         Caption         =   "Scan RW for MZ - .NET Asm.Load()"
+      End
+      Begin VB.Menu mnuSaveMultiAsOne 
+         Caption         =   "Save MultiSelect As One"
+         Visible         =   0   'False
+      End
    End
    Begin VB.Menu mnuPopup2 
       Caption         =   "mnuPopup2"
@@ -289,6 +296,107 @@ Private Sub mnuSaveMemory_Click()
     Else
         MsgBox "Error saving file: " & Err.Description
     End If
+End Sub
+
+Private Sub mnuSaveMultiAsOne_Click()
+    
+    'note this is designed to dump a bunch of continious pe sections form memory map back into a pe file
+    'dont just dump a bunch of random allocs with it...
+    
+    Dim cMem As CMemory
+    Dim li As ListItem
+    Dim isInject As Boolean
+    Dim cnt As Long
+    Dim scanned As Long
+    Dim dump As String
+    Dim f As Long, f2 As Long
+    Dim tmp As String
+    Dim b() As Byte
+    Dim qdf As CDumpFix
+    Dim fixed As Boolean
+    
+    If lv.SelCount = 0 Then Exit Sub
+    
+    dump = dlg.SaveDialog(AllFiles)
+    If Len(dump) = 0 Then Exit Sub
+    tmp = fso.GetFreeFileName(Environ("temp"), ".bin")
+    
+    f = FreeFile
+    Open dump For Binary As f
+    
+    For Each li In lv.ListItems
+        If li.Selected = True Then
+            cnt = cnt + 1
+            Set cMem = li.Tag
+            
+            If cMem.StateAsString = "RESERVE" Then 'it doesnt actually exist its all null..so we will pad our output file..
+                ReDim b(cMem.size - 1)
+                Put f, , b() 'append it onto our dump file
+            Else
+                If Not pi.DumpMemory(cMem.pid, cMem.BaseAsHexString, Hex(cMem.size), tmp) Then
+                    MsgBox "Failed to dump: " & cMem.BaseAsHexString & " size: " & cMem.size, vbInformation
+                    Close f
+                    Exit Sub
+                End If
+            
+                f2 = FreeFile
+                Open tmp For Binary As f2
+                ReDim b(LOF(f2))
+                Get f2, , b()
+                Close f2
+                
+                Put f, , b() 'append it onto our dump file
+            End If
+            
+        End If
+    Next
+    
+    Close f
+    Set qdf = New CDumpFix
+    fixed = qdf.QuickDumpFix(dump)
+    
+    MsgBox "Complete! File size is: " & Hex(FileLen(dump)) & " DumpFix: " & fixed, vbInformation
+    
+End Sub
+
+Private Sub mnuScanRWForMZ_Click()
+        
+    Dim cMem As CMemory
+    Dim li As ListItem
+    Dim isInject As Boolean
+    Dim cnt As Long
+    Dim scanned As Long
+    
+    For Each li In lv.ListItems
+    
+        Set cMem = li.Tag
+        isInject = False
+        
+        If (cMem.Protection = PAGE_READWRITE Or cMem.Protection = PAGE_READONLY) And Len(cMem.ModuleName) = 0 Then
+            scanned = scanned + 1
+            
+            If pi.ReadMemory2(cMem.pid, cMem.Base, 2) = "MZ" Then
+                isInject = True
+            Else
+                dumpLen = IIf(cMem.size > &H1500, &H1500, cMem.size)
+                s = pi.ReadMemory2(cMem.pid, cMem.Base, dumpLen)
+                isInject = IIf(InStr(1, s, "DOS mode", vbTextCompare) > 0, True, False)
+            End If
+            
+            If isInject Then
+                SetLiColor li, ColorConstants.vbMagenta
+                li.Bold = True
+                cnt = cnt + 1
+            End If
+        End If
+    Next
+     
+    If cnt > 0 Then
+        lv.Filter = "color:vbMagenta"
+    End If
+    
+    MsgBox "Scanned: " & scanned & " allocs found: " & cnt & " MZ headers found in RW memory."
+
 End Sub
 
 Private Sub mnuSearchMemory_Click()

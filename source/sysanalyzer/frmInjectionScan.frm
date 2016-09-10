@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
 Begin VB.Form frmInjectionScan 
    Caption         =   "32bit process Injection Scan"
    ClientHeight    =   3825
@@ -282,14 +282,13 @@ Sub FindStealthInjections(pid As Long, pName As String)
             
             'If cMem.size < &H10000 Then 'some level of DoS protection against huge allocations (Dridex)...
                 dumpLen = IIf(cMem.size > &H4000, &H4000, cMem.size) 'do a spot check of entrophy, no need for full (non critical metric) now we dont exclude big ones..
-                s = pi.ReadMemory2(cMem.pid, cMem.Base, cMem.size) 'doesnt add that much time
+                s = pi.ReadMemory2(cMem.pid, cMem.Base, dumpLen) 'doesnt add that much time
                 entropy = CalculateEntropy(s)
                 
                 If VBA.Left$(s, 2) = "MZ" Then
                     isInject = True
                 Else
-                    dumpLen = IIf(cMem.size > &H1500, &H1500, cMem.size)
-                    s = VBA.Left$(s, dumpLen)
+                    If cMem.size > &H1500 Then s = VBA.Left$(s, &H1500)
                     isInject = IIf(InStr(1, s, "DOS mode", vbTextCompare) > 0, True, False)
                 End If
                 

@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
 Begin VB.Form frmAnalyzeProcess 
    Caption         =   "Analyze Process"
    ClientHeight    =   4380
@@ -71,6 +71,8 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+'AnalyzeProcess now x64 safe in dump routines..oops 9.8.16
+
 Dim proc As New CProcessInfo
 Dim qdf As New CDumpFix
 Dim cst As New CStrings
@@ -203,15 +205,18 @@ Public Function AnalyzeProcess(pid As Long) ', Optional memoryMapOnly As Boolean
                 DoEvents 'we already took a memory dump of the main exe..
             Else
                 If known.isFileKnown(cmod.path) <> exact_match Then
-                    AddLine "Unknown or Changed Dll Dumping: " & pHex(cmod.Base) & ": " & cmod.path
-                    push rep, "Dumping: " & pHex(cmod.Base) & vbTab & cmod.path
+                    AddLine "Unknown or Changed Dll Dumping: " & cmod.HexBase & ": " & cmod.path
+                    push rep, "Dumping: " & cmod.HexBase & vbTab & cmod.path
                     dllName = fso.FileNameFromPath(cmod.path)
-                    If Len(dllName) = 0 Then dllName = pHex(cmod.Base) & ".dll"
+                    If Len(dllName) = 0 Then dllName = cmod.HexBase & ".dll"
                     dllName = pFolder & "\" & dllName & ".dmp"
-                    proc.DumpProcessMemory pid, cmod.Base, cmod.size, dllName
-                    qdf.QuickDumpFix dllName
-                    AddLine "Doing String dump.."
-                    doStringDump fso.GetBaseName(dllName), dllName
+                    If proc.DumpMemory(pid, cmod.HexBase, cmod.HexSize, dllName) Then  'now x64 safe 9.8.16 oops
+                        qdf.QuickDumpFix dllName
+                        AddLine "Doing String dump.."
+                        doStringDump fso.GetBaseName(dllName), dllName
+                    Else
+                        AddLine "FAILED to dump " & dllName & " x64: " & cmod.isx64 & " pid: " & pid & " Base: " & cmod.HexBase & " size: " & cmod.HexSize
+                    End If
                 End If
             End If
         Else
@@ -227,7 +232,7 @@ Public Function AnalyzeProcess(pid As Long) ', Optional memoryMapOnly As Boolean
     
     AddLine "Dumping main process memory"
     Set cmod = col(1)
-    Call proc.DumpProcessMemory(pid, cmod.Base, cmod.size, pth)
+    Call proc.DumpMemory(pid, cmod.HexBase, cmod.HexSize, pth)
     pb.value = pb.value + 1
 
     If Not fso.FileExists(pth) Then

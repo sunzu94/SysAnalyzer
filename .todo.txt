@@ -1,3 +1,4 @@
+pause/resume countdown
 if stable, port timeout mechanism to proclib (peek pipe required)
 if new dlls dropped scan processes for them as part of report.
 
