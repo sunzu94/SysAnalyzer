@@ -45,6 +45,23 @@ Begin VB.Form frmWizard
       TabIndex        =   7
       Top             =   1260
       Width           =   6465
+      Begin VB.TextBox txtIgnoreIP 
+         Height          =   330
+         Left            =   4725
+         TabIndex        =   44
+         Top             =   1890
+         Width           =   1140
+      End
+      Begin VB.CheckBox chkIgnoreIP 
+         BackColor       =   &H005A5963&
+         Caption         =   "Ignore IP"
+         ForeColor       =   &H00E0E0E0&
+         Height          =   315
+         Left            =   3645
+         TabIndex        =   43
+         Top             =   1890
+         Width           =   975
+      End
       Begin VB.TextBox txtMonitorDlls 
          Height          =   285
          Left            =   1575
@@ -55,10 +72,10 @@ Begin VB.Form frmWizard
       End
       Begin VB.TextBox txtPassword 
          Height          =   285
-         Left            =   4770
+         Left            =   4725
          TabIndex        =   38
          Top             =   2340
-         Width           =   1095
+         Width           =   1140
       End
       Begin VB.ComboBox cboUsers 
          Height          =   315
@@ -82,7 +99,7 @@ Begin VB.Form frmWizard
          Caption         =   "filter for host only traffic"
          ForeColor       =   &H00E0E0E0&
          Height          =   255
-         Left            =   3330
+         Left            =   3645
          TabIndex        =   32
          Top             =   1620
          Width           =   2025
@@ -97,7 +114,7 @@ Begin VB.Form frmWizard
       End
       Begin VB.ComboBox cboIp 
          Height          =   315
-         Left            =   1140
+         Left            =   1080
          TabIndex        =   16
          Top             =   1890
          Width           =   2475
@@ -245,7 +262,7 @@ Begin VB.Form frmWizard
          EndProperty
          ForeColor       =   &H00E0E0E0&
          Height          =   255
-         Left            =   5355
+         Left            =   5670
          MousePointer    =   14  'Arrow and Question
          TabIndex        =   33
          Top             =   1620
@@ -267,9 +284,9 @@ Begin VB.Form frmWizard
          Caption         =   "IP"
          ForeColor       =   &H00E0E0E0&
          Height          =   255
-         Left            =   840
+         Left            =   765
          TabIndex        =   15
-         Top             =   1950
+         Top             =   1935
          Width           =   285
       End
       Begin VB.Label lblLaunchTcpDump 
@@ -681,6 +698,8 @@ Private Type config
     delay As Long
     tcpdump As Byte
     interface As Byte
+    chkIgnoreIP As Byte
+    txtIgnoreIP As String
 End Type
  
 Private cfg As config
@@ -690,6 +709,10 @@ Private procWatch As String
 Private going_toMainUI As Boolean
 Private Declare Function GetCurrentProcessId Lib "kernel32.dll" () As Long
 Private doRnd As Boolean
+
+Private Sub chkIgnoreIP_Click()
+'    txtIgnoreIP.Visible = CBool(chkIgnoreIP.value)
+End Sub
 
 Private Sub cmdAbout_Click()
     frmAbout.Show 1, Me
@@ -963,6 +986,8 @@ Sub LoadConfig()
         txtDelay = .delay
         txtInterface = .interface
         chkPacketCapture.value = .tcpdump
+        chkIgnoreIP.value = .chkIgnoreIP
+        txtIgnoreIP = .txtIgnoreIP
     End With
     
 End Sub
@@ -980,6 +1005,8 @@ Sub SaveConfig()
         .delay = CLng(txtDelay)
         .interface = CByte(txtInterface)
         .tcpdump = chkPacketCapture.value
+        .chkIgnoreIP = chkIgnoreIP.value
+        .txtIgnoreIP = txtIgnoreIP.Text
     End With
     
     Dim f As Long
@@ -1263,8 +1290,10 @@ Private Function launchtcpdump()
     Dim i As Long
     Dim c As Collection
     Dim ip As String
+    Dim ignore As String
     
     i = 1
+    txtIgnoreIP = Trim(txtIgnoreIP)
     
     If Not IsNumeric(txtInterface.Text) Or txtInterface.Text = 0 Then
         MsgBox "Interface for tcpdump must be numeric and non-zero", vbInformation
@@ -1290,7 +1319,19 @@ Private Function launchtcpdump()
             args = Replace(args, "[IP]", cboIp.Text)
         End If
         
-        args = "cmd /k """ & """" & tcpdump & """" & args & """"  'takes to long to initilize showing up in snapshots?
+        If chkIgnoreIP.value = 1 And Len(txtIgnoreIP) > 0 Then
+            ignore = " and not (ip src [IP] or ip dst [IP])"
+            ignore = Replace(ignore, "[IP]", txtIgnoreIP)
+        End If
+        
+        'example:
+        'cmd /k ""C:\iDefense\SysAnalyzer\win_dump.exe"
+        '  -w "C:\Users\John\Desktop\analysis\capture_2.pcap"
+        '  -q -U -l -s 0 -i 2
+        ' ip src 10.0.0.14 or ip dst 10.0.0.14 '
+        ' and not (ip src 10.0.0.13 or ip dst 10.0.0.13)"
+
+        args = "cmd /k """ & """" & tcpdump & """" & args & ignore & """"  'takes to long to initilize showing up in snapshots?
         'args = tcpdump & """" & args & """"
         
         Clipboard.Clear

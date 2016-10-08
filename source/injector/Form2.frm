@@ -937,7 +937,7 @@ Private Sub Form_Load()
                 If Not IsUserAnAdministrator() Then
                     Me.Caption = "This tool really requires admin privledges"
                 Else
-                    RunElevated App.path & "\api_logger.exe", essSW_SHOW
+                    RunElevated App.path & "\api_logger.exe", essSW_SHOW, , Command
                     End
                 End If
             'End If
