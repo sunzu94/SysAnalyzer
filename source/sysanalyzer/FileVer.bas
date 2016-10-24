@@ -1096,6 +1096,8 @@ Sub LaunchGoatBrowser()
     Dim h1 As Long
     Dim h2 As Long
     
+    If isBrowserRunning() Then Exit Sub
+    
     f = App.path
     If isIde Then
         f = fso.GetParentFolder(f)

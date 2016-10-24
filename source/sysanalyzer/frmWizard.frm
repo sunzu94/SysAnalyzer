@@ -45,6 +45,16 @@ Begin VB.Form frmWizard
       TabIndex        =   7
       Top             =   1260
       Width           =   6465
+      Begin VB.CheckBox chkStartBrowser 
+         BackColor       =   &H005A5963&
+         Caption         =   "Start Browser as Inject Target"
+         ForeColor       =   &H00E0E0E0&
+         Height          =   315
+         Left            =   3690
+         TabIndex        =   45
+         Top             =   270
+         Width           =   2595
+      End
       Begin VB.TextBox txtIgnoreIP 
          Height          =   330
          Left            =   4725
@@ -700,6 +710,7 @@ Private Type config
     interface As Byte
     chkIgnoreIP As Byte
     txtIgnoreIP As String
+    startBrowser As Byte
 End Type
  
 Private cfg As config
@@ -959,6 +970,7 @@ Sub SetConfigDefaults()
             .interface = 1
             .tcpdump = 1
             txtDelay = .delay
+            .startBrowser = 1
     End With
 End Sub
 
@@ -988,6 +1000,7 @@ Sub LoadConfig()
         chkPacketCapture.value = .tcpdump
         chkIgnoreIP.value = .chkIgnoreIP
         txtIgnoreIP = .txtIgnoreIP
+        chkStartBrowser.value = .startBrowser
     End With
     
 End Sub
@@ -1007,6 +1020,7 @@ Sub SaveConfig()
         .tcpdump = chkPacketCapture.value
         .chkIgnoreIP = chkIgnoreIP.value
         .txtIgnoreIP = txtIgnoreIP.Text
+        .startBrowser = chkStartBrowser.value
     End With
     
     Dim f As Long
@@ -1074,14 +1088,6 @@ Private Sub Form_Load()
     
     mnuPopup.Visible = False
     chkFilterHostOnly.value = CInt(GetMySetting("chkFilterHostOnly.Value", 1))
-    
-    If Not isBrowserRunning() Then
-        'we do this on form startup and no on launch to take advantage of the natural user delay of them
-        'configuring the for the run. This gives the browser time to full initilize and get its bs out of the way
-        'otherwise we would catch some of this startup traffic in our logging as extra noise..it is important to have
-        'a goat browser window open to catch injectors which are common enough to warrent it.
-        LaunchGoatBrowser
-    End If
     
     START_TIME = Now
     DebugLogFile = UserDeskTopFolder & "\debug.log"
@@ -1152,6 +1158,14 @@ Private Sub Form_Load()
         txtBinary = App.path & "\..\..\_safe_test1.exe"
     End If
 
+    If chkStartBrowser.value = 1 Then
+        'we do this on form startup and no on launch to take advantage of the natural user delay of them
+        'configuring the for the run. This gives the browser time to full initilize and get its bs out of the way
+        'otherwise we would catch some of this startup traffic in our logging as extra noise..it is important to have
+        'a goat browser window open to catch injectors which are common enough to warrent it.
+        LaunchGoatBrowser
+    End If
+    
     LoadUsers
     Me.Icon = frmMain.Icon
     
@@ -1178,6 +1192,8 @@ Sub cmdStart_Click()
         
     On Error Resume Next
     Dim errmsg As String
+    
+    If chkStartBrowser.value = 1 Then LaunchGoatBrowser 'only one browser instance started..ok to call twice
     
     If chkRunAsUser.value = 1 Then
         If chkApiLog.value = 1 Then
