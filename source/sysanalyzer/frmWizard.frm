@@ -1089,12 +1089,6 @@ Private Sub Form_Load()
     
     mnuPopup.Visible = False
     chkFilterHostOnly.value = CInt(GetMySetting("chkFilterHostOnly.Value", 1))
-    
-    START_TIME = Now
-    DebugLogFile = UserDeskTopFolder & "\debug.log"
-    If fso.FileExists(DebugLogFile) Then fso.DeleteFile DebugLogFile
-    fso.writeFile DebugLogFile, "-------[ SysAnalyzer v" & App.major & "." & App.minor & "." & App.Revision & "  " & START_TIME & " ]-------" & vbCrLf
-    
     mnuScanForUnknownMods.Enabled = False
     
     If Not known.Ready Then
@@ -1155,7 +1149,7 @@ Private Sub Form_Load()
     LoadUsers
     Me.Icon = frmMain.Icon
     
-    cmdLine.LoadArgs '"'%ap%\_safe_test1.exe' /delay 30 /args 'test 123' /autostart" 'sample cmdline for testing...
+    cmdLine.LoadArgs '"'%ap%\_safe_test1.exe' /delay fart /args 'test 123' /autostart /outDir c:\output" 'sample cmdline for testing...
     
     If cmdLine.args.count > 0 Then
        
@@ -1165,11 +1159,18 @@ Private Sub Form_Load()
             txtBinary = sample
             lblBStats.Caption = GetCompileDateOrType(txtBinary, , , True)
             If cmdLine.ArgExists("autostart") Then isAutoRunMode = True
-            If cmdLine.ArgExists("delay") Then txtDelay = CLng(cmdLine.GetArg("delay"))
+            If cmdLine.ArgExists("delay") Then txtDelay = cmdLine.GetArg("delay")
             If cmdLine.ArgExists("args") Then txtArgs = cmdLine.GetArg("args")
-            If isAutoRunMode Then cmdStart_Click
+            If cmdLine.ArgExists("outDir") Then outputDir = cmdLine.GetArg("outdir")
+            validateDelay
         Else
-            MsgBox "Command line usage: <file to analyze> [/autostart] [/delay <int>] [/args 'arg string']", vbInformation
+            MsgBox Replace( _
+                         "Command line usage: '<path to analysis file>' \n\nOptional Arguments:\n    /autostart " & _
+                         "\n    /delay <int> \n    /args '<arg string>' \n    /outDir '<output folder>'" & _
+                         "\n\nNote: All other options can be preconfigured in the GUI which saves " & _
+                         "settings across runs.\n          Just open open UI, configure, then close wizard form to save settings" & _
+                         "\n          Either double or single quotes are fine" _
+                   , "\n", vbCrLf), vbInformation
             End
         End If
         
@@ -1179,9 +1180,24 @@ Private Sub Form_Load()
         txtBinary = App.path & "\..\..\_safe_test1.exe"
     End If
     
+    START_TIME = Now
+    DebugLogFile = UserDeskTopFolder & "\debug.log"
+    If fso.FileExists(DebugLogFile) Then fso.DeleteFile DebugLogFile
+    fso.writeFile DebugLogFile, "-------[ SysAnalyzer v" & App.major & "." & App.minor & "." & App.Revision & "  " & START_TIME & " ]-------" & vbCrLf
+
+    If isAutoRunMode Then cmdStart_Click
+    
 Exit Sub
 hell:
         MsgBox Err.Description
+End Sub
+
+Sub validateDelay()
+    On Error Resume Next
+    If Len(txtDelay) = 0 Then txtDelay = 30
+    If Not IsNumeric(txtDelay) Then txtDelay = 30
+    txtDelay = CLng(txtDelay)
+    If Err.Number <> 0 Then txtDelay = 30
 End Sub
 
 Private Sub LoadUsers()
@@ -1203,6 +1219,7 @@ Sub cmdStart_Click()
     On Error Resume Next
     Dim errmsg As String
     
+    validateDelay
     If chkStartBrowser.value = 1 Then LaunchGoatBrowser 'only one browser instance started..ok to call twice
     
     If chkRunAsUser.value = 1 Then
@@ -1248,12 +1265,7 @@ Sub cmdStart_Click()
         chkApiLog.value = 0
         Exit Sub
     End If
-    
-    If Len(txtDelay) = 0 Or Not IsNumeric(txtDelay) Then
-        MsgBox "Invalid Delay Set defaulting to 30 seconds", vbInformation
-        txtDelay = 30
-    End If
-        
+            
     If chkNetworkAnalyzer.value = 1 Then
         If Not isNetworkAnalyzerRunning() Then
             If fso.FileExists(networkAnalyzer) Then

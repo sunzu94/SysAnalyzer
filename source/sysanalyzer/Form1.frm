@@ -1166,7 +1166,7 @@ Private Sub mnuLaunchStrings_Click()
         Exit Sub
     End If
     
-    f = cp.fullpath
+    f = cp.fullPath
     LaunchStrings f, True
 End Sub
 
@@ -1228,7 +1228,7 @@ Private Sub mnuSaveToAnalysisFolder_Click()
         Exit Sub
     End If
     
-    f = cp.fullpath
+    f = cp.fullPath
     If Not fso.FileExists(f) Then
         MsgBox "File not found: " & f
     Else
@@ -1257,7 +1257,7 @@ Private Sub mnuScanProcForStealthInjects_Click()
         Exit Sub
     End If
 
-    frmInjectionScan.FindStealthInjections activePID, cp.fullpath
+    frmInjectionScan.FindStealthInjections activePID, cp.fullPath
 End Sub
 
 Private Sub mnuScanProcsForDll_Click()
@@ -1374,7 +1374,9 @@ Private Sub tmrCountDown_Timer()
             diff.CProc.TerminateProces networkAnalyzerPID
             diff.CProc.TerminateProces procWatchPID
             diff.CProc.TerminateProces goatBrowserPID
-            diff.CProc.TerminateProces tcpDumpPID
+            diff.CProc.TerminateProces tcpDumpPID 'so this is actually the cmd.exe process since we used /k
+            diff.CProc.KillProcess "win_dump.exe"
+            'note we do not kill off the malware process or any new ones created we just clean up after ourselves..
             Form_Unload 0
         Else
             frmReportViewer.OpenAnalysisFolder UserDeskTopFolder
@@ -1383,22 +1385,12 @@ Private Sub tmrCountDown_Timer()
     Else
         lblDisplay = (seconds - tickCount) & " Seconds remaining"
     End If
-    
-    
+        
 End Sub
-
- 
 
 Function GetClipboard() As String
     GetClipboard = Clipboard.GetText
 End Function
-
-
-
-
-
-
-
 
 Private Sub mnuListUnknown_Click()
     
@@ -1781,7 +1773,7 @@ Private Sub mnuDumpProcess_Click()
     End If
 
     Dim pth As String
-    pth = fso.FileNameFromPath(cp.fullpath) & ".dmp"
+    pth = fso.FileNameFromPath(cp.fullPath) & ".dmp"
     pth = frmDlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save Dump as", , Me, pth)
     If Len(pth) = 0 Then Exit Sub
 
@@ -1799,7 +1791,7 @@ Private Sub mnuCopyProcessPath_Click()
         Exit Sub
     End If
 
-    pth = cp.fullpath
+    pth = cp.fullPath
     Clipboard.Clear
     Clipboard.SetText pth
 End Sub
@@ -1828,7 +1820,7 @@ Private Sub mnuProcessFileProps_Click()
         Exit Sub
     End If
 
-    path = cp.fullpath
+    path = cp.fullPath
     fsize = "FileSize: " & FileLen(path) & vbCrLf & String(70, "-") & vbCrLf
 
     path = QuickInfo(path)

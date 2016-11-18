@@ -59,6 +59,7 @@ Global tcpDumpPID As Long
 Global networkAnalyzerPID As Long
 Global DirWatchActive As Boolean
 Global isAutoRunMode As Boolean
+Global outputDir As String
 
 Global Const LANG_US = &H409
 Private Const HWND_NOTOPMOST = -2
@@ -853,6 +854,20 @@ Public Function UserDeskTopFolder() As String
     Dim p As String
     Const MAX_PATH As Long = 260
       
+      'this allows the user to override the normal output dir via command line (only)
+      If Len(outputDir) > 0 Then
+            If Not fso.FolderExists(outputDir) Then
+                If Not fso.buildPath(outputDir) Then
+                    outputDir = Empty
+                End If
+            End If
+      End If
+                    
+      If Len(outputDir) > 0 Then
+          UserDeskTopFolder = outputDir
+          Exit Function
+      End If
+                
       p = String(MAX_PATH, Chr(0))
       If SHGetSpecialFolderLocation(0, 0, idl) <> 0 Then Exit Function
       SHGetPathFromIDList idl, p
