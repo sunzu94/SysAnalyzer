@@ -1177,7 +1177,7 @@ Private Sub mnuProcCmdLine_Click()
         activePID = 0
         Exit Sub
     End If
-    MsgBox cp.CmdLine, vbInformation
+    MsgBox cp.cmdLine, vbInformation
 End Sub
 
 Private Sub mnuRegMonCopyLine_Click()
@@ -1369,9 +1369,17 @@ Private Sub tmrCountDown_Timer()
         End If
         
         fso.writeFile UserDeskTopFolder & "\Report_" & Format(Now(), "h.nam/pm") & ".log", Join(ret, vbCrLf)
-        frmReportViewer.OpenAnalysisFolder UserDeskTopFolder
         
-        
+        If isAutoRunMode Then
+            diff.CProc.TerminateProces networkAnalyzerPID
+            diff.CProc.TerminateProces procWatchPID
+            diff.CProc.TerminateProces goatBrowserPID
+            diff.CProc.TerminateProces tcpDumpPID
+            Form_Unload 0
+        Else
+            frmReportViewer.OpenAnalysisFolder UserDeskTopFolder
+        End If
+
     Else
         lblDisplay = (seconds - tickCount) & " Seconds remaining"
     End If

@@ -54,7 +54,11 @@ Global cLogData As New Collection
 Global DebugLogFile As String
 Global START_TIME As Date
 Global procWatchPID As Long
+Global goatBrowserPID As Long
+Global tcpDumpPID As Long
+Global networkAnalyzerPID As Long
 Global DirWatchActive As Boolean
+Global isAutoRunMode As Boolean
 
 Global Const LANG_US = &H409
 Private Const HWND_NOTOPMOST = -2
@@ -73,7 +77,7 @@ Private Declare Function GetFileVersionInfo Lib "Version.dll" Alias "GetFileVers
 Private Declare Function GetFileVersionInfoSize Lib "Version.dll" Alias "GetFileVersionInfoSizeA" (ByVal lptstrFilename As String, lpdwHandle As Long) As Long
 Private Declare Function VerQueryValue Lib "Version.dll" Alias "VerQueryValueA" (pBlock As Any, ByVal lpSubBlock As String, lplpBuffer As Any, puLen As Long) As Long
 Private Declare Function GetSystemDirectory Lib "kernel32" Alias "GetSystemDirectoryA" (ByVal path As String, ByVal cbBytes As Long) As Long
-Private Declare Sub MoveMemory Lib "kernel32" Alias "RtlMoveMemory" (Dest As Any, ByVal Source As Long, ByVal Length As Long)
+Private Declare Sub MoveMemory Lib "kernel32" Alias "RtlMoveMemory" (Dest As Any, ByVal Source As Long, ByVal length As Long)
 Private Declare Function lstrcpy Lib "kernel32" Alias "lstrcpyA" (ByVal lpString1 As String, ByVal lpString2 As Long) As Long
 Public Declare Function FindWindow Lib "user32" Alias "FindWindowA" (ByVal lpClassname As String, ByVal lpWindowName As String) As Long
 Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (hpvDest As Any, hpvSource As Any, ByVal cbCopy As Long)
@@ -83,7 +87,8 @@ Public Declare Function GetForegroundWindow Lib "user32" () As Long
 Public Declare Function GetClassName Lib "user32" Alias "GetClassNameA" (ByVal hwnd As Long, ByVal lpClassname As String, ByVal nMaxCount As Long) As Long
 Public Declare Function ShowWindow Lib "user32" (ByVal hwnd As Long, ByVal nCmdShow As Long) As Long
 Private Declare Function EnumChildWindows Lib "user32" (ByVal hWndParent As Long, ByVal lpEnumFunc As Long, ByVal lParam As Long) As Long
-                    
+Private Declare Function GetWindowThreadProcessId Lib "user32.dll" (ByVal hwnd As Long, ByRef hINst As Long) As Long
+
                      
 Public Type FILEPROPERTIE
     CompanyName As String
@@ -1009,7 +1014,11 @@ Function isNetworkAnalyzerRunning() As Boolean
     
     hServer = FindWindow(vbIDEClassName, vbWindowCaption)
     If hServer = 0 Then hServer = FindWindow(vbEXEClassName, vbWindowCaption)
-    If hServer <> 0 Then isNetworkAnalyzerRunning = True
+    
+    If hServer <> 0 Then
+        isNetworkAnalyzerRunning = True
+        GetWindowThreadProcessId hServer, networkAnalyzerPID
+    End If
     
 End Function
 
@@ -1112,7 +1121,8 @@ Sub LaunchGoatBrowser()
     
     h1 = GetForegroundWindow()
     pid = Shell("""" & b & """ """ & f & """", vbMinimizedFocus)
-
+    goatBrowserPID = pid
+    
     Set childWindows = New Collection
     x = EnumChildWindows(0, AddressOf EnumChildProc, ByVal 0&)
     

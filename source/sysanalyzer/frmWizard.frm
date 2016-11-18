@@ -359,7 +359,7 @@ Begin VB.Form frmWizard
    Begin VB.CommandButton cmdStart 
       Caption         =   "Start"
       Height          =   375
-      Left            =   9090
+      Left            =   9135
       TabIndex        =   3
       Top             =   5355
       Width           =   1155
@@ -1070,6 +1070,7 @@ Private Sub Form_Load()
     On Error GoTo hell
     
     Dim c As Collection
+    Dim sample As String
     Dim ip
     
     If IsVistaPlus() Then
@@ -1126,7 +1127,6 @@ Private Sub Form_Load()
     cboIp.Visible = IIf(cboIp.ListCount > 1, True, False) 'try to keep config as easy as we can for them...
     lblip.Visible = cboIp.Visible
 
-
     'watchDirs.Add CStr(Environ("TEMP"))
     'watchDirs.Add CStr(Environ("WINDIR"))
     'watchDirs.Add CStr("C:\Program Files")
@@ -1144,20 +1144,6 @@ Private Sub Form_Load()
         chkNetworkAnalyzer.Enabled = False
     End If
     
-    If Len(Command) > 0 Then
-        Dim cmd As String
-        cmd = Trim(Replace(Command, """", Empty))
-        If fso.FileExists(cmd) Then
-            txtBinary = cmd
-            lblBStats.Caption = GetCompileDateOrType(txtBinary, , , True)
-            'TODO auto run exe with settings if /launch
-        End If
-    End If
-    
-    If Len(txtBinary) = 0 And isIde() Then
-        txtBinary = App.path & "\..\..\_safe_test1.exe"
-    End If
-
     If chkStartBrowser.value = 1 Then
         'we do this on form startup and no on launch to take advantage of the natural user delay of them
         'configuring the for the run. This gives the browser time to full initilize and get its bs out of the way
@@ -1168,6 +1154,30 @@ Private Sub Form_Load()
     
     LoadUsers
     Me.Icon = frmMain.Icon
+    
+    cmdLine.LoadArgs '"'%ap%\_safe_test1.exe' /delay 30 /args 'test 123' /autostart" 'sample cmdline for testing...
+    
+    If cmdLine.args.count > 0 Then
+       
+        sample = Replace(cmdLine.args(1), "%ap%", App.path & IIf(isIde(), "\..\..\", ""))
+        
+        If fso.FileExists(sample) Then
+            txtBinary = sample
+            lblBStats.Caption = GetCompileDateOrType(txtBinary, , , True)
+            If cmdLine.ArgExists("autostart") Then isAutoRunMode = True
+            If cmdLine.ArgExists("delay") Then txtDelay = CLng(cmdLine.GetArg("delay"))
+            If cmdLine.ArgExists("args") Then txtArgs = cmdLine.GetArg("args")
+            If isAutoRunMode Then cmdStart_Click
+        Else
+            MsgBox "Command line usage: <file to analyze> [/autostart] [/delay <int>] [/args 'arg string']", vbInformation
+            End
+        End If
+        
+    End If
+    
+    If Len(txtBinary) = 0 And isIde() Then
+        txtBinary = App.path & "\..\..\_safe_test1.exe"
+    End If
     
 Exit Sub
 hell:
@@ -1247,7 +1257,7 @@ Sub cmdStart_Click()
     If chkNetworkAnalyzer.value = 1 Then
         If Not isNetworkAnalyzerRunning() Then
             If fso.FileExists(networkAnalyzer) Then
-                Shell """" & networkAnalyzer & """ /start /log """ & UserDeskTopFolder & """", vbMinimizedNoFocus
+                networkAnalyzerPID = Shell("""" & networkAnalyzer & """ /start /log """ & UserDeskTopFolder & """", vbMinimizedNoFocus)
             Else
                 MsgBox "Missing: " & networkAnalyzer
             End If
@@ -1352,7 +1362,7 @@ Private Function launchtcpdump()
         
         Clipboard.Clear
         Clipboard.SetText args
-        Shell args, vbMinimizedNoFocus
+        tcpDumpPID = Shell(args, vbMinimizedNoFocus)
         Sleep 500
         
     Else
