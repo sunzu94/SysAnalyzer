@@ -10,6 +10,16 @@ Begin VB.Form frmWizard
    ScaleHeight     =   5835
    ScaleWidth      =   10530
    StartUpPosition =   2  'CenterScreen
+   Begin VB.CheckBox chkUseKnown 
+      BackColor       =   &H005A5963&
+      Caption         =   "Use Known file DB :"
+      ForeColor       =   &H00E0E0E0&
+      Height          =   315
+      Left            =   5550
+      TabIndex        =   45
+      Top             =   960
+      Width           =   1725
+   End
    Begin VB.CommandButton cmdBrowse 
       Caption         =   "..."
       BeginProperty Font 
@@ -24,7 +34,7 @@ Begin VB.Form frmWizard
       Height          =   255
       Index           =   1
       Left            =   8460
-      TabIndex        =   24
+      TabIndex        =   23
       Top             =   600
       Width           =   375
    End
@@ -51,14 +61,14 @@ Begin VB.Form frmWizard
          ForeColor       =   &H00E0E0E0&
          Height          =   315
          Left            =   3690
-         TabIndex        =   45
+         TabIndex        =   44
          Top             =   270
          Width           =   2595
       End
       Begin VB.TextBox txtIgnoreIP 
          Height          =   330
          Left            =   4725
-         TabIndex        =   44
+         TabIndex        =   43
          Top             =   1890
          Width           =   1140
       End
@@ -68,14 +78,14 @@ Begin VB.Form frmWizard
          ForeColor       =   &H00E0E0E0&
          Height          =   315
          Left            =   3645
-         TabIndex        =   43
+         TabIndex        =   42
          Top             =   1890
          Width           =   975
       End
       Begin VB.TextBox txtMonitorDlls 
          Height          =   285
          Left            =   1575
-         TabIndex        =   41
+         TabIndex        =   40
          Text            =   "explore,svchost,firefox,rundll"
          Top             =   3285
          Width           =   4290
@@ -83,14 +93,14 @@ Begin VB.Form frmWizard
       Begin VB.TextBox txtPassword 
          Height          =   285
          Left            =   4725
-         TabIndex        =   38
+         TabIndex        =   37
          Top             =   2340
          Width           =   1140
       End
       Begin VB.ComboBox cboUsers 
          Height          =   315
          Left            =   2340
-         TabIndex        =   35
+         TabIndex        =   34
          Top             =   2295
          Width           =   1845
       End
@@ -100,7 +110,7 @@ Begin VB.Form frmWizard
          ForeColor       =   &H00E0E0E0&
          Height          =   315
          Left            =   495
-         TabIndex        =   34
+         TabIndex        =   33
          Top             =   2340
          Width           =   1875
       End
@@ -110,7 +120,7 @@ Begin VB.Form frmWizard
          ForeColor       =   &H00E0E0E0&
          Height          =   255
          Left            =   3645
-         TabIndex        =   32
+         TabIndex        =   31
          Top             =   1620
          Width           =   2025
       End
@@ -193,7 +203,7 @@ Begin VB.Form frmWizard
          Height          =   255
          Left            =   6030
          MousePointer    =   14  'Arrow and Question
-         TabIndex        =   42
+         TabIndex        =   41
          Top             =   3285
          Width           =   225
       End
@@ -204,7 +214,7 @@ Begin VB.Form frmWizard
          Height          =   195
          Index           =   1
          Left            =   450
-         TabIndex        =   40
+         TabIndex        =   39
          Top             =   3375
          Width           =   1140
       End
@@ -224,7 +234,7 @@ Begin VB.Form frmWizard
          Height          =   255
          Left            =   6030
          MousePointer    =   14  'Arrow and Question
-         TabIndex        =   39
+         TabIndex        =   38
          Top             =   2385
          Width           =   225
       End
@@ -234,7 +244,7 @@ Begin VB.Form frmWizard
          ForeColor       =   &H00E0E0E0&
          Height          =   195
          Left            =   4320
-         TabIndex        =   37
+         TabIndex        =   36
          Top             =   2385
          Width           =   480
       End
@@ -254,7 +264,7 @@ Begin VB.Form frmWizard
          Height          =   255
          Left            =   2250
          MousePointer    =   14  'Arrow and Question
-         TabIndex        =   36
+         TabIndex        =   35
          Top             =   585
          Width           =   225
       End
@@ -274,7 +284,7 @@ Begin VB.Form frmWizard
          Height          =   255
          Left            =   5670
          MousePointer    =   14  'Arrow and Question
-         TabIndex        =   33
+         TabIndex        =   32
          Top             =   1620
          Width           =   225
       End
@@ -395,7 +405,7 @@ Begin VB.Form frmWizard
       ForeColor       =   &H00E0E0E0&
       Height          =   255
       Left            =   9000
-      TabIndex        =   31
+      TabIndex        =   30
       Top             =   585
       Width           =   1455
    End
@@ -404,7 +414,7 @@ Begin VB.Form frmWizard
       ForeColor       =   &H00E0E0E0&
       Height          =   255
       Left            =   9000
-      TabIndex        =   30
+      TabIndex        =   29
       Top             =   225
       Width           =   1455
    End
@@ -423,7 +433,7 @@ Begin VB.Form frmWizard
       Height          =   345
       Left            =   180
       MousePointer    =   14  'Arrow and Question
-      TabIndex        =   29
+      TabIndex        =   28
       Top             =   5400
       Width           =   5625
    End
@@ -442,7 +452,7 @@ Begin VB.Form frmWizard
       Height          =   255
       Left            =   1290
       MousePointer    =   14  'Arrow and Question
-      TabIndex        =   28
+      TabIndex        =   27
       Top             =   3990
       Width           =   2295
    End
@@ -462,7 +472,7 @@ Begin VB.Form frmWizard
       Height          =   255
       Left            =   135
       MousePointer    =   14  'Arrow and Question
-      TabIndex        =   27
+      TabIndex        =   26
       Top             =   3990
       Width           =   675
    End
@@ -482,7 +492,7 @@ Begin VB.Form frmWizard
       Height          =   255
       Left            =   135
       MousePointer    =   14  'Arrow and Question
-      TabIndex        =   26
+      TabIndex        =   25
       Top             =   3300
       Width           =   675
    End
@@ -502,7 +512,7 @@ Begin VB.Form frmWizard
       Height          =   255
       Left            =   120
       MousePointer    =   14  'Arrow and Question
-      TabIndex        =   25
+      TabIndex        =   24
       Top             =   3660
       Width           =   675
    End
@@ -511,8 +521,8 @@ Begin VB.Form frmWizard
       Caption         =   "lblKnown"
       ForeColor       =   &H00E0E0E0&
       Height          =   195
-      Left            =   6360
-      TabIndex        =   23
+      Left            =   7350
+      TabIndex        =   22
       Top             =   1020
       Width           =   975
    End
@@ -530,22 +540,11 @@ Begin VB.Form frmWizard
       EndProperty
       ForeColor       =   &H00E0E0E0&
       Height          =   255
-      Left            =   7680
+      Left            =   8460
       MousePointer    =   14  'Arrow and Question
-      TabIndex        =   22
-      Top             =   1020
-      Width           =   675
-   End
-   Begin VB.Label Label1 
-      BackColor       =   &H005A5963&
-      Caption         =   "Known file DB :"
-      ForeColor       =   &H00E0E0E0&
-      Height          =   255
-      Index           =   1
-      Left            =   5160
       TabIndex        =   21
-      Top             =   1020
-      Width           =   1155
+      Top             =   1035
+      Width           =   675
    End
    Begin VB.Label Label1 
       BackColor       =   &H005A5963&
@@ -711,6 +710,7 @@ Private Type config
     chkIgnoreIP As Byte
     txtIgnoreIP As String
     startBrowser As Byte
+    useKnown As Byte
 End Type
  
 Private cfg As config
@@ -723,6 +723,10 @@ Private doRnd As Boolean
 
 Private Sub chkIgnoreIP_Click()
 '    txtIgnoreIP.Visible = CBool(chkIgnoreIP.value)
+End Sub
+
+Private Sub chkUseKnown_Click()
+    known.Disabled = Not (chkUseKnown.value = 1)
 End Sub
 
 Private Sub cmdAbout_Click()
@@ -1001,6 +1005,7 @@ Sub LoadConfig()
         chkIgnoreIP.value = .chkIgnoreIP
         txtIgnoreIP = .txtIgnoreIP
         chkStartBrowser.value = .startBrowser
+        chkUseKnown.value = .useKnown
     End With
     
 End Sub
@@ -1021,6 +1026,7 @@ Sub SaveConfig()
         .chkIgnoreIP = chkIgnoreIP.value
         .txtIgnoreIP = txtIgnoreIP.Text
         .startBrowser = chkStartBrowser.value
+        .useKnown = chkUseKnown.value
     End With
     
     Dim f As Long
@@ -1072,6 +1078,8 @@ Private Sub Form_Load()
     Dim c As Collection
     Dim sample As String
     Dim ip
+    
+    'MsgBox Command
     
     If IsVistaPlus() Then
         If Not IsProcessElevated() Then
@@ -1147,7 +1155,7 @@ Private Sub Form_Load()
     End If
     
     LoadUsers
-    Me.Icon = frmMain.Icon
+    'Me.Icon = frmMain.Icon 'this would load frmMain to early...
     
     cmdLine.LoadArgs '"'%ap%\_safe_test1.exe' /delay fart /args 'test 123' /autostart /outDir c:\output" 'sample cmdline for testing...
     

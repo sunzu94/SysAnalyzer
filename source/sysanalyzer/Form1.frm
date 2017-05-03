@@ -44,8 +44,8 @@ Begin VB.Form frmMain
       TabCaption(2)   =   "Process Dlls"
       TabPicture(2)   =   "Form1.frx":5C4A
       Tab(2).ControlEnabled=   0   'False
-      Tab(2).Control(0)=   "lvProcessDllList"
-      Tab(2).Control(1)=   "lvProcessDlls"
+      Tab(2).Control(0)=   "lvProcessDlls"
+      Tab(2).Control(1)=   "lvProcessDllList"
       Tab(2).ControlCount=   2
       TabCaption(3)   =   "Loaded Drivers"
       TabPicture(3)   =   "Form1.frx":5C66
@@ -858,9 +858,13 @@ Private Sub Form_Load()
         mnuHideKnown.Checked = True
         mnuListUnknown.Enabled = True 'this gets all displayed dlls automatically, only makes sense with hideknown enabled..
     End If
+        
+    If known.Disabled Then
+        mnuKnownDBDisable.Checked = True 'does not fire click event...
+    End If
     
-    mnuKnownDBDisable.Checked = CBool(GetMySetting("mnuKnownDBDisable", "False"))
-    known.Disabled = mnuKnownDBDisable.Checked
+    'mnuKnownDBDisable.Checked = CBool(GetMySetting("mnuKnownDBDisable", "False"))
+    'known.Disabled = mnuKnownDBDisable.Checked
     
     Dim alv As ListView, i As Long
     For i = 0 To 6
@@ -1166,7 +1170,7 @@ Private Sub mnuLaunchStrings_Click()
         Exit Sub
     End If
     
-    f = cp.fullPath
+    f = cp.fullpath
     LaunchStrings f, True
 End Sub
 
@@ -1228,7 +1232,7 @@ Private Sub mnuSaveToAnalysisFolder_Click()
         Exit Sub
     End If
     
-    f = cp.fullPath
+    f = cp.fullpath
     If Not fso.FileExists(f) Then
         MsgBox "File not found: " & f
     Else
@@ -1257,7 +1261,7 @@ Private Sub mnuScanProcForStealthInjects_Click()
         Exit Sub
     End If
 
-    frmInjectionScan.FindStealthInjections activePID, cp.fullPath
+    frmInjectionScan.FindStealthInjections activePID, cp.fullpath
 End Sub
 
 Private Sub mnuScanProcsForDll_Click()
@@ -1773,7 +1777,7 @@ Private Sub mnuDumpProcess_Click()
     End If
 
     Dim pth As String
-    pth = fso.FileNameFromPath(cp.fullPath) & ".dmp"
+    pth = fso.FileNameFromPath(cp.fullpath) & ".dmp"
     pth = frmDlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save Dump as", , Me, pth)
     If Len(pth) = 0 Then Exit Sub
 
@@ -1791,7 +1795,7 @@ Private Sub mnuCopyProcessPath_Click()
         Exit Sub
     End If
 
-    pth = cp.fullPath
+    pth = cp.fullpath
     Clipboard.Clear
     Clipboard.SetText pth
 End Sub
@@ -1820,7 +1824,7 @@ Private Sub mnuProcessFileProps_Click()
         Exit Sub
     End If
 
-    path = cp.fullPath
+    path = cp.fullpath
     fsize = "FileSize: " & FileLen(path) & vbCrLf & String(70, "-") & vbCrLf
 
     path = QuickInfo(path)
