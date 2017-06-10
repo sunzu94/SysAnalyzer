@@ -87,7 +87,7 @@ Function ShowList(list, Optional modal As Boolean = False, Optional saveName As 
     
     If topMost Then
         SetWindowPos Me.hwnd, HWND_TOPMOST, Me.Left / 15, _
-            Me.top / 15, Me.Width / 15, _
+            Me.Top / 15, Me.Width / 15, _
             Me.Height / 15, 0
     End If
     
@@ -117,7 +117,7 @@ Private Sub Command2_Click()
     
     If Len(filesaveName) = 0 Then
         Base = fso.GetBaseName(frmMain.samplePath)
-        Base = UserDeskTopFolder & "\" & Base & "_" & Format(Now(), "h.nam/pm") & ".log"
+        Base = UserDeskTopFolder & "\" & Base & "_" & Format(Now(), "h.nam/pm") & LOGFILEEXT
     Else
         Base = UserDeskTopFolder & "\" & filesaveName
     End If
@@ -142,7 +142,7 @@ End Sub
 
 Private Sub Form_Resize()
     On Error Resume Next
-    Text1.Height = Me.Height - Text1.top - 550
+    Text1.Height = Me.Height - Text1.Top - 550
     Text1.Width = Me.Width - Text1.Left - 200
 End Sub
 

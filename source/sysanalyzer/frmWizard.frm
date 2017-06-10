@@ -838,6 +838,7 @@ Private Sub lblSkip_Click()
     ProcessesToRWEScan = txtRWEScan
     csvProcessesToDllMonitor = txtMonitorDlls
     
+    If known.Loaded Then known.Disabled = Not (chkUseKnown.value = 1)
     frmMain.Initalize
     frmMain.SSTab1.TabVisible(6) = True 'dir watch, they can turn on anytime..
     If chkWatchDirs.value Then frmMain.cmdDirWatch_Click
@@ -1108,6 +1109,7 @@ Private Sub Form_Load()
         lblKnown.Caption = "Empty"
     End If
     
+    LOGFILEEXT = ".log"
     cfgFile = App.path & "\cfg.dat"
     networkAnalyzer = App.path & IIf(isIde(), "\..\..", Empty) & "\sniff_hit.exe"
     procWatch = App.path & IIf(isIde(), "\..\..", Empty) & "\proc_watch.exe"
@@ -1138,6 +1140,7 @@ Private Sub Form_Load()
     Set cLogData = New Collection
     
     LoadConfig
+    If known.Loaded And cfg.useKnown Then chkUseKnown.value = 1
 
     If cboIp.ListCount = 0 Then  'no active interfaces ?
         chkPacketCapture.Enabled = False
@@ -1170,11 +1173,12 @@ Private Sub Form_Load()
             If cmdLine.ArgExists("delay") Then txtDelay = cmdLine.GetArg("delay")
             If cmdLine.ArgExists("args") Then txtArgs = cmdLine.GetArg("args")
             If cmdLine.ArgExists("outDir") Then outputDir = cmdLine.GetArg("outdir")
+            If cmdLine.ArgExists("ext") Then LOGFILEEXT = cmdLine.GetArg("ext")
             validateDelay
         Else
             MsgBox Replace( _
                          "Command line usage: '<path to analysis file>' \n\nOptional Arguments:\n    /autostart " & _
-                         "\n    /delay <int> \n    /args '<arg string>' \n    /outDir '<output folder>'" & _
+                         "\n    /delay <int> \n    /args '<arg string>' \n    /outDir '<output folder>' /n    /ext extension" & _
                          "\n\nNote: All other options can be preconfigured in the GUI which saves " & _
                          "settings across runs.\n          Just open open UI, configure, then close wizard form to save settings" & _
                          "\n          Either double or single quotes are fine" _
@@ -1189,7 +1193,7 @@ Private Sub Form_Load()
     End If
     
     START_TIME = Now
-    DebugLogFile = UserDeskTopFolder & "\debug.log"
+    DebugLogFile = UserDeskTopFolder & "\debug" & LOGFILEEXT
     If fso.FileExists(DebugLogFile) Then fso.DeleteFile DebugLogFile
     fso.writeFile DebugLogFile, "-------[ SysAnalyzer v" & App.major & "." & App.minor & "." & App.Revision & "  " & START_TIME & " ]-------" & vbCrLf
 
@@ -1228,6 +1232,7 @@ Sub cmdStart_Click()
     Dim errmsg As String
     
     validateDelay
+    If known.Loaded Then known.Disabled = Not (chkUseKnown.value = 1)
     If chkStartBrowser.value = 1 Then LaunchGoatBrowser 'only one browser instance started..ok to call twice
     
     If chkRunAsUser.value = 1 Then
@@ -1288,7 +1293,7 @@ Sub cmdStart_Click()
     
     'must be last external process to launch as it monitors others...
     If fso.FileExists(procWatch) Then
-        procWatchPID = Shell(procWatch & " /log=" & UserDeskTopFolder & "\ProcWatch.log", vbMinimizedNoFocus)
+        procWatchPID = Shell(procWatch & " /log=" & UserDeskTopFolder & "\ProcWatch" & LOGFILEEXT, vbMinimizedNoFocus)
     End If
 
     'LaunchGoatBrowser
@@ -1348,11 +1353,11 @@ Private Function launchtcpdump()
     
     If fso.FileExists(tcpdump) Then
                 
-        f = UserDeskTopFolder() & "\capture.pcap"
+        f = UserDeskTopFolder() & "\capture." & LOGFILEEXT
         If fso.FileExists(f) Then
             While fso.FileExists(f)
                 i = i + 1
-                f = UserDeskTopFolder() & "\capture_" & i & ".pcap"
+                f = UserDeskTopFolder() & "\capture_" & i & "." & LOGFILEEXT
                 If i = 100 Then Exit Function 'wtf?
             Wend
         End If

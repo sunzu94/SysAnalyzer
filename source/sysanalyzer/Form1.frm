@@ -44,8 +44,8 @@ Begin VB.Form frmMain
       TabCaption(2)   =   "Process Dlls"
       TabPicture(2)   =   "Form1.frx":5C4A
       Tab(2).ControlEnabled=   0   'False
-      Tab(2).Control(0)=   "lvProcessDlls"
-      Tab(2).Control(1)=   "lvProcessDllList"
+      Tab(2).Control(0)=   "lvProcessDllList"
+      Tab(2).Control(1)=   "lvProcessDlls"
       Tab(2).ControlCount=   2
       TabCaption(3)   =   "Loaded Drivers"
       TabPicture(3)   =   "Form1.frx":5C66
@@ -804,7 +804,7 @@ End Sub
 Private Sub mnuSaveApiLog_Click()
     On Error Resume Next
     Dim apilog As String
-    apilog = UserDeskTopFolder & "\api.log"
+    apilog = UserDeskTopFolder & "\api" & LOGFILEEXT
     If fso.FileExists(apilog) Then fso.DeleteFile apilog
     fso.writeFile apilog, GetAllElements(lvAPILog)
 End Sub
@@ -812,7 +812,7 @@ End Sub
 Private Sub mnuSaveDirWatch_Click()
     On Error Resume Next
     Dim dirlog As String
-    dirlog = UserDeskTopFolder & "\dirWatch.log"
+    dirlog = UserDeskTopFolder & "\dirWatch" & LOGFILEEXT
     If fso.FileExists(dirlog) Then fso.DeleteFile dirlog
     fso.writeFile dirlog, GetAllElements(lvDirWatch)
 End Sub
@@ -1296,7 +1296,7 @@ Private Sub mnuSearch_Click()
     Next
     
     If match > 0 Then
-        frmReport.ShowList ret, , "search_result.log", False
+        frmReport.ShowList ret, , "search_result" & LOGFILEEXT, False
     End If
     
 End Sub
@@ -1372,7 +1372,7 @@ Private Sub tmrCountDown_Timer()
             ret(0) = ret(0) & "No new processes detected look at the dlls or it may have exited" & vbCrLf & vbCrLf
         End If
         
-        fso.writeFile UserDeskTopFolder & "\Report_" & Format(Now(), "h.nam/pm") & ".log", Join(ret, vbCrLf)
+        fso.writeFile UserDeskTopFolder & "\Report_" & Format(Now(), "h.nam/pm") & LOGFILEEXT, Join(ret, vbCrLf)
         
         If isAutoRunMode Then
             diff.CProc.TerminateProces networkAnalyzerPID

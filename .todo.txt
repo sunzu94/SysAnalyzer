@@ -1,4 +1,5 @@
 
+api_log: OpenProcess Hook triggers CreateSnapShot and process enum hooks from within dll itself..ignore these
 inject dll right click menu
 way to scan rwe multi procs but not all
 right click on process and show mutexes

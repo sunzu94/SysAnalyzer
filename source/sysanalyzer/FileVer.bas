@@ -60,6 +60,7 @@ Global networkAnalyzerPID As Long
 Global DirWatchActive As Boolean
 Global isAutoRunMode As Boolean
 Global outputDir As String
+Global LOGFILEEXT As String
 
 Global Const LANG_US = &H409
 Private Const HWND_NOTOPMOST = -2
@@ -299,16 +300,16 @@ Function pHex(x)
 End Function
 
 'todo: try zlib compressibility as another entropy check...
-Function CalculateEntropy(ByVal s As String) As Integer 'very basic...
-    On Error Resume Next
-    If Len(s) = 0 Then Exit Function
-    Dim a As Long, b As Long
-    a = Len(s)
-    's = Replace(s, Chr(0), Empty)
-    s = SimpleCompress(s)
-    b = Len(s)
-    CalculateEntropy = ((b / a) * 100)
-End Function
+'Function CalculateEntropy(ByVal s As String) As Integer 'very basic...
+'    On Error Resume Next
+'    If Len(s) = 0 Then Exit Function
+'    Dim a As Long, b As Long
+'    a = Len(s)
+'    's = Replace(s, Chr(0), Empty)
+'    s = SimpleCompress(s)
+'    b = Len(s)
+'    CalculateEntropy = ((b / a) * 100)
+'End Function
 
 
 Function LaunchStrings(data As String, Optional isPath As Boolean = False)
@@ -823,13 +824,13 @@ End Function
 
 
 Function ReadFile(fileName)
-Dim f, Temp
+Dim f, temp
   f = FreeFile
-  Temp = ""
+  temp = ""
    Open fileName For Binary As #f        ' Open file.(can be text or image)
-     Temp = Input(FileLen(fileName), #f) ' Get entire Files data
+     temp = Input(FileLen(fileName), #f) ' Get entire Files data
    Close #f
-   ReadFile = Temp
+   ReadFile = temp
 End Function
 
 
@@ -1176,6 +1177,115 @@ Private Function EnumChildProc(ByVal hwnd As Long, ByVal lParam As Long) As Long
     If Not IsObject(childWindows) Then Set childWindows = New Collection
     childWindows.Add c 'module level collection object...
     EnumChildProc = 1  'continue enum
+End Function
+
+'ported from Detect It Easy
+Function fileEntropy(pth As String, Optional offset As Long = 0, Optional leng As Long = -1) As Single
+    
+    Dim sz As Long
+    Dim fEntropy As Single
+    Dim bytes(255) As Single
+    Dim temp As Single
+    Dim nSize As Long
+    Dim nTemp As Long
+    Const BUFFER_SIZE = &H1000
+    Dim buf() As Byte
+    Dim f As Long
+    
+    On Error Resume Next
+    
+    f = FreeFile
+    Open pth For Binary Access Read As f
+    If Err.Number <> 0 Then GoTo ret0
+    
+    sz = LOF(f) - 1
+    
+    If leng = 0 Then GoTo ret0
+    
+    If leng = -1 Then
+        leng = sz - offset
+        If leng = 0 Then GoTo ret0
+    End If
+    
+    If offset >= sz Then GoTo ret0
+    If offset + leng > sz Then GoTo ret0
+    
+    Seek f, offset
+    nSize = leng
+    fEntropy = 1.44269504088896
+    ReDim buf(BUFFER_SIZE)
+    
+    'read the file in chunks and count how many times each byte value occurs
+    While (nSize > 0)
+        nTemp = IIf(nSize < BUFFER_SIZE, nSize, BUFFER_SIZE)
+        If nTemp <> BUFFER_SIZE Then ReDim buf(nTemp) 'last chunk, partial buffer
+        Get f, , buf()
+        For i = 0 To UBound(buf)
+            bytes(buf(i)) = bytes(buf(i)) + 1
+        Next
+        nSize = nSize - nTemp
+    Wend
+    
+    For i = 0 To UBound(bytes)
+        temp = bytes(i) / CSng(leng)
+        If temp <> 0 Then
+            fEntropy = fEntropy + (-Log(temp) / Log(2)) * bytes(i)
+        End If
+    Next
+    
+    Close f
+    fileEntropy = fEntropy / CSng(leng)
+    
+Exit Function
+ret0:
+    Close f
+End Function
+
+Function strEntropy(str As String) As Single
+    Dim b() As Byte
+    If Len(str) = 0 Then Exit Function
+    b() = StrConv(str, vbFromUnicode, LANG_US)
+    strEntropy = memEntropy(b)
+End Function
+
+Function memEntropy(buf() As Byte, Optional offset As Long = 0, Optional leng As Long = -1) As Single
+    
+    Dim sz As Long
+    Dim fEntropy As Single
+    Dim bytes(255) As Single
+    Dim temp As Single
+    Const BUFFER_SIZE = &H1000
+    
+    sz = UBound(buf)
+    
+    If leng = 0 Then GoTo ret0
+    If leng = -1 Then
+        leng = sz - offset
+        If leng = 0 Then GoTo ret0
+    End If
+    
+    If offset >= sz Then GoTo ret0
+    If offset + leng > sz Then GoTo ret0
+    
+    fEntropy = 1.44269504088896
+    
+    While (offset < sz)
+        'count each byte value occurance
+        bytes(buf(offset)) = bytes(buf(offset)) + 1
+        offset = offset + 1
+    Wend
+    
+    For i = 0 To UBound(bytes)
+        temp = bytes(i) / CSng(leng)
+        If temp <> 0 Then
+            fEntropy = fEntropy + (-Log(temp) / Log(2)) * bytes(i)
+        End If
+    Next
+    
+    memEntropy = fEntropy / CSng(leng)
+    
+Exit Function
+ret0:
 End Function
 
 
