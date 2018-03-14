@@ -71,4 +71,4 @@ AssocFileExtension=&Associate %1 with the %2 file extension
 AssocingFileExtension=Associating %1 with the %2 file extension...
 
 [Run]
-Filename: {app}\WinPcap_4_1_2.exe; StatusMsg: Installing WinPcap Packet Sniffer Driver; Flags: postinstall runascurrentuser
+Filename: {app}\WinPcap_4_1_2.exe; StatusMsg: Installing WinPcap Packet Sniffer Driver; Flags: postinstall runascurrentuser unchecked

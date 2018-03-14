@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Begin VB.Form Form2 
    Caption         =   "ApiLogger"
    ClientHeight    =   8055
@@ -1246,6 +1246,14 @@ Private Sub RecieveTextMessage(lParam As Long)
             End If
         End If
         
+'        Dim heapFreeDat As String
+'        If InStr(temp, "HeapFree(heap=") > 0 Then
+'            If chkCaptureVirtualFree.value = 1 Then
+'                heapFreeDat = captureHeapFree(pid, temp)
+'                If Len(heapFreeDat) > 0 Then temp = temp & " - " & heapFreeDat
+'            End If
+'        End If
+        
         If InStr(temp, "CloseHandle") > 0 Then Exit Sub 'to much spam
 
         If lastMsg = temp Then
@@ -1372,6 +1380,33 @@ Function captureVirtFree(pid, temp) As Boolean
     captureVirtFree = cpi.DumpProcessMemory(CLng("&h" & pid), CLng("&h" & addr), CLng("&h" & sz), f)
     
 End Function
+
+
+'client proc seemes to have died with this..not using right now..know size better..but so slow..
+'Function captureHeapFree(pid, temp) As String
+'    Dim f As String
+'    Dim d As String, dat As String
+'    Dim a, b, addr, i, sz
+'
+'    On Error Resume Next
+'
+'    'LogAPI("%x     HeapFree(heap=%x, flags=%x, addr=%x)",CalledFrom(),hHeap, dwFlags, lpMem);
+'    a = InStr(temp, "addr=") + 5
+'    b = InStr(a, temp, ")")
+'    addr = Mid(temp, a, b - a)
+'    If Len(addr) = 0 Then Exit Function
+'
+'    'so we dont know the size lets try to read 100 bytes..
+'    dat = cpi.ReadMemory2(CLng("&h" & pid), CLng("&h" & addr), 100)
+'    If Len(dat) = 0 Then dat = cpi.ReadMemory2(CLng("&h" & pid), CLng("&h" & addr), 50)
+'    If Len(dat) = 0 Then dat = cpi.ReadMemory2(CLng("&h" & pid), CLng("&h" & addr), 25)
+'    If Len(dat) = 0 Then dat = cpi.ReadMemory2(CLng("&h" & pid), CLng("&h" & addr), 10)
+'    If Len(dat) = 0 Then Exit Function
+'
+'    'simple heuristics to find unicode or ascii string?
+'    captureHeapFree = Replace(dat, Chr(0), ".") & "..."
+'
+'End Function
 
 
 

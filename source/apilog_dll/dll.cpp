@@ -342,6 +342,28 @@ BOOL __stdcall My_HttpSendRequestW(
 }
 */
 
+void __stdcall My_GetStartupInfoW(void* p){
+
+	LogAPI("%x     GetStartupInfoW()",CalledFrom());
+	Real_GetStartupInfoW(p);
+
+}
+
+BOOL __stdcall My_HeapFree(HANDLE hHeap,DWORD  dwFlags,LPVOID lpMem){
+
+	//since we dont know the actual size..we will let the vbclient probe mem and extract data easier than here...
+	LogAPI("%x     HeapFree(heap=%x, flags=%x, addr=%x)",CalledFrom(),hHeap, dwFlags, lpMem);
+
+	BOOL  ret = 0;
+	try{
+		ret = Real_HeapFree(hHeap, dwFlags, lpMem);
+	}
+	catch(...){}
+
+	return ret;
+
+}
+
 BOOL __stdcall My_VirtualFree( LPVOID a1, SIZE_T a2, DWORD  a3 )
 {
 	/*BOOL WINAPI VirtualFree(
@@ -1925,6 +1947,7 @@ void InstallHooks(void)
 	//it will fuckup the hook engine because the int3 will be copied to the thunk. 
 
 	curDLL = hooked_dlls[0];//kernel32.dll = 0
+	ADDHOOK(GetStartupInfoW);
 	ADDHOOK(CreateFileA);
 	ADDHOOK(_lcreat);
 	ADDHOOK(_lopen);
@@ -1939,6 +1962,7 @@ void InstallHooks(void)
 	ADDHOOK(WriteProcessMemory);
 	ADDHOOK(VirtualAllocEx);
 	ADDHOOK(VirtualFree);
+	//ADDHOOK(HeapFree); //to noisy and slow...
 	ADDHOOK(IsDebuggerPresent);
 	//ADDHOOK(GetVersionExA);
 	//ADDHOOK(GlobalAlloc)

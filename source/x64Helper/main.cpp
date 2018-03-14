@@ -512,7 +512,7 @@ void usage(int invalidOptionCount=0){
 	printf("\t/dumpprocess decimal_pid out_file_path\n");
 	printf("\t/startwdll exe_path dll_path\n");
 	printf("\t/memmap decimal_pid out_file_path\n");
-	printf("\t/loadlib file_path\n");
+	printf("\t/loadlib file_path [exportToCall [cdecl] ]\n");
 	if( IsDebuggerPresent() ) getch();
 	exit(0);
 }
@@ -521,6 +521,9 @@ int main(int argc, char* argv[] )
 {
 	uint pid=0;
 	char* dll= 0;
+	char* exp = 0;
+	typedef void (__stdcall *myStdExport)(void);
+	typedef void (_cdecl *myCExport)(void);
 	int rv = 0;
 	bool handled = false;
 
@@ -546,13 +549,38 @@ int main(int argc, char* argv[] )
 	
 	// /loadlib path
 	if(strstr(argv[1],"/loadlib") > 0 ){ 
-		if(argc!=3) usage(2);
+		if(argc < 3) usage(2);
 		dll = strdup(argv[2]);
 		if(!FileExists(dll)){
 			printf("Error: dll file not found: %s\n\n",dll);
 			usage();
 		}
-		printf("loadlib=%x\npress any key to continue...", LoadLibrary(dll));
+		if(argc > 3){
+			exp = argv[3];
+			printf("Will try to call export %s\n", exp);
+		}
+		bool isStdCall = true;
+		if(argc == 5) isStdCall = false;
+
+		HMODULE h =  LoadLibrary(dll);
+		if(exp==NULL){
+			printf("loadlib=%x\npress any key to continue...",h);
+		}else{ 
+			printf("loadlib = %x ",h);
+			__int64 lpProc = (__int64)GetProcAddress(h, exp);
+			printf("%s = %llx CallConv:", exp, lpProc);
+			if(isStdCall) printf("stdcall\n"); else printf("cdecl\n");
+			if(lpProc != 0){
+				if(isStdCall){
+					myStdExport me = (myStdExport)lpProc;
+					me();
+				}else{
+					myCExport mec = (myCExport)lpProc;
+					mec();
+				}
+			}
+		}
+				
 		getch();
 		handled = true;
 	}
