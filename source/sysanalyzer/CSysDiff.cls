@@ -367,7 +367,7 @@ Sub ShowDiffReport()
     
     Set ChangedProcesses = New Collection
     Set ChangedPorts = New Collection
-'    Set ChangedServices = New Collection
+    Set ChangedServices = New Collection
     Set ChangedDrivers = New Collection
     Set ChangedMutexes = New Collection
     Set ChangedTasks = New Collection
@@ -382,6 +382,7 @@ Sub ShowDiffReport()
     Dim li As ListItem
     Dim spec As String
     Dim drv As Variant
+    Dim svc As New CService
     
     Dim r() As String
     
@@ -447,6 +448,9 @@ Sub ShowDiffReport()
         End If
     Next
 
+    svc.Name = "Todo"
+    ChangedServices.Add svc
+    
     ShowSnapShot ChangedProcesses, ChangedPorts, ChangedServices, ChangedMutexes, _
                  ChangedTasks, ChangedPipes, ChangedDrivers, CReg.GetDifferences
 
@@ -462,7 +466,7 @@ Private Sub ShowSnapShot(procs As Collection, ports As Collection, servcs As Col
    
     Dim proc As CProcess
     Dim Port As CProcessPort
-    'Dim servc As CService
+    Dim servc As CService
     Dim n As CModule
     Dim d
     Dim tmp As String
@@ -478,7 +482,7 @@ Private Sub ShowSnapShot(procs As Collection, ports As Collection, servcs As Col
     
     frmMain.Display = "Showing ShapShot"
     frmMain.pb.value = 0
-    frmMain.pb.max = 8
+    frmMain.pb.max = 9
     
     frmMain.lvProcesses.Clear
     frmMain.lvPorts.ListItems.Clear
@@ -488,6 +492,8 @@ Private Sub ShowSnapShot(procs As Collection, ports As Collection, servcs As Col
     frmMain.lvRegKeys.Clear
     frmMain.lvMutex.Clear
     frmMain.lvTasks.ListItems.Clear
+    frmMain.lvServices.ListItems.Clear
+    
     
     frmMain.Display = "Loading processes.."
     For Each proc In procs
@@ -538,7 +544,20 @@ next_port:
     End If
     
     frmMain.pb.value = frmMain.pb.value + 1
+    frmMain.Display = "Loading services..." 'PID,Name,DisplayName,Path
+    For Each servc In servcs
+        mm = not_found
+        Set li = frmMain.lvServices.AddItem(pad(servc.ProcessId))
+        li.subItems(1) = servc.Name
+        li.subItems(2) = servc.DisplayName
+        li.subItems(3) = servc.PathName
+        li.subItems(4) = servc.Description
+        If shutDown Then Exit Sub
+    Next
+    
+    
    
+    frmMain.pb.value = frmMain.pb.value + 1
     frmMain.Display = "Loading process dll list.."
     Dim dd As CProcessDllDiff
     For Each dd In ProcessDlls

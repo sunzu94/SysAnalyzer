@@ -24,13 +24,14 @@ Begin VB.Form frmMain
       _ExtentY        =   9446
       _Version        =   393216
       Style           =   1
-      Tabs            =   10
+      Tabs            =   11
+      Tab             =   10
       TabsPerRow      =   11
       TabHeight       =   520
       ShowFocusRect   =   0   'False
       TabCaption(0)   =   "Running Processes"
       TabPicture(0)   =   "Form1.frx":5C12
-      Tab(0).ControlEnabled=   -1  'True
+      Tab(0).ControlEnabled=   0   'False
       Tab(0).Control(0)=   "fraProc"
       Tab(0).Control(0).Enabled=   0   'False
       Tab(0).Control(1)=   "lvProcesses"
@@ -40,48 +41,64 @@ Begin VB.Form frmMain
       TabPicture(1)   =   "Form1.frx":5C2E
       Tab(1).ControlEnabled=   0   'False
       Tab(1).Control(0)=   "lvPorts"
+      Tab(1).Control(0).Enabled=   0   'False
       Tab(1).ControlCount=   1
       TabCaption(2)   =   "Process Dlls"
       TabPicture(2)   =   "Form1.frx":5C4A
       Tab(2).ControlEnabled=   0   'False
-      Tab(2).Control(0)=   "lvProcessDlls"
-      Tab(2).Control(1)=   "lvProcessDllList"
+      Tab(2).Control(0)=   "lvProcessDllList"
+      Tab(2).Control(0).Enabled=   0   'False
+      Tab(2).Control(1)=   "lvProcessDlls"
+      Tab(2).Control(1).Enabled=   0   'False
       Tab(2).ControlCount=   2
       TabCaption(3)   =   "Loaded Drivers"
       TabPicture(3)   =   "Form1.frx":5C66
       Tab(3).ControlEnabled=   0   'False
       Tab(3).Control(0)=   "lvDrivers"
+      Tab(3).Control(0).Enabled=   0   'False
       Tab(3).ControlCount=   1
       TabCaption(4)   =   "Reg Monitor"
       TabPicture(4)   =   "Form1.frx":5C82
       Tab(4).ControlEnabled=   0   'False
       Tab(4).Control(0)=   "lvRegKeys"
+      Tab(4).Control(0).Enabled=   0   'False
       Tab(4).ControlCount=   1
       TabCaption(5)   =   "Api Log"
       TabPicture(5)   =   "Form1.frx":5C9E
       Tab(5).ControlEnabled=   0   'False
       Tab(5).Control(0)=   "lvAPILog"
+      Tab(5).Control(0).Enabled=   0   'False
       Tab(5).ControlCount=   1
       TabCaption(6)   =   "Directory Watch Data"
       TabPicture(6)   =   "Form1.frx":5CBA
       Tab(6).ControlEnabled=   0   'False
       Tab(6).Control(0)=   "lvDirWatch"
+      Tab(6).Control(0).Enabled=   0   'False
       Tab(6).ControlCount=   1
       TabCaption(7)   =   "Mutexes"
       TabPicture(7)   =   "Form1.frx":5CD6
       Tab(7).ControlEnabled=   0   'False
       Tab(7).Control(0)=   "lvMutex"
+      Tab(7).Control(0).Enabled=   0   'False
       Tab(7).ControlCount=   1
       TabCaption(8)   =   "Tasks"
       TabPicture(8)   =   "Form1.frx":5CF2
       Tab(8).ControlEnabled=   0   'False
       Tab(8).Control(0)=   "lvTasks"
+      Tab(8).Control(0).Enabled=   0   'False
       Tab(8).ControlCount=   1
       TabCaption(9)   =   "Pipes"
       TabPicture(9)   =   "Form1.frx":5D0E
       Tab(9).ControlEnabled=   0   'False
       Tab(9).Control(0)=   "lvPipes"
+      Tab(9).Control(0).Enabled=   0   'False
       Tab(9).ControlCount=   1
+      TabCaption(10)  =   "Services"
+      TabPicture(10)  =   "Form1.frx":5D2A
+      Tab(10).ControlEnabled=   -1  'True
+      Tab(10).Control(0)=   "lvServices"
+      Tab(10).Control(0).Enabled=   0   'False
+      Tab(10).ControlCount=   1
       Begin sysAnalyzer_2.ucFilterList lvPipes 
          Height          =   4875
          Left            =   -74910
@@ -155,7 +172,7 @@ Begin VB.Form frmMain
       End
       Begin sysAnalyzer_2.ucFilterList lvProcesses 
          Height          =   4470
-         Left            =   45
+         Left            =   -74955
          TabIndex        =   10
          Top             =   420
          Width           =   10140
@@ -183,7 +200,7 @@ Begin VB.Form frmMain
       Begin VB.Frame fraProc 
          BorderStyle     =   0  'None
          Height          =   390
-         Left            =   135
+         Left            =   -74865
          TabIndex        =   4
          Top             =   4785
          Width           =   10035
@@ -320,6 +337,15 @@ Begin VB.Form frmMain
             Text            =   "Executable"
             Object.Width           =   2540
          EndProperty
+      End
+      Begin sysAnalyzer_2.ucFilterList lvServices 
+         Height          =   4875
+         Left            =   120
+         TabIndex        =   16
+         Top             =   360
+         Width           =   11310
+         _ExtentX        =   19950
+         _ExtentY        =   8599
       End
    End
    Begin VB.OLE OLE1 
@@ -843,6 +869,7 @@ Private Sub Form_Load()
     lvPorts.SetColumnHeaders "Port,PID,Type,Path*,Service", "735,750,690,4665"
     lvRegKeys.SetColumnHeaders "Path,Value*", "4530"
     lvPipes.SetColumnHeaders "Name*"
+    lvServices.SetColumnHeaders "PID,Name,DisplayName,Path*,Description", "750,1000,2000,4000"
     
     LvSizeLastColumn lvProcessDllList
     

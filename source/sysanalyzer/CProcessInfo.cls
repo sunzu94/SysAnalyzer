@@ -246,7 +246,7 @@ Private Const WTS_CURRENT_SERVER_HANDLE = 0&
 Private Declare Function WTSQuerySessionInformation _
     Lib "wtsapi32" Alias "WTSQuerySessionInformationW" ( _
     ByVal hServer As Long, _
-    ByVal sessionID As Long, _
+    ByVal SessionId As Long, _
     ByVal WTSInfoClass As Long, _
     ByRef address As Long, _
     ByRef pBytesReturned As Long _
@@ -276,7 +276,7 @@ Private Declare Function GetLogicalDriveStringsA Lib "kernel32" ( _
 
 
 Private Type WTS_PROCESS_INFO
-   sessionID As Long
+   SessionId As Long
    ProcessId As Long
    pProcessName As Long
    pUserSid As Long
@@ -398,7 +398,7 @@ Function GetRunningProcesses() As Collection 'of CProcess classes
     Dim p As Long
     Dim udtProcessInfo As WTS_PROCESS_INFO
     Dim itmAdd As ListItem
-
+    Dim cim As CIMProcess
     
     retVal = WTSEnumerateProcesses(WTS_CURRENT_SERVER_HANDLE, 0&, 1, lpBuffer, count)
    
@@ -408,7 +408,7 @@ Function GetRunningProcesses() As Collection 'of CProcess classes
                 CopyMemory udtProcessInfo, ByVal p, LenB(udtProcessInfo)
                 Set proc = New CProcess
                 With proc
-                    .sessionID = udtProcessInfo.sessionID
+                    .SessionId = udtProcessInfo.SessionId
                     .pid = udtProcessInfo.ProcessId
                     .path = GetStringFromLP(udtProcessInfo.pProcessName)
                     .fullpath = GetProcessPath(.pid)
@@ -416,6 +416,13 @@ Function GetRunningProcesses() As Collection 'of CProcess classes
                     .cmdLine = GetProcessCmdLine(.pid, .fullpath)
                     GetUserName udtProcessInfo.pUserSid, proc
                     .is64Bit = (x64.IsProcess_x64(.pid) = r_64bit)
+                    
+                    If Len(.fullpath) = 0 Then .fullpath = .path  'not all system process have executable path set even with wmi backup check
+                        'Set cim = WmiProcByPID(.pid)
+                        '.fullpath = cim.ExecutablePath
+                        '.cmdLine = cim.CommandLine
+                    'End If
+                        
                     m_col.Add proc, "pid:" & .pid
                 End With
                          
@@ -429,6 +436,26 @@ Function GetRunningProcesses() As Collection 'of CProcess classes
    End If
    
    Set GetRunningProcesses = m_col
+    
+End Function
+
+'should we switch from api to wmi? more info available easier now...
+Function WmiProcByPID(pid As Long) As CIMProcess
+    Dim p As New CIMProcess
+    Dim objwmiservice, colItems, pp
+    
+    Set WmiProcByPID = p
+    
+    Const strComputer = "."
+    Set objwmiservice = GetObject("winmgmts:{impersonationLevel=impersonate}!\\" & strComputer & "\root\cimv2")
+    Set colItems = objwmiservice.ExecQuery("SELECT * FROM Win32_Process where PROCESSID = """ & pid & """")
+    
+    If colItems.count = 0 Then Exit Function
+
+    For Each pp In colItems 'cant seem to access colitems(1) other ways?
+        p.LoadSelf pp
+        Exit For
+    Next
     
 End Function
 
@@ -1129,7 +1156,7 @@ Function GetProcess(pid As Long, cp As CProcess) As Boolean
                 If udtProcessInfo.ProcessId = pid Then
                     Set proc = New CProcess
                     With proc
-                        .sessionID = udtProcessInfo.sessionID
+                        .SessionId = udtProcessInfo.SessionId
                         .pid = udtProcessInfo.ProcessId
                         .path = GetStringFromLP(udtProcessInfo.pProcessName)
                         .fullpath = GetProcessPath(.pid)

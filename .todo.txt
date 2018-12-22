@@ -1,4 +1,5 @@
 
+filterList subtractive filter allow csv for multiple?
 
 shellext copy now has new dependancies add them here as well...
 dirwatch rtckl find (or search all tabs already covers but..)
