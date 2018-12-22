@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
 Begin VB.Form frmListProcess 
    BorderStyle     =   5  'Sizable ToolWindow
    Caption         =   "Choose Process"
@@ -17,8 +17,8 @@ Begin VB.Form frmListProcess
    Begin VB.Timer tmrModalMemMap 
       Enabled         =   0   'False
       Interval        =   200
-      Left            =   4545
-      Top             =   3285
+      Left            =   4875
+      Top             =   3300
    End
    Begin VB.TextBox txtSearch 
       Height          =   315
@@ -106,6 +106,24 @@ Begin VB.Form frmListProcess
          Object.Width           =   2540
       EndProperty
    End
+   Begin VB.Label lblX 
+      Caption         =   "X"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   9.75
+         Charset         =   0
+         Weight          =   700
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00FF0000&
+      Height          =   240
+      Left            =   4425
+      TabIndex        =   6
+      Top             =   3375
+      Width           =   165
+   End
    Begin VB.Label lblRefresh 
       Caption         =   "Refresh"
       BeginProperty Font 
@@ -191,6 +209,8 @@ Private Sub Command1_Click()
     Dim cp As CProcess
     Set cp = selli.Tag
     
+    lastProcessSearch = txtSearch
+    
     If Not cp Is Nothing Then
         Form2.txtPacked = "pid:" & cp.pid
         Unload Me
@@ -212,15 +232,18 @@ Private Function LoadProccesses(c As Collection)
         Set li.Tag = p
         cc = InStr(p.User, ":")
         If cc > 0 Then
-            li.SubItems(1) = Mid(p.User, cc + 1)
+            li.subItems(1) = Mid(p.User, cc + 1)
         Else
-            li.SubItems(1) = p.User
+            li.subItems(1) = p.User
         End If
-        li.SubItems(1) = IIf(p.is64Bit, "*64 ", "") & li.SubItems(1)
+        li.subItems(1) = IIf(p.is64Bit, "*64 ", "") & li.subItems(1)
         'li.SubItems(2) = p.path
-        li.SubItems(2) = p.fullpath 'can fail on win7?
+        li.subItems(2) = p.fullpath 'can fail on win7?
     Next
     
+    'txtSearch.Text = GetSetting("apilogger", "settings", "txtSearch", "")
+     txtSearch = lastProcessSearch
+     
 End Function
 
 Function SelectProcess(c As Collection) As CProcess
@@ -288,6 +311,9 @@ Private Sub Form_Load()
     Me.Caption = Me.Caption & "   -   SeDebug?: " & cpi.SeDebugEnabled
     baseCaption = Me.Caption
     
+    
+    
+    
 End Sub
 
 Private Sub Form_Resize()
@@ -303,10 +329,12 @@ Private Sub Form_Resize()
     lblRefresh.Top = Command1.Top
     txtSearch.Top = Command1.Top
     Label1.Top = Command1.Top
+    lblX.Top = Label1.Top
 End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
     On Error Resume Next
+    'SaveSetting "apilogger", "settings", "txtSearch", txtSearch.Text
     Set selli = Nothing
     Unload Me
 End Sub
@@ -314,6 +342,10 @@ End Sub
 Private Sub lblRefresh_Click()
      LoadProccesses cpi.GetRunningProcesses
      If lv2.Visible Then txtSearch_Change
+End Sub
+
+Private Sub lblX_Click()
+    txtSearch = Empty
 End Sub
 
 Private Sub lv_ColumnClick(ByVal ColumnHeader As MSComctlLib.ColumnHeader)
@@ -445,11 +477,11 @@ Private Sub txtSearch_Change()
     Dim li2 As ListItem
     
     For Each li In lv.ListItems
-        If InStr(1, li.SubItems(2), txtSearch, vbTextCompare) > 0 Then
+        If InStr(1, li.subItems(2), txtSearch, vbTextCompare) > 0 Then
             Set li2 = lv2.ListItems.Add(, , li.Text)
             Set li2.Tag = li.Tag
-            li2.SubItems(1) = li.SubItems(1)
-            li2.SubItems(2) = li.SubItems(2)
+            li2.subItems(1) = li.subItems(1)
+            li2.subItems(2) = li.subItems(2)
         End If
     Next
     

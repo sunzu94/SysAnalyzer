@@ -144,7 +144,7 @@ Private Type MEMORY_BASIC_INFORMATION
    AllocationBase As Long
    InitialProtect As Long
    RegionSize As Long
-   state As Long
+   State As Long
    Protect As Long
    Type As Long
 End Type
@@ -211,7 +211,7 @@ Private Declare Function ResumeThread Lib "kernel32" (ByVal hThread As Long) As 
 
 Private Declare Function OpenProcessToken Lib "advapi32.dll" (ByVal ProcessHandle As Long, ByVal DesiredAccess As Long, TokenHandle As Long) As Long
 Private Declare Function GetTokenInformation Lib "advapi32.dll" (ByVal TokenHandle As Long, ByVal TokenInformationClass As Integer, TokenInformation As Any, ByVal TokenInformationLength As Long, ReturnLength As Long) As Long
-Private Declare Function LookupAccountSid Lib "advapi32.dll" Alias "LookupAccountSidA" (ByVal lpSystemName As String, ByVal sID As Long, ByVal name As String, cbName As Long, ByVal ReferencedDomainName As String, cbReferencedDomainName As Long, peUse As Integer) As Long
+Private Declare Function LookupAccountSid Lib "advapi32.dll" Alias "LookupAccountSidA" (ByVal lpSystemName As String, ByVal sID As Long, ByVal Name As String, cbName As Long, ByVal ReferencedDomainName As String, cbReferencedDomainName As Long, peUse As Integer) As Long
 'Private Declare Function VirtualQueryEx Lib "kernel32" (ByVal hProcess As Long, lpAddress As Any, lpBuffer As MEMORY_BASIC_INFORMATION, ByVal dwLength As Long) As Long
 Private Declare Function VirtualQueryEx Lib "kernel32" (ByVal hProcess As Long, ByVal lpAddress As Long, lpBuffer As MEMORY_BASIC_INFORMATION, ByVal dwLength As Long) As Long
 
@@ -277,7 +277,7 @@ Private Declare Function GetLogicalDriveStringsA Lib "kernel32" ( _
 
 Private Type WTS_PROCESS_INFO
    sessionID As Long
-   ProcessID As Long
+   ProcessId As Long
    pProcessName As Long
    pUserSid As Long
 End Type
@@ -409,11 +409,11 @@ Function GetRunningProcesses() As Collection 'of CProcess classes
                 Set proc = New CProcess
                 With proc
                     .sessionID = udtProcessInfo.sessionID
-                    .pid = udtProcessInfo.ProcessID
+                    .pid = udtProcessInfo.ProcessId
                     .path = GetStringFromLP(udtProcessInfo.pProcessName)
-                    .fullPath = GetProcessPath(.pid)
+                    .fullpath = GetProcessPath(.pid)
                     .ParentPID = GetParentProcessId(.pid)
-                    .cmdLine = GetProcessCmdLine(.pid, .fullPath)
+                    .cmdLine = GetProcessCmdLine(.pid, .fullpath)
                     GetUserName udtProcessInfo.pUserSid, proc
                     .is64Bit = (x64.IsProcess_x64(.pid) = r_64bit)
                     m_col.Add proc, "pid:" & .pid
@@ -452,10 +452,10 @@ Function Legacy_GetRunningProcesses() As Collection 'of CProcess classes
              If InStr(.path, Chr(0)) > 0 Then
                 .path = Mid(.path, 1, InStr(.path, Chr(0)) - 1)
              End If
-            .fullPath = GetProcessPath(myProcess.th32ProcessID)
+            .fullpath = GetProcessPath(myProcess.th32ProcessID)
             .pid = myProcess.th32ProcessID
             .ParentPID = myProcess.th32ParentProcessID
-            .cmdLine = GetProcessCmdLine(.pid, .fullPath)
+            .cmdLine = GetProcessCmdLine(.pid, .fullpath)
             .User = GetProcessUser(.pid)
             .is64Bit = (x64.IsProcess_x64(.pid) = r_64bit)
         End With
@@ -472,10 +472,10 @@ Function Legacy_GetRunningProcesses() As Collection 'of CProcess classes
                  If InStr(.path, Chr(0)) > 0 Then
                     .path = Mid(.path, 1, InStr(.path, Chr(0)) - 1)
                  End If
-                .fullPath = GetProcessPath(myProcess.th32ProcessID)
+                .fullpath = GetProcessPath(myProcess.th32ProcessID)
                 .pid = myProcess.th32ProcessID
                 .ParentPID = myProcess.th32ParentProcessID
-                .cmdLine = GetProcessCmdLine(.pid, .fullPath)
+                .cmdLine = GetProcessCmdLine(.pid, .fullpath)
                 .User = GetProcessUser(.pid) 'OpenProcessToken Fails for Local/Network Service
                 'If Len(.User) = 0 Then Stop
                 .is64Bit = (x64.IsProcess_x64(.pid) = r_64bit)
@@ -496,7 +496,7 @@ Function Legacy_GetRunningProcesses() As Collection 'of CProcess classes
 End Function
 
 'using static PEB address will fail for XP SP 2 and above...
-Function GetProcessCmdLine(pid As Long, Optional fullPath As String) As String
+Function GetProcessCmdLine(pid As Long, Optional fullpath As String) As String
 
     'Exit Function 'fix me sometime
     
@@ -555,8 +555,8 @@ Function GetProcessCmdLine(pid As Long, Optional fullPath As String) As String
         If wszCmdLine(i) <> 0 Then cmdLine = cmdLine & Chr(wszCmdLine(i))
    Next
      
-   cmdLine = Replace(cmdLine, """" & fullPath & """", Empty, , , vbTextCompare)
-   cmdLine = Replace(cmdLine, fullPath, Empty, , , vbTextCompare)
+   cmdLine = Replace(cmdLine, """" & fullpath & """", Empty, , , vbTextCompare)
+   cmdLine = Replace(cmdLine, fullpath, Empty, , , vbTextCompare)
      
    GetProcessCmdLine = Trim(cmdLine)
    
@@ -923,23 +923,23 @@ Function TerminateProces(pid As Long) As Boolean
     CloseHandle pHandle
 End Function
 
-Function KillProcess(ByVal name As String, Optional all As Boolean = True) As Long
+Function KillProcess(ByVal Name As String, Optional all As Boolean = True) As Long
     Dim c As Collection
     Dim p As CProcess
     Dim i As Long
-    Dim fullPath As Boolean
+    Dim fullpath As Boolean
     
-    fullPath = InStr(name, "\") > 0
+    fullpath = InStr(Name, "\") > 0
     Set c = GetRunningProcesses()
     
     For Each p In c
-        If fullPath Then
-            If LCase(p.fullPath) = LCase(name) Then
+        If fullpath Then
+            If LCase(p.fullpath) = LCase(Name) Then
                 If TerminateProces(p.pid) Then i = i + 1
                 If Not all Then Exit For
             End If
         Else
-            If LCase(p.path) = LCase(name) Then
+            If LCase(p.path) = LCase(Name) Then
                 If TerminateProces(p.pid) Then i = i + 1
                 If Not all Then Exit For
             End If
@@ -1014,7 +1014,7 @@ Function GetMemoryMap(pid As Long) As Collection 'of CMem
          If Not IsProcHandleValid(hProc) Then Exit Do
          x = VirtualQueryEx(hProc, cur, meminfo, LenB(meminfo))
          
-         If meminfo.state <> MEM_FREE Then
+         If meminfo.State <> MEM_FREE Then
             Set cMem = New CMemory
             cMem.pid = pid
             cMem.size = meminfo.RegionSize
@@ -1023,7 +1023,7 @@ Function GetMemoryMap(pid As Long) As Collection 'of CMem
             cMem.InitialProtection = meminfo.InitialProtect
             cMem.MemType = meminfo.Type
             cMem.Protection = meminfo.Protect
-            cMem.state = meminfo.state
+            cMem.State = meminfo.State
                        
             If cur > 0 Then
                n = String(256, Chr(0))
@@ -1126,15 +1126,15 @@ Function GetProcess(pid As Long, cp As CProcess) As Boolean
           For i = 1 To count
                 CopyMemory udtProcessInfo, ByVal p, LenB(udtProcessInfo)
                 
-                If udtProcessInfo.ProcessID = pid Then
+                If udtProcessInfo.ProcessId = pid Then
                     Set proc = New CProcess
                     With proc
                         .sessionID = udtProcessInfo.sessionID
-                        .pid = udtProcessInfo.ProcessID
+                        .pid = udtProcessInfo.ProcessId
                         .path = GetStringFromLP(udtProcessInfo.pProcessName)
-                        .fullPath = GetProcessPath(.pid)
+                        .fullpath = GetProcessPath(.pid)
                         .ParentPID = GetParentProcessId(.pid)
-                        .cmdLine = GetProcessCmdLine(.pid, .fullPath)
+                        .cmdLine = GetProcessCmdLine(.pid, .fullpath)
                         GetUserName udtProcessInfo.pUserSid, proc
                         .is64Bit = (x64.IsProcess_x64(.pid) = r_64bit)
                     End With
@@ -1371,7 +1371,7 @@ Public Function StartProcessWithDLL(exePath As String, dllPath As String, Option
     End If
     
     Set cp = New CProcess
-    cp.fullPath = exePath
+    cp.fullpath = exePath
     cp.path = exePath
     
     If x64.WillRunAsx64Process(exePath) Then
@@ -1610,7 +1610,7 @@ Private Function ParseXPTaskEntry(x, ByRef c As Collection)
         y = Split(x, vbLf)
         If UBound(y) >= 2 Then
             Set t = New CTaskElem
-            t.name = y(0)
+            t.Name = y(0)
             t.path = y(0)
             t.exe = Replace(y(1), vbTab & "-Exe: ", Empty)
             t.args = Replace(y(2), vbTab & "-Params: ", Empty)
@@ -1645,7 +1645,7 @@ Private Function VistaEnumTasks(objTaskFolder, ByRef c As Collection)
     If colTasks.count > 0 Then
         For Each objTask In colTasks
             Set t = New CTaskElem
-            t.name = objTask.name
+            t.Name = objTask.Name
             t.path = objTask.path
             For Each objTaskAction In objTask.Definition.Actions
                 Select Case objTaskAction.Type
@@ -1928,3 +1928,73 @@ Function ReadProcessLng(hProc As Long, address As Long, outVal As Long) As Boole
     End If
  
 End Function
+
+Function EnumServices(Optional onlyRunning As Boolean = False) As Collection 'of CService
+    
+    Dim c As New Collection
+    Dim r As String
+    Dim s As CService
+    Dim objwmiservice, colItems, objItem
+     
+    Set EnumServices = c
+    If onlyRunning Then r = " WHERE  Started=""True""" 'State=""Running""" 'what about starting and stopping...
+    
+    On Error GoTo hell
+    Const strComputer = "."
+    Set objwmiservice = GetObject("winmgmts:\\" & strComputer & "\root\cimv2")
+    Set colItems = objwmiservice.ExecQuery("SELECT * FROM Win32_Service" & r)
+    
+    For Each objItem In colItems
+        Set s = New CService
+        s.LoadSelf objItem
+        c.Add s
+    Next
+    
+hell:
+    'If Err.Number <> 0 Then
+    '    Debug.Print Err.Description
+    '    Stop
+    'End If
+    
+End Function
+
+'Some service PIDs can actually return multiple services
+'outVar can either be a collection of CService objects, or a csv string
+Function GetServiceByPid(pid As Long, ByRef outVar, Optional asSimpleString As Boolean = True) As Boolean
+
+    Dim c As New Collection
+    Dim s As CService
+    Dim objwmiservice, colItems, objItem
+    
+    On Error GoTo hell
+    
+    If asSimpleString Then outVar = Empty
+    
+    Const strComputer = "."
+    Set objwmiservice = GetObject("winmgmts:\\" & strComputer & "\root\cimv2")
+    Set colItems = objwmiservice.ExecQuery("SELECT * FROM Win32_Service WHERE  ProcessID=""" & pid & """")
+    
+    If colItems.count = 0 Then Exit Function
+    
+    For Each objItem In colItems
+        If asSimpleString Then
+            outVar = outVar & objItem.Name & ", "
+        Else
+            Set s = New CService
+            s.LoadSelf objItem
+            c.Add s
+        End If
+    Next
+    
+    If asSimpleString Then
+        If Len(outVar) > 1 And Right(outVar, 2) = ", " Then outVar = Left(outVar, Len(outVar) - 2)
+    Else
+        Set outVar = c
+    End If
+    
+    GetServiceByPid = True
+    Exit Function
+hell:
+
+End Function
+

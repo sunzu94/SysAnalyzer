@@ -44,8 +44,8 @@ Begin VB.Form frmMain
       TabCaption(2)   =   "Process Dlls"
       TabPicture(2)   =   "Form1.frx":5C4A
       Tab(2).ControlEnabled=   0   'False
-      Tab(2).Control(0)=   "lvProcessDllList"
-      Tab(2).Control(1)=   "lvProcessDlls"
+      Tab(2).Control(0)=   "lvProcessDlls"
+      Tab(2).Control(1)=   "lvProcessDllList"
       Tab(2).ControlCount=   2
       TabCaption(3)   =   "Loaded Drivers"
       TabPicture(3)   =   "Form1.frx":5C66
@@ -838,9 +838,9 @@ Private Sub Form_Load()
         
     lvMutex.SetColumnHeaders "PID,Name*", "750"
     lvDrivers.SetColumnHeaders "Driver File,Company Name,Description", "4470,2205"
-    lvProcesses.SetColumnHeaders "PID,ParentPID,User,Path*", "810,1005,1665"
+    lvProcesses.SetColumnHeaders "PID,ParentPID,User,Path*,Service", "810,1005,1665,5655"
     lvProcessDlls.SetColumnHeaders "DLL Path,Company Name,File Description", "4080,2175"
-    lvPorts.SetColumnHeaders "Port,PID,Type,Path*", "735,750,690"
+    lvPorts.SetColumnHeaders "Port,PID,Type,Path*,Service", "735,750,690,4665"
     lvRegKeys.SetColumnHeaders "Path,Value*", "4530"
     lvPipes.SetColumnHeaders "Name*"
     
@@ -896,13 +896,13 @@ Private Sub Form_Resize()
         'Debug.Print
         If TypeName(o) = "ListView" Then
             Set lv = o
-            If lv.name <> "lvProcessDllList" Then lv.Width = SSTab1.Width - 200
-            If lv.name = "lvDirWatch" Then
+            If lv.Name <> "lvProcessDllList" Then lv.Width = SSTab1.Width - 200
+            If lv.Name = "lvDirWatch" Then
                 lvDirWatch.ColumnHeaders(3).Width = lvDirWatch.ColumnHeaders(3).Width * 3
             Else
                 lv.ColumnHeaders(lv.ColumnHeaders.count).Width = lv.Width - lv.ColumnHeaders(lv.ColumnHeaders.count).Left - 200
             End If
-            If lv.name = "lvPorts" Or lv.name = "lvRegKeys" Or lv.name = "lvTasks" Then
+            If lv.Name = "lvPorts" Or lv.Name = "lvRegKeys" Or lv.Name = "lvTasks" Then
                 With lv
                     .Height = SSTab1.Height - .Top - 100
                 End With
@@ -910,7 +910,7 @@ Private Sub Form_Resize()
         End If
         If TypeName(o) = "ucFilterList" Then
            o.Width = SSTab1.Width - 200
-           If o.name = "lvProcessDlls" Then
+           If o.Name = "lvProcessDlls" Then
                  o.Width = o.Width - lvProcessDllList.Width - 100
            End If
            o.Height = SSTab1.Height - o.Top - 100
@@ -1077,7 +1077,7 @@ Private Sub mnuCopySelected_Click()
                 Next
                 li.Selected = True
                 match = match + 1
-                push ret(), active_lv.name & "> " & tmp
+                push ret(), active_lv.Name & "> " & tmp
             End If
         Next
     Next
@@ -1288,7 +1288,7 @@ Private Sub mnuSearch_Click()
             If InStr(1, tmp, Search, vbTextCompare) > 0 Then
                 li.Selected = True
                 match = match + 1
-                push ret(), active_lv.name & "> " & tmp
+                push ret(), active_lv.Name & "> " & tmp
             Else
                 li.Selected = False
             End If
@@ -1738,7 +1738,7 @@ Private Function RecieveTextMessage(lParam As Long, msg As String) As Boolean
    
     Dim CopyData As COPYDATASTRUCT
     Dim Buffer(1 To 2048) As Byte
-    Dim Temp As String
+    Dim temp As String
     
     msg = Empty
     
@@ -1746,10 +1746,10 @@ Private Function RecieveTextMessage(lParam As Long, msg As String) As Boolean
     
     If CopyData.dwFlag = 3 Then
         CopyMemory Buffer(1), ByVal CopyData.lpData, CopyData.cbSize
-        Temp = StrConv(Buffer, vbUnicode)
-        Temp = Left$(Temp, InStr(1, Temp, Chr$(0)) - 1)
+        temp = StrConv(Buffer, vbUnicode)
+        temp = Left$(temp, InStr(1, temp, Chr$(0)) - 1)
         'heres where we work with the intercepted message
-        msg = Temp
+        msg = temp
         RecieveTextMessage = True
     End If
     

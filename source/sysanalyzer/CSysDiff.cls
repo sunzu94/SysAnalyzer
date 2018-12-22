@@ -44,8 +44,8 @@ Dim Ports1 As Collection
 Dim ports2 As Collection
 Dim ChangedPorts As Collection
 
-Dim Services1 As New Collection  'unused
-Dim Services2 As New Collection  'unused
+Dim Services1 As Collection  'unused
+Dim Services2 As Collection  'unused
 Dim ChangedServices As Collection
 
 Public ProcessDlls As Collection 'of cProcessDllDiff
@@ -145,7 +145,7 @@ Sub DoSnap1()
     frmMain.lvMutex.Clear
     
     frmMain.Display = "Taking SnapShot 1"
-    frmMain.pb.max = 8
+    frmMain.pb.max = 9
     frmMain.pb.value = 0
     
     Sleep 100
@@ -186,6 +186,11 @@ Sub DoSnap1()
     
     frmMain.Display = "Enumerating named pipes..."
     Set Pipes1 = CProc.EnumNamedPipes()
+    frmMain.pb.value = frmMain.pb.value + 1
+    If shutDown Then Exit Sub
+    
+    frmMain.Display = "Enumerating Services..."
+    Set Services1 = CProc.EnumServices()
     frmMain.pb.value = frmMain.pb.value + 1
     If shutDown Then Exit Sub
     
@@ -237,7 +242,7 @@ Sub DoSnap2()
     
     On Error Resume Next
     
-    frmMain.pb.max = 8
+    frmMain.pb.max = 9
     frmMain.pb.value = 0
     frmMain.Display = "Taking Snapshot 2"
     
@@ -276,6 +281,11 @@ Sub DoSnap2()
     frmMain.pb.value = frmMain.pb.value + 1
     If shutDown Then Exit Sub
     
+    frmMain.Display = "Enumerating Services..."
+    Set Services2 = CProc.EnumServices()
+    frmMain.pb.value = frmMain.pb.value + 1
+    If shutDown Then Exit Sub
+    
     frmMain.Display = "Enumerating named pipes..."
     Set Pipes2 = CProc.EnumNamedPipes()
     frmMain.pb.value = frmMain.pb.value + 1
@@ -310,6 +320,33 @@ Function FindPidForExeName(exename As String, col As Collection) As Long
     Next
 End Function
 
+Function ServicesForPID(pid As Long, c As Collection) As String
+    Dim s As CService
+    
+    If pid = 0 Then Exit Function
+    
+    For Each s In c
+        'Debug.Print s.ProcessId & " " & s.Name
+        If s.ProcessId = pid Then
+            ServicesForPID = ServicesForPID & s.Name & ", "
+        End If
+    Next
+    
+    If Len(ServicesForPID) > 1 And Right(ServicesForPID, 2) = ", " Then ServicesForPID = Left(ServicesForPID, Len(ServicesForPID) - 2)
+    
+End Function
+
+'Function ServicePathFromPID(pid As Long, c As Collection) As String
+'    Dim s As CService
+'
+'    For Each s In c
+'        If s.ProcessId = pid Then
+'            ServicePathFromPID = s.PathName
+'            Exit Function
+'        End If
+'    Next
+'
+'End Function
 
 Sub ShowDiffReport()
         
@@ -428,6 +465,7 @@ Private Sub ShowSnapShot(procs As Collection, ports As Collection, servcs As Col
     'Dim servc As CService
     Dim n As CModule
     Dim d
+    Dim tmp As String
     Dim mm As matchModes
     Dim cme As CMutexElem
     
@@ -463,8 +501,10 @@ Private Sub ShowSnapShot(procs As Collection, ports As Collection, servcs As Col
         li.Tag = proc.pid
         li.subItems(1) = pad(proc.ParentPID)
         li.subItems(2) = proc.User & IIf(proc.is64Bit, "  *64 ", Empty)
-        li.subItems(3) = proc.fullpath ' CProc.GetProcessPath(proc.pid)
-        li.ToolTipText = proc.CmdLine
+        li.subItems(3) = proc.fullpath
+        li.subItems(4) = ServicesForPID(proc.pid, servcs)
+        'If CProc.GetServiceByPid(proc.pid, tmp) Then li.subItems(4) = tmp 'seems slow all the individual queries
+        li.ToolTipText = proc.cmdLine
         If mm = exact_match Then SetLiColor li, my_green
         If mm = hash_changed Then SetLiColor li, my_orange
 next_proc:
@@ -484,6 +524,7 @@ next_proc:
         li.subItems(1) = pad(Port.pid)
         li.subItems(2) = IIf(Port.isTCP, "TCP", "UDP")
         li.subItems(3) = Port.path
+        li.subItems(4) = ServicesForPID(Port.pid, servcs)
         If mm = exact_match Then SetLiColor li, my_green
         If mm = hash_changed Then SetLiColor li, my_orange
 next_port:
@@ -589,9 +630,9 @@ next_driver:
     For Each cme In mutexes
         Set li = frmMain.lvMutex.AddItem(cme.pid)
         If DisplayMode = dm_diff Then
-            li.subItems(1) = IIf(cme.isNew, "", "- ") & cme.name
+            li.subItems(1) = IIf(cme.isNew, "", "- ") & cme.Name
         Else
-            li.subItems(1) = cme.name
+            li.subItems(1) = cme.Name
         End If
         If shutDown Then Exit Sub
     Next
@@ -601,7 +642,7 @@ next_driver:
     
     Dim cte As CTaskElem
     For Each cte In tasks
-        Set li = frmMain.lvTasks.ListItems.Add(, , cte.name)
+        Set li = frmMain.lvTasks.ListItems.Add(, , cte.Name)
         li.subItems(1) = cte.exe
         Set li.Tag = cte
         If shutDown Then Exit Sub
