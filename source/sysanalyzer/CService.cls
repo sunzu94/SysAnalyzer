@@ -25,11 +25,13 @@ Public Status As String
 Public SystemName As String
 Public ProcessId As Long
 
+Public ServiceDLL As String
 Public UserData As String 'used for diff message
 
 Sub LoadSelf(objItem)
 
     On Error Resume Next
+    Dim pth As String
     
     Caption = objItem.Caption
     Description = objItem.Description
@@ -44,6 +46,10 @@ Sub LoadSelf(objItem)
     Status = objItem.Status
     SystemName = objItem.SystemName
     ProcessId = objItem.ProcessId
+    
+    reg.hive = HKEY_LOCAL_MACHINE
+    pth = "\SYSTEM\CurrentControlSet\Services\" & Name & "\Parameters"
+    ServiceDLL = reg.ReadValue(pth, "ServiceDLL")
     
 End Sub
 
@@ -65,6 +71,7 @@ Function stateChanged(s As CService, Optional ByRef outVar) As Boolean
     Dim tmp() As String
     outVar = Empty
     With s
+        If ServiceDLL <> .ServiceDLL Then push tmp, "|_ServiceDLL_Changed:" & ServiceDLL & "->" & .ServiceDLL & "_| "
         If State <> .State Then push tmp, "|_State_Changed:" & State & "->" & .State & "_| "
         If StartMode <> .StartMode Then push tmp, "|_Start_Mode_Changed:" & StartMode & "->" & .StartMode & "_| "
         If Status <> .Status Then push tmp, "|_Status_Changed:" & Status & "->" & .Status & "_| "
@@ -90,6 +97,7 @@ Function Clone(Optional comment As String) As CService
         .SystemName = SystemName
         .ProcessId = ProcessId
         .UserData = comment
+        .ServiceDLL = ServiceDLL
     End With
     Set Clone = s
 End Function
