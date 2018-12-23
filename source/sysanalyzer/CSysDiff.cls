@@ -448,8 +448,7 @@ Sub ShowDiffReport()
         End If
     Next
 
-    svc.Name = "Todo"
-    ChangedServices.Add svc
+    DiffServices
     
     ShowSnapShot ChangedProcesses, ChangedPorts, ChangedServices, ChangedMutexes, _
                  ChangedTasks, ChangedPipes, ChangedDrivers, CReg.GetDifferences
@@ -551,7 +550,7 @@ next_port:
         li.subItems(1) = servc.Name
         li.subItems(2) = servc.DisplayName
         li.subItems(3) = servc.PathName
-        li.subItems(4) = servc.Description
+        li.subItems(4) = servc.UserData & servc.Description 'user data only for diff shows reason
         If shutDown Then Exit Sub
     Next
     
@@ -688,4 +687,48 @@ Private Function pad(v, Optional l As Long = 5)
 hell:
         pad = v
     End If
+End Function
+
+Private Function DiffServices()
+
+    Set ChangedServices = New Collection
+        
+    Dim sc1 As New Collection
+    Dim sc2 As New Collection
+    Dim s As CService, s2 As CService
+    Dim i As Long, j As Long
+    Dim tmp As String
+    
+    'clone each so we can trim them on matches, just adding reference counts to classes not data copy
+    For Each s In Services1
+        sc1.Add s
+    Next
+    
+    For Each s In Services2
+        sc2.Add s
+    Next
+    
+    For i = sc1.count To 1 Step -1
+        Set s = sc1(i)
+        For j = sc2.count To 1 Step -1
+            Set s2 = sc2(j)
+            If s.isEqual(s2) Then
+                If s.stateChanged(s2, tmp) Then
+                    ChangedServices.Add s2.Clone(tmp)
+                End If
+                sc1.Remove i
+                sc2.Remove j
+                GoTo nextI
+            End If
+        Next
+        'if we made it here there was no match in snap2 so it was deleted or changed
+        ChangedServices.Add s.Clone("|_Snap_1_Service_Not_Found_| ")
+nextI:
+    Next
+    
+    'If there are any s2 left then they are new
+    For Each s In sc2
+        ChangedServices.Add s.Clone("|_New_Snap_2_Service_| ")
+    Next
+    
 End Function

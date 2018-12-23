@@ -25,6 +25,8 @@ Public Status As String
 Public SystemName As String
 Public ProcessId As Long
 
+Public UserData As String 'used for diff message
+
 Sub LoadSelf(objItem)
 
     On Error Resume Next
@@ -44,3 +46,50 @@ Sub LoadSelf(objItem)
     ProcessId = objItem.ProcessId
     
 End Sub
+
+Function isEqual(s As CService) As Boolean
+
+    With s
+        If Name = .Name Then
+            If PathName = .PathName Then
+                If Description = .Description Then
+                    isEqual = True
+                End If
+            End If
+        End If
+    End With
+            
+End Function
+
+Function stateChanged(s As CService, Optional ByRef outVar) As Boolean
+    Dim tmp() As String
+    outVar = Empty
+    With s
+        If State <> .State Then push tmp, "|_State_Changed:" & State & "->" & .State & "_| "
+        If StartMode <> .StartMode Then push tmp, "|_Start_Mode_Changed:" & StartMode & "->" & .StartMode & "_| "
+        If Status <> .Status Then push tmp, "|_Status_Changed:" & Status & "->" & .Status & "_| "
+    End With
+    outVar = Join(tmp, "")
+    stateChanged = Len(outVar) > 2
+End Function
+
+Function Clone(Optional comment As String) As CService
+    Dim s As New CService
+    With s
+        .Caption = Caption
+        .Description = Description
+        .DisplayName = DisplayName
+        .Name = Name
+        .PathName = PathName
+        .ServiceType = ServiceType
+        .Started = Started
+        .StartMode = StartMode
+        .StartName = StartName
+        .State = State
+        .Status = Status
+        .SystemName = SystemName
+        .ProcessId = ProcessId
+        .UserData = comment
+    End With
+    Set Clone = s
+End Function
