@@ -1,3 +1,6 @@
+
+![screenshot](https://raw.githubusercontent.com/dzzie/SysAnalyzer/master/chm_src/img/main_ui_screens.gif)
+
 <pre>
 
 Copyright (C) 2005 iDefense, a Verisign Company 
@@ -12,8 +15,6 @@ original trainer: https://www.youtube.com/watch?v=OPXwKChdO4c
 
 Installer:  http://sandsprite.com/tools.php?id=13
 Help File:  http://sandsprite.com/iDef/SysAnalyzer/
-
-![screenshot](https://raw.githubusercontent.com/dzzie/SysAnalyzer/master/chm_src/img/main_ui_screens.gif)
 
 SysAnalyzer is an application that was designed to give malcode analysts an 
 automated tool to quickly collect, compare, and report on the actions a 
