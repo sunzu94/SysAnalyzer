@@ -7,7 +7,6 @@
 *.manifest
 *.suo
 *.idb
-*chm_src*
 */filter_test/*
 */obj/*
 */Debug/*

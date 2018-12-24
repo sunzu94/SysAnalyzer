@@ -45,5 +45,5 @@ CProcessDllDiff = 0, 0, 613, 533,
 frmDeepMemScan = 148, 46, 995, 781, , 176, 176, 822, 759, C
 CWindow = 198, 198, 1160, 859, 
 cmdLine = 210, 90, 1174, 930, 
-CService = 208, 208, 1235, 849, Z
+CService = 208, 208, 1235, 849, 
 CIMProcess = 78, 78, 1491, 526, 
