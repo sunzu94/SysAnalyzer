@@ -1985,6 +1985,32 @@ hell:
     
 End Function
 
+'unused right now
+Function InstalledStorePkgs() As Collection
+    
+    Dim r As String
+    Dim objwmiservice, colItems, objItem
+    
+    Set InstalledStorePkgs = New Collection
+    
+    On Error GoTo hell
+    Const strComputer = "."
+    Set objwmiservice = GetObject("winmgmts:\\" & strComputer & "\root\cimv2")
+    Set colItems = objwmiservice.ExecQuery("SELECT * FROM Win32_InstalledStoreProgram") ' where PID=" & pid) 'SWbemObjectSet
+   
+    For Each objItem In colItems
+        InstalledStorePkgs.Add objItem.Name
+        Debug.Print objItem.ProgramId & " ***** " & objItem.Name
+    Next
+    
+hell:
+    If Err.Number <> 0 Then
+        Debug.Print Err.Description
+        Stop
+    End If
+    
+End Function
+
 'Some service PIDs can actually return multiple services
 'outVar can either be a collection of CService objects, or a csv string
 Function GetServiceByPid(pid As Long, ByRef outVar, Optional asSimpleString As Boolean = True) As Boolean

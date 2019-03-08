@@ -328,7 +328,7 @@ Function ServicesForPID(pid As Long, c As Collection) As String
     For Each s In c
         'Debug.Print s.ProcessId & " " & s.Name
         If s.ProcessId = pid Then
-            ServicesForPID = ServicesForPID & s.Name & ", "
+            ServicesForPID = ServicesForPID & s.name & ", "
         End If
     Next
     
@@ -508,6 +508,11 @@ Private Sub ShowSnapShot(procs As Collection, ports As Collection, servcs As Col
         li.subItems(2) = proc.User & IIf(proc.is64Bit, "  *64 ", Empty)
         li.subItems(3) = proc.fullpath
         li.subItems(4) = ServicesForPID(proc.pid, servcs)
+        If Len(li.subItems(4)) = 0 Then
+            If proc.isAppStorePkg() Then
+                li.subItems(4) = " **APP= " & proc.PkgName
+            End If
+        End If
         'If CProc.GetServiceByPid(proc.pid, tmp) Then li.subItems(4) = tmp 'seems slow all the individual queries
         li.ToolTipText = proc.cmdLine
         If mm = exact_match Then SetLiColor li, my_green
@@ -547,7 +552,7 @@ next_port:
     For Each servc In servcs
         mm = not_found
         Set li = frmMain.lvServices.AddItem(pad(servc.ProcessId))
-        li.subItems(1) = servc.Name
+        li.subItems(1) = servc.name
         li.subItems(2) = servc.DisplayName
         li.subItems(3) = servc.PathName
         li.subItems(4) = servc.UserData & servc.Description 'user data only for diff shows reason
@@ -648,9 +653,9 @@ next_driver:
     For Each cme In mutexes
         Set li = frmMain.lvMutex.AddItem(cme.pid)
         If DisplayMode = dm_diff Then
-            li.subItems(1) = IIf(cme.isNew, "", "- ") & cme.Name
+            li.subItems(1) = IIf(cme.isNew, "", "- ") & cme.name
         Else
-            li.subItems(1) = cme.Name
+            li.subItems(1) = cme.name
         End If
         If shutDown Then Exit Sub
     Next
@@ -660,7 +665,7 @@ next_driver:
     
     Dim cte As CTaskElem
     For Each cte In tasks
-        Set li = frmMain.lvTasks.ListItems.Add(, , cte.Name)
+        Set li = frmMain.lvTasks.ListItems.Add(, , cte.name)
         li.subItems(1) = cte.exe
         Set li.Tag = cte
         If shutDown Then Exit Sub

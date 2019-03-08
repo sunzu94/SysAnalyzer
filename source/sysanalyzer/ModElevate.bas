@@ -1,8 +1,8 @@
 Attribute VB_Name = "ModElevate"
 Option Explicit
 
-Private Declare Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal Hwnd As Long, ByVal wMsg As Long, ByVal wParam As Long, lParam As Any) As Long
-Private Declare Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteA" (ByVal Hwnd As Long, ByVal lpszOp As String, ByVal lpszFile As String, ByVal lpszParams As String, ByVal LpszDir As String, ByVal FsShowCmd As Long) As Long
+Private Declare Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal hwnd As Long, ByVal wMsg As Long, ByVal wParam As Long, lParam As Any) As Long
+Private Declare Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteA" (ByVal hwnd As Long, ByVal lpszOp As String, ByVal lpszFile As String, ByVal lpszParams As String, ByVal LpszDir As String, ByVal FsShowCmd As Long) As Long
 
 Private Declare Function Wow64DisableWow64FsRedirection Lib "kernel32.dll" (ByRef old As Long) As Long
 Private Declare Function Wow64RevertWow64FsRedirection Lib "kernel32.dll" (ByRef old As Long) As Long
@@ -75,7 +75,7 @@ End Enum
 Private Type SHELLEXECUTEINFO
         cbSize        As Long
         fMask         As Long
-        Hwnd          As Long
+        hwnd          As Long
         lpVerb        As String
         lpFile        As String
         lpParameters  As String
@@ -130,7 +130,7 @@ Public Function RunElevated(ByVal FilePath As String, Optional ShellShowType As 
         .nShow = ShellShowType              ' How the program will be displayed
         .lpDirectory = PathGetFolder(FilePath)
         .lpParameters = EXEParameters       ' Each parameter must be separated by space. If the lpFile member specifies a document file, lpParameters should be NULL.
-        .Hwnd = hWndOwner                   ' Owner window handle
+        .hwnd = hWndOwner                   ' Owner window handle
         .lpVerb = "runas"
     End With
 
@@ -155,6 +155,7 @@ Public Function IsVistaPlus() As Boolean
     IsVistaPlus = True
 End Function
 
+'if program is run in compatability mode this will lie..
 'Declare Function RtlGetVersion Lib "NTDLL" (ByRef lpVersionInformation As Long) As Long
 '
 'Public Function NativeGetVersion() As String

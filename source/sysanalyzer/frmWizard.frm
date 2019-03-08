@@ -1074,6 +1074,10 @@ Private Sub Form_Load()
     'x = GetCommandOutput("C:\Documents and Settings\david\Desktop\argv_test\Debug\argv_test.exe 1 2 3 taco", 10)
     'MsgBox "haha!" & x
     
+'    Dim cc As New CProcessInfo
+'    cc.InstalledStorePkgs
+'    End
+    
     On Error GoTo hell
     
     Dim c As Collection

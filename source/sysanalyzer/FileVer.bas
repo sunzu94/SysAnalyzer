@@ -39,6 +39,7 @@ Global hash As New CWinHash
     Global known As New CKnownFile
     Global apiDataManager As New CApiDataManager
     Global reg As New clsRegistry2
+    Global osInfo As New COSInfo
 #End If
 
 Public Const x64Error = "This feature is only currently available for 32 bit processes."
@@ -347,7 +348,7 @@ Function LaunchStrings(data As String, Optional isPath As Boolean = False)
 
 End Function
 
-Function LaunchExternalHexViewer(data As String, Optional isPath As Boolean = False, Optional Base As String = Empty)
+Function LaunchExternalHexViewer(data As String, Optional isPath As Boolean = False, Optional base As String = Empty)
 
     Dim b() As Byte
     Dim f As String
@@ -356,7 +357,7 @@ Function LaunchExternalHexViewer(data As String, Optional isPath As Boolean = Fa
     
     On Error Resume Next
     
-    If Len(Base) > 0 Then Base = "/base=" & Base
+    If Len(base) > 0 Then base = "/base=" & base
     
     exe = App.path & IIf(isIde(), "\..\..", "") & "\shellext.exe"
     If Not fso.FileExists(exe) Then
@@ -381,7 +382,7 @@ Function LaunchExternalHexViewer(data As String, Optional isPath As Boolean = Fa
     Put h, , b()
     Close h
     
-    Shell exe & " """ & f & """" & IIf(Len(Base) > 0, " " & Base, "") & " /hexv"
+    Shell exe & " """ & f & """" & IIf(Len(base) > 0, " " & base, "") & " /hexv"
 
 End Function
 
@@ -715,13 +716,13 @@ End Function
 Function CloneMutexCollection(master As Collection) As Collection
     
     Dim m As CMutexElem
-    Dim clone As New Collection
+    Dim Clone As New Collection
     
     For Each m In master
-        clone.Add m, m.getKey()
+        Clone.Add m, m.getKey()
     Next
     
-    Set CloneMutexCollection = clone
+    Set CloneMutexCollection = Clone
     
 End Function
 
@@ -923,7 +924,7 @@ Sub ScanProcsForDll(Optional lblDisplay As Label = Nothing)
                     tmp2 = Empty
                     For Each cm In m
                         If InStr(1, cm.path, find, vbTextCompare) > 0 Then
-                           tmp2 = tmp2 & vbTab & Hex(cm.Base) & vbTab & cm.path & vbCrLf
+                           tmp2 = tmp2 & vbTab & Hex(cm.base) & vbTab & cm.path & vbCrLf
                            hit = True
                         End If
                     Next
@@ -1047,12 +1048,12 @@ Sub SetLiColor(li As ListItem, newcolor As Long)
     Next
 End Sub
 
-Function RandomizeApiLogDllName(Base As String, Optional rnd As Boolean = False) As String
+Function RandomizeApiLogDllName(base As String, Optional rnd As Boolean = False) As String
     On Error Resume Next
        
     'only do this if requested with hidden option..no need start cat and mouse games
     If Not rnd Then 'Or InStr(1, Base, "api_log", vbTextCompare) < 1 Then
-        RandomizeApiLogDllName = Base
+        RandomizeApiLogDllName = base
         Exit Function
     End If
     
@@ -1064,10 +1065,10 @@ Function RandomizeApiLogDllName(Base As String, Optional rnd As Boolean = False)
     t = Mid(t, 1, sz) & ".dll"
     tmp = Environ("temp") & "\" & t
     
-    FileCopy Base, tmp
+    FileCopy base, tmp
     
     If Not fso.FileExists(tmp) Then
-        RandomizeApiLogDllName = Base
+        RandomizeApiLogDllName = base
         Exit Function
     End If
     
