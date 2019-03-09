@@ -285,7 +285,7 @@ End Type
 Private Declare Function WTSEnumerateProcesses _
    Lib "wtsapi32.dll" Alias "WTSEnumerateProcessesA" _
    (ByVal hServer As Long, ByVal reserved As Long, _
-   ByVal version As Long, ByRef ppProcessInfo As Long, _
+   ByVal Version As Long, ByRef ppProcessInfo As Long, _
    ByRef pCount As Long _
    ) As Long
 
@@ -416,6 +416,7 @@ Function GetRunningProcesses() As Collection 'of CProcess classes
                     .cmdLine = GetProcessCmdLine(.pid, .fullpath)
                     GetUserName udtProcessInfo.pUserSid, proc
                     .is64Bit = (x64.IsProcess_x64(.pid) = r_64bit)
+                    .LoadAppStoreInfo
                     
                     If Len(.fullpath) = 0 Then .fullpath = .path  'not all system process have executable path set even with wmi backup check
                         'Set cim = WmiProcByPID(.pid)
@@ -485,6 +486,7 @@ Function Legacy_GetRunningProcesses() As Collection 'of CProcess classes
             .cmdLine = GetProcessCmdLine(.pid, .fullpath)
             .User = GetProcessUser(.pid)
             .is64Bit = (x64.IsProcess_x64(.pid) = r_64bit)
+            .LoadAppStoreInfo
         End With
 
         m_col.Add proc, "pid:" & myProcess.th32ProcessID
@@ -506,6 +508,7 @@ Function Legacy_GetRunningProcesses() As Collection 'of CProcess classes
                 .User = GetProcessUser(.pid) 'OpenProcessToken Fails for Local/Network Service
                 'If Len(.User) = 0 Then Stop
                 .is64Bit = (x64.IsProcess_x64(.pid) = r_64bit)
+                .LoadAppStoreInfo
             End With
 
             n = InStr(proc.path, Chr(0))
@@ -1164,6 +1167,7 @@ Function GetProcess(pid As Long, cp As CProcess) As Boolean
                         .cmdLine = GetProcessCmdLine(.pid, .fullpath)
                         GetUserName udtProcessInfo.pUserSid, proc
                         .is64Bit = (x64.IsProcess_x64(.pid) = r_64bit)
+                        .LoadAppStoreInfo
                     End With
                     Set cp = proc
                     WTSFreeMemory lpBuffer

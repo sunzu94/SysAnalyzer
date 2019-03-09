@@ -32,13 +32,19 @@ Option Explicit
 '         this program; if not, write to the Free Software Foundation, Inc., 59 Temple
 '         Place, Suite 330, Boston, MA 02111-1307 USA
 
+'CProcessInfo functions which fill out the fields in this class (from different sources sometimes!)
+'    Legacy_GetRunningProcesses
+'    GetRunningProcesses
+'    GetProcess
+'    StartProcessWithDLL - partial fill out
+
 'Used in several projects do not change interface!
 Public pid As Long
 Public path As String
 Public cmdLine As String
 Public ParentPID As Long
 Public User As String
-Public base As Long
+Public Base As Long
 Public size As Long
 Public is64Bit As Boolean
 Public domain As String
@@ -49,16 +55,19 @@ Public PkgFullName
 Public PkgName
 Public PkgPublisher
 Public PkgErr
-Private pkgQueried As Boolean
+Public PkgQueried As Boolean
+Private m_isAppStorePkg As Boolean
 
 Private Declare Function OpenProcess Lib "kernel32" (ByVal dwDesiredAccess As Long, ByVal bInheritHandle As Long, ByVal dwProcessId As Long) As Long
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (pDest As Any, pSrc As Any, ByVal ByteLen As Long)
 Private Declare Function CloseHandle Lib "kernel32" (ByVal hObject As Long) As Long
+Private Declare Function GetModuleHandle Lib "kernel32" Alias "GetModuleHandleA" (ByVal lpModuleName As String) As Long
+Private Declare Function GetProcAddress Lib "kernel32" (ByVal hModule As Long, ByVal lpProcName As String) As Long
 
 'win8+ only
 Private Declare Function GetPackageFullName Lib "kernel32" (ByVal hProcess As Long, ByRef packageFullNameLength As Long, ByRef PackageFullName As Byte) As Long
 'buffer contains PACKAGE_ID header, PWSTR pointers point to unicode strings held in remainder of buffer following header
-Private Declare Function GetPackageId Lib "kernel32" (ByVal hProcess As Long, ByRef bufferLength As Long, ByRef buffer As Byte) As Long
+Private Declare Function GetPackageId Lib "kernel32" (ByVal hProcess As Long, ByRef BufferLength As Long, ByRef buffer As Byte) As Long
 
 Private Type PACKAGE_ID
   reserved As Long
@@ -67,67 +76,85 @@ Private Type PACKAGE_ID
   build As Integer
   minor As Integer
   major As Integer
-  name  As Long
+  Name  As Long
   publisher  As Long
   resourceId  As Long
   publisherId  As Long
 End Type
 
 Property Get isAppStorePkg() As Boolean
+    If Not PkgQueried Then LoadAppStoreInfo
+    isAppStorePkg = m_isAppStorePkg
+End Property
+
+
+Friend Sub LoadAppStoreInfo()
 
     Dim hProcess As Long
     Dim length As Long, rc As Long, buf() As Byte
     Dim pack As PACKAGE_ID
-    Dim base As Long
+    Dim Base As Long
+    Dim hK32 As Long
     
     Const PROCESS_QUERY_LIMITED_INFORMATION = &H1000
     Const ERROR_INSUFFICIENT_BUFFER = 122 '(0x7A)
     Const APPMODEL_ERROR_NO_PACKAGE = 15700
       
     On Error Resume Next
-    If pkgQueried Then Exit Property
     
-    pkgQueried = True
+    If PkgQueried Then Exit Sub
+    PkgQueried = True
     
-    If osInfo.WinVer < ev_Win8 Then Exit Property
+    hK32 = GetModuleHandle("kernel32.dll")
+    If GetProcAddress(hK32, "GetPackageFullName") = 0 Then
+    'If osInfo.WinVer < ev_Win8 Then 'uses global from sysanalyzer!
+        PkgErr = "os unsupported"
+        Exit Sub
+    End If
     
     hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
     If hProcess = 0 Then
         PkgErr = "error opening pid"
-        Exit Property
+        Exit Sub
     End If
     
     rc = GetPackageFullName(hProcess, length, 0)
     
     If rc <> ERROR_INSUFFICIENT_BUFFER Then
         If rc = APPMODEL_ERROR_NO_PACKAGE Then
-            PkgErr = "this pid is not a windows store app"
+            PkgErr = "pid " & pid & " is not a windows store app"
         Else
             PkgErr = "error GetPackageFullName returned " & rc
         End If
         CloseHandle hProcess
-        Exit Property
+        Exit Sub
     End If
         
     ReDim buf((length + 2) * 2)
     rc = GetPackageFullName(hProcess, length, buf(0))
     PkgFullName = GetUniString(buf, 0)
 
+    length = 0
     rc = GetPackageId(hProcess, length, 0)
-    ReDim buf(length)
-    base = VarPtr(buf(0))
     
+    If length < LenB(pack) Then
+        PkgErr = "GetPackageId size failed: " & length & " error: " & rc
+        Exit Sub
+    End If
+        
+    ReDim buf(length)
+    Base = VarPtr(buf(0))
     rc = GetPackageId(hProcess, length, buf(0))
     
-    CopyMemory ByVal VarPtr(pack), ByVal base, LenB(pack)
+    CopyMemory ByVal VarPtr(pack), ByVal Base, LenB(pack)
     
-    PkgName = GetUniString(buf, pack.name - base)
-    PkgPublisher = GetUniString(buf, pack.publisher - base)
+    PkgName = GetUniString(buf, pack.Name - Base)
+    PkgPublisher = GetUniString(buf, pack.publisher - Base)
     
     CloseHandle hProcess
-    isAppStorePkg = True
+    m_isAppStorePkg = True
    
-End Property
+End Sub
 
 Private Function GetUniString(buf() As Byte, ByVal offset As Long) As String
     
