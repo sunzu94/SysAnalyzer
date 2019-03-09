@@ -348,7 +348,7 @@ Function LaunchStrings(data As String, Optional isPath As Boolean = False)
 
 End Function
 
-Function LaunchExternalHexViewer(data As String, Optional isPath As Boolean = False, Optional base As String = Empty)
+Function LaunchExternalHexViewer(data As String, Optional isPath As Boolean = False, Optional Base As String = Empty)
 
     Dim b() As Byte
     Dim f As String
@@ -357,7 +357,7 @@ Function LaunchExternalHexViewer(data As String, Optional isPath As Boolean = Fa
     
     On Error Resume Next
     
-    If Len(base) > 0 Then base = "/base=" & base
+    If Len(Base) > 0 Then Base = "/base=" & Base
     
     exe = App.path & IIf(isIde(), "\..\..", "") & "\shellext.exe"
     If Not fso.FileExists(exe) Then
@@ -382,7 +382,7 @@ Function LaunchExternalHexViewer(data As String, Optional isPath As Boolean = Fa
     Put h, , b()
     Close h
     
-    Shell exe & " """ & f & """" & IIf(Len(base) > 0, " " & base, "") & " /hexv"
+    Shell exe & " """ & f & """" & IIf(Len(Base) > 0, " " & Base, "") & " /hexv"
 
 End Function
 
@@ -399,7 +399,7 @@ Sub SaveFormSizeAnPosition(f As Form)
     Dim s As String
     If f.WindowState <> 0 Then Exit Sub 'vbnormal
     s = f.Left & "," & f.Top & "," & f.Width & "," & f.Height
-    SaveMySetting f.name & "_pos", s
+    SaveMySetting f.Name & "_pos", s
 End Sub
 
 Function occuranceCount(haystack, match) As Long
@@ -415,7 +415,7 @@ Sub RestoreFormSizeAnPosition(f As Form)
     On Error GoTo hell
     Dim s
     
-    s = GetMySetting(f.name & "_pos", "")
+    s = GetMySetting(f.Name & "_pos", "")
     
     If Len(s) = 0 Then Exit Sub
     If occuranceCount(s, ",") <> 3 Then Exit Sub
@@ -598,6 +598,8 @@ Public Function FileInfo(Optional ByVal PathWithFilename As String) As FILEPROPE
     Dim intTemp As Integer
            
     ReDim bytBuff(500)
+    
+    If osInfo.is64BitOS Then PathWithFilename = Replace(PathWithFilename, "system32", "Sysnative", , , vbTextCompare)
     
     ' size
     lngBufferlen = GetFileVersionInfoSize(PathWithFilename, lngDummy)
@@ -784,7 +786,7 @@ Function GetAllElements(lv As ListView) As String
         Next
         push ret, tmp
         
-        If lv.name = "lvProcessDllList" Then
+        If lv.Name = "lvProcessDllList" Then
             Set dd = li.Tag
             If diff.DisplayMode = dm_snap1 Then Set c = dd.dlls1
             If diff.DisplayMode = dm_snap2 Then Set c = dd.dlls2
@@ -924,7 +926,7 @@ Sub ScanProcsForDll(Optional lblDisplay As Label = Nothing)
                     tmp2 = Empty
                     For Each cm In m
                         If InStr(1, cm.path, find, vbTextCompare) > 0 Then
-                           tmp2 = tmp2 & vbTab & Hex(cm.base) & vbTab & cm.path & vbCrLf
+                           tmp2 = tmp2 & vbTab & Hex(cm.Base) & vbTab & cm.path & vbCrLf
                            hit = True
                         End If
                     Next
@@ -1048,12 +1050,12 @@ Sub SetLiColor(li As ListItem, newcolor As Long)
     Next
 End Sub
 
-Function RandomizeApiLogDllName(base As String, Optional rnd As Boolean = False) As String
+Function RandomizeApiLogDllName(Base As String, Optional rnd As Boolean = False) As String
     On Error Resume Next
        
     'only do this if requested with hidden option..no need start cat and mouse games
     If Not rnd Then 'Or InStr(1, Base, "api_log", vbTextCompare) < 1 Then
-        RandomizeApiLogDllName = base
+        RandomizeApiLogDllName = Base
         Exit Function
     End If
     
@@ -1065,10 +1067,10 @@ Function RandomizeApiLogDllName(base As String, Optional rnd As Boolean = False)
     t = Mid(t, 1, sz) & ".dll"
     tmp = Environ("temp") & "\" & t
     
-    FileCopy base, tmp
+    FileCopy Base, tmp
     
     If Not fso.FileExists(tmp) Then
-        RandomizeApiLogDllName = base
+        RandomizeApiLogDllName = Base
         Exit Function
     End If
     

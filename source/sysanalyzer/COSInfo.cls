@@ -31,6 +31,15 @@ Public ServicePackMajorVersion
 Public ServicePackMinorVersion
 Public SystemDirectory
 Public WindowsDirectory
+Public is64BitOS As Boolean
+Public NumberOfCores As Long
+Public ProcessorId
+Public ProcessorType
+Public ProcessorRevision
+'Public ProcessorSerialNumber
+'Public PrecessorUniqueId
+'Public ProcessorVersion
+            
 'https://www.activexperts.com/admin/scripts/wmi/vbscript/0407/
 'https://docs.microsoft.com/en-us/windows/desktop/CIMWin32Prov/win32-operatingsystem
 'https://docs.microsoft.com/en-us/windows/desktop/SysInfo/operating-system-version
@@ -103,5 +112,20 @@ Private Sub Class_Initialize()
         
     Next
     
+    Set colItems = objwmiservice.ExecQuery("SELECT * FROM Win32_Processor")
+    For Each objItem In colItems
+        With objItem
+            'Debug.Print "processor.AddressWidth=" & .AddressWidth
+            If .addresswidth = 64 Then is64BitOS = True
+            NumberOfCores = .NumberOfCores
+            ProcessorId = .ProcessorId
+            ProcessorType = .ProcessorType
+            ProcessorRevision = .revision
+            'ProcessorSerialNumber = .SerialNumber
+            'PrecessorUniqueId = .UniqueId
+            'ProcessorVersion = .Version
+        End With
+    Next
+        
 End Sub
 

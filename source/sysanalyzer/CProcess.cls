@@ -105,9 +105,9 @@ Friend Sub LoadAppStoreInfo()
     If PkgQueried Then Exit Sub
     PkgQueried = True
     
-    hK32 = GetModuleHandle("kernel32.dll")
-    If GetProcAddress(hK32, "GetPackageFullName") = 0 Then
-    'If osInfo.WinVer < ev_Win8 Then 'uses global from sysanalyzer!
+    'hK32 = GetModuleHandle("kernel32.dll")
+    'If GetProcAddress(hK32, "GetPackageFullName") = 0 Then
+    If osInfo.WinVer < ev_Win8 Then 'uses global from sysanalyzer!
         PkgErr = "os unsupported"
         Exit Sub
     End If

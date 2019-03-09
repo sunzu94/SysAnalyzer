@@ -32,6 +32,8 @@ Option Explicit
 '         this program; if not, write to the Free Software Foundation, Inc., 59 Temple
 '         Place, Suite 330, Boston, MA 02111-1307 USA
 
+'alias: %windir%\Sysnative access real sysdir from 32bit process on x64 machine
+
 'Used in several projects do not change interface!
 '
 '8.25.12

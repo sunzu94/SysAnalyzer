@@ -619,7 +619,9 @@ next_port:
         
         Set li = frmMain.lvDrivers.AddItem(d)
         
+        If osInfo.is64BitOS Then d = Replace(d, "system32", "Sysnative", , , vbTextCompare)
         'this can cause crash
+        
         If FileExists(d) Then
             'debugLog "ShowSnapShot.Drivers.FileInfo(" & d & ")"
             fp = FileInfo(d)
