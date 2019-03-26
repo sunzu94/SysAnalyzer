@@ -598,9 +598,7 @@ Public Function FileInfo(Optional ByVal PathWithFilename As String) As FILEPROPE
     Dim intTemp As Integer
            
     ReDim bytBuff(500)
-    
-    If osInfo.is64BitOS Then PathWithFilename = Replace(PathWithFilename, "system32", "Sysnative", , , vbTextCompare)
-    
+        
     ' size
     lngBufferlen = GetFileVersionInfoSize(PathWithFilename, lngDummy)
     If lngBufferlen > 0 Then

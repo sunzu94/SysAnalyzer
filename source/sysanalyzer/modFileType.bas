@@ -112,6 +112,7 @@ End Function
 Function hpad(ByVal v, Optional l As Long = 8)
     On Error GoTo hell
     Dim x As Long
+    v = Replace(v, "0x", Empty)
     v = Trim(v)
     hpad = Right("00000000" & v, l)
     Exit Function
@@ -144,7 +145,7 @@ Private Function CompiledDate(stamp As Double) As String
 
 End Function
 
-Function GetCompileDateOrType(fpath As String, Optional ByRef out_isType As Boolean, Optional ByRef out_isPE As Boolean, Optional typeOnly As Boolean = False, Optional compiledTimeOnly As Boolean = False) As String
+Function GetCompileDateOrType(fPath As String, Optional ByRef out_isType As Boolean, Optional ByRef out_isPE As Boolean, Optional typeOnly As Boolean = False, Optional compiledTimeOnly As Boolean = False) As String
     On Error GoTo hell
         
         Dim i As Long
@@ -159,18 +160,18 @@ Function GetCompileDateOrType(fpath As String, Optional ByRef out_isType As Bool
         out_isType = False
         
         'fs = DisableRedir()
-        If Not fso.FileExists(fpath) Then Exit Function
+        If Not fso.FileExists(fPath) Then Exit Function
             
         f = FreeFile
         
-        Open fpath For Binary Access Read As f
+        Open fPath For Binary Access Read As f
         Get f, , DOSHEADER
         
         If DOSHEADER.e_magic <> &H5A4D Then
             Get f, 1, buf()
             Close f
             sbuf = StrConv(buf(), vbUnicode, LANG_US)
-            GetCompileDateOrType = DetectFileType(sbuf, fpath)
+            GetCompileDateOrType = DetectFileType(sbuf, fPath)
             out_isType = True
             'RevertRedir fs
             Exit Function
@@ -182,7 +183,7 @@ Function GetCompileDateOrType(fpath As String, Optional ByRef out_isType As Bool
             Get f, 1, buf()
             Close f
             sbuf = StrConv(buf(), vbUnicode, LANG_US)
-            GetCompileDateOrType = DetectFileType(sbuf, fpath)
+            GetCompileDateOrType = DetectFileType(sbuf, fPath)
             out_isType = True
             'RevertRedir fs
             Exit Function

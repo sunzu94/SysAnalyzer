@@ -48,7 +48,7 @@ Public Base As Long
 Public size As Long
 Public is64Bit As Boolean
 Public domain As String
-Public fullpath As String
+Public FullPath As String
 Public SessionId As Long
 
 Public PkgFullName
@@ -81,6 +81,14 @@ Private Type PACKAGE_ID
   resourceId  As Long
   publisherId  As Long
 End Type
+
+Property Get NativePath() As String
+    If is64Bit Then
+        NativePath = Replace(FullPath, "system32", "SysNative", , , vbTextCompare) 'bypass file redir without api calls
+    Else
+        NativePath = FullPath
+    End If
+End Property
 
 Property Get isAppStorePkg() As Boolean
     If Not PkgQueried Then LoadAppStoreInfo

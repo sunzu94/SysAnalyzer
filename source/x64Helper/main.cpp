@@ -157,7 +157,7 @@ int PrintModules( DWORD processID )
 
             if ( GetModuleFileNameEx( hProcess, hMods[i], szModName, sizeof(szModName) / sizeof(TCHAR)))
             {
-                _tprintf( TEXT("0x%010X,0x%010X,%s\n"), hMods[i] , modSize, szModName);
+                _tprintf( TEXT("0x%llX,0x%llX,%s\n"), hMods[i] , modSize, szModName);
             }
         }
 	}
@@ -469,7 +469,7 @@ int memMap(int pid, char* pth)
     
 	fprintf(f, "va, AllocationBase, Size, AllocationProtect, Type, Protect, State, ModuleFileName\r\n");
 
-	while(va < 0x000007FFFFFFFFFF)// x64 User Space Limit
+	while(va < 0x00007FFFFFFFFFFF)// x64 User Space Limit
 	{
 		wErr = VirtualQueryEx(hProcess, (LPCVOID)va, &mbi, sizeof(mbi));
 

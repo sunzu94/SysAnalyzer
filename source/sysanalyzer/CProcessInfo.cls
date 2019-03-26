@@ -413,14 +413,14 @@ Function GetRunningProcesses() As Collection 'of CProcess classes
                     .SessionId = udtProcessInfo.SessionId
                     .pid = udtProcessInfo.ProcessId
                     .path = GetStringFromLP(udtProcessInfo.pProcessName)
-                    .fullpath = GetProcessPath(.pid)
+                    .FullPath = GetProcessPath(.pid)
                     .ParentPID = GetParentProcessId(.pid)
-                    .cmdLine = GetProcessCmdLine(.pid, .fullpath)
+                    .cmdLine = GetProcessCmdLine(.pid, .FullPath)
                     GetUserName udtProcessInfo.pUserSid, proc
                     .is64Bit = (x64.IsProcess_x64(.pid) = r_64bit)
                     .LoadAppStoreInfo
                     
-                    If Len(.fullpath) = 0 Then .fullpath = .path  'not all system process have executable path set even with wmi backup check
+                    If Len(.FullPath) = 0 Then .FullPath = .path  'not all system process have executable path set even with wmi backup check
                         'Set cim = WmiProcByPID(.pid)
                         '.fullpath = cim.ExecutablePath
                         '.cmdLine = cim.CommandLine
@@ -482,10 +482,10 @@ Function Legacy_GetRunningProcesses() As Collection 'of CProcess classes
              If InStr(.path, Chr(0)) > 0 Then
                 .path = Mid(.path, 1, InStr(.path, Chr(0)) - 1)
              End If
-            .fullpath = GetProcessPath(myProcess.th32ProcessID)
+            .FullPath = GetProcessPath(myProcess.th32ProcessID)
             .pid = myProcess.th32ProcessID
             .ParentPID = myProcess.th32ParentProcessID
-            .cmdLine = GetProcessCmdLine(.pid, .fullpath)
+            .cmdLine = GetProcessCmdLine(.pid, .FullPath)
             .User = GetProcessUser(.pid)
             .is64Bit = (x64.IsProcess_x64(.pid) = r_64bit)
             .LoadAppStoreInfo
@@ -503,10 +503,10 @@ Function Legacy_GetRunningProcesses() As Collection 'of CProcess classes
                  If InStr(.path, Chr(0)) > 0 Then
                     .path = Mid(.path, 1, InStr(.path, Chr(0)) - 1)
                  End If
-                .fullpath = GetProcessPath(myProcess.th32ProcessID)
+                .FullPath = GetProcessPath(myProcess.th32ProcessID)
                 .pid = myProcess.th32ProcessID
                 .ParentPID = myProcess.th32ParentProcessID
-                .cmdLine = GetProcessCmdLine(.pid, .fullpath)
+                .cmdLine = GetProcessCmdLine(.pid, .FullPath)
                 .User = GetProcessUser(.pid) 'OpenProcessToken Fails for Local/Network Service
                 'If Len(.User) = 0 Then Stop
                 .is64Bit = (x64.IsProcess_x64(.pid) = r_64bit)
@@ -528,7 +528,7 @@ Function Legacy_GetRunningProcesses() As Collection 'of CProcess classes
 End Function
 
 'using static PEB address will fail for XP SP 2 and above...
-Function GetProcessCmdLine(pid As Long, Optional fullpath As String) As String
+Function GetProcessCmdLine(pid As Long, Optional FullPath As String) As String
 
     'Exit Function 'fix me sometime
     
@@ -587,8 +587,8 @@ Function GetProcessCmdLine(pid As Long, Optional fullpath As String) As String
         If wszCmdLine(i) <> 0 Then cmdLine = cmdLine & Chr(wszCmdLine(i))
    Next
      
-   cmdLine = Replace(cmdLine, """" & fullpath & """", Empty, , , vbTextCompare)
-   cmdLine = Replace(cmdLine, fullpath, Empty, , , vbTextCompare)
+   cmdLine = Replace(cmdLine, """" & FullPath & """", Empty, , , vbTextCompare)
+   cmdLine = Replace(cmdLine, FullPath, Empty, , , vbTextCompare)
      
    GetProcessCmdLine = Trim(cmdLine)
    
@@ -959,14 +959,14 @@ Function KillProcess(ByVal Name As String, Optional all As Boolean = True) As Lo
     Dim c As Collection
     Dim p As CProcess
     Dim i As Long
-    Dim fullpath As Boolean
+    Dim FullPath As Boolean
     
-    fullpath = InStr(Name, "\") > 0
+    FullPath = InStr(Name, "\") > 0
     Set c = GetRunningProcesses()
     
     For Each p In c
-        If fullpath Then
-            If LCase(p.fullpath) = LCase(Name) Then
+        If FullPath Then
+            If LCase(p.FullPath) = LCase(Name) Then
                 If TerminateProces(p.pid) Then i = i + 1
                 If Not all Then Exit For
             End If
@@ -1164,9 +1164,9 @@ Function GetProcess(pid As Long, cp As CProcess) As Boolean
                         .SessionId = udtProcessInfo.SessionId
                         .pid = udtProcessInfo.ProcessId
                         .path = GetStringFromLP(udtProcessInfo.pProcessName)
-                        .fullpath = GetProcessPath(.pid)
+                        .FullPath = GetProcessPath(.pid)
                         .ParentPID = GetParentProcessId(.pid)
-                        .cmdLine = GetProcessCmdLine(.pid, .fullpath)
+                        .cmdLine = GetProcessCmdLine(.pid, .FullPath)
                         GetUserName udtProcessInfo.pUserSid, proc
                         .is64Bit = (x64.IsProcess_x64(.pid) = r_64bit)
                         .LoadAppStoreInfo
@@ -1404,7 +1404,7 @@ Public Function StartProcessWithDLL(exePath As String, dllPath As String, Option
     End If
     
     Set cp = New CProcess
-    cp.fullpath = exePath
+    cp.FullPath = exePath
     cp.path = exePath
     
     If x64.WillRunAsx64Process(exePath) Then

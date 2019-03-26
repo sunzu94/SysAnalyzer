@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Object = "{BDC217C8-ED16-11CD-956C-0000C04E4C0A}#1.1#0"; "TABCTL32.OCX"
 Begin VB.Form frmMain 
    Caption         =   "SysAnalyzer"
@@ -33,65 +33,53 @@ Begin VB.Form frmMain
       TabPicture(0)   =   "Form1.frx":5C12
       Tab(0).ControlEnabled=   0   'False
       Tab(0).Control(0)=   "fraProc"
-      Tab(0).Control(0).Enabled=   0   'False
       Tab(0).Control(1)=   "lvProcesses"
-      Tab(0).Control(1).Enabled=   0   'False
       Tab(0).ControlCount=   2
       TabCaption(1)   =   "Open Ports"
       TabPicture(1)   =   "Form1.frx":5C2E
       Tab(1).ControlEnabled=   0   'False
       Tab(1).Control(0)=   "lvPorts"
-      Tab(1).Control(0).Enabled=   0   'False
       Tab(1).ControlCount=   1
       TabCaption(2)   =   "Process Dlls"
       TabPicture(2)   =   "Form1.frx":5C4A
       Tab(2).ControlEnabled=   0   'False
       Tab(2).Control(0)=   "lvProcessDllList"
-      Tab(2).Control(0).Enabled=   0   'False
       Tab(2).Control(1)=   "lvProcessDlls"
-      Tab(2).Control(1).Enabled=   0   'False
       Tab(2).ControlCount=   2
       TabCaption(3)   =   "Loaded Drivers"
       TabPicture(3)   =   "Form1.frx":5C66
       Tab(3).ControlEnabled=   0   'False
       Tab(3).Control(0)=   "lvDrivers"
-      Tab(3).Control(0).Enabled=   0   'False
       Tab(3).ControlCount=   1
       TabCaption(4)   =   "Reg Monitor"
       TabPicture(4)   =   "Form1.frx":5C82
       Tab(4).ControlEnabled=   0   'False
       Tab(4).Control(0)=   "lvRegKeys"
-      Tab(4).Control(0).Enabled=   0   'False
       Tab(4).ControlCount=   1
       TabCaption(5)   =   "Api Log"
       TabPicture(5)   =   "Form1.frx":5C9E
       Tab(5).ControlEnabled=   0   'False
       Tab(5).Control(0)=   "lvAPILog"
-      Tab(5).Control(0).Enabled=   0   'False
       Tab(5).ControlCount=   1
       TabCaption(6)   =   "Directory Watch Data"
       TabPicture(6)   =   "Form1.frx":5CBA
       Tab(6).ControlEnabled=   0   'False
       Tab(6).Control(0)=   "lvDirWatch"
-      Tab(6).Control(0).Enabled=   0   'False
       Tab(6).ControlCount=   1
       TabCaption(7)   =   "Mutexes"
       TabPicture(7)   =   "Form1.frx":5CD6
       Tab(7).ControlEnabled=   0   'False
       Tab(7).Control(0)=   "lvMutex"
-      Tab(7).Control(0).Enabled=   0   'False
       Tab(7).ControlCount=   1
       TabCaption(8)   =   "Tasks"
       TabPicture(8)   =   "Form1.frx":5CF2
       Tab(8).ControlEnabled=   0   'False
       Tab(8).Control(0)=   "lvTasks"
-      Tab(8).Control(0).Enabled=   0   'False
       Tab(8).ControlCount=   1
       TabCaption(9)   =   "Pipes"
       TabPicture(9)   =   "Form1.frx":5D0E
       Tab(9).ControlEnabled=   0   'False
       Tab(9).Control(0)=   "lvPipes"
-      Tab(9).Control(0).Enabled=   0   'False
       Tab(9).ControlCount=   1
       TabCaption(10)  =   "Services"
       TabPicture(10)  =   "Form1.frx":5D2A
@@ -342,7 +330,7 @@ Begin VB.Form frmMain
          Height          =   4875
          Left            =   120
          TabIndex        =   16
-         Top             =   360
+         Top             =   420
          Width           =   11310
          _ExtentX        =   19950
          _ExtentY        =   8599
@@ -1197,7 +1185,7 @@ Private Sub mnuLaunchStrings_Click()
         Exit Sub
     End If
     
-    f = cp.fullpath
+    f = cp.NativePath
     LaunchStrings f, True
 End Sub
 
@@ -1259,7 +1247,7 @@ Private Sub mnuSaveToAnalysisFolder_Click()
         Exit Sub
     End If
     
-    f = cp.fullpath
+    f = cp.NativePath
     If Not fso.FileExists(f) Then
         MsgBox "File not found: " & f
     Else
@@ -1288,7 +1276,7 @@ Private Sub mnuScanProcForStealthInjects_Click()
         Exit Sub
     End If
 
-    frmInjectionScan.FindStealthInjections activePID, cp.fullpath
+    frmInjectionScan.FindStealthInjections activePID, cp.FullPath
 End Sub
 
 Private Sub mnuScanProcsForDll_Click()
@@ -1764,7 +1752,7 @@ End Function
 Private Function RecieveTextMessage(lParam As Long, msg As String) As Boolean
    
     Dim CopyData As COPYDATASTRUCT
-    Dim Buffer(1 To 2048) As Byte
+    Dim buffer(1 To 2048) As Byte
     Dim temp As String
     
     msg = Empty
@@ -1772,8 +1760,8 @@ Private Function RecieveTextMessage(lParam As Long, msg As String) As Boolean
     CopyMemory CopyData, ByVal lParam, Len(CopyData)
     
     If CopyData.dwFlag = 3 Then
-        CopyMemory Buffer(1), ByVal CopyData.lpData, CopyData.cbSize
-        temp = StrConv(Buffer, vbUnicode)
+        CopyMemory buffer(1), ByVal CopyData.lpData, CopyData.cbSize
+        temp = StrConv(buffer, vbUnicode)
         temp = Left$(temp, InStr(1, temp, Chr$(0)) - 1)
         'heres where we work with the intercepted message
         msg = temp
@@ -1804,7 +1792,7 @@ Private Sub mnuDumpProcess_Click()
     End If
 
     Dim pth As String
-    pth = fso.FileNameFromPath(cp.fullpath) & ".dmp"
+    pth = fso.FileNameFromPath(cp.FullPath) & ".dmp"
     pth = frmDlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save Dump as", , Me, pth)
     If Len(pth) = 0 Then Exit Sub
 
@@ -1822,7 +1810,7 @@ Private Sub mnuCopyProcessPath_Click()
         Exit Sub
     End If
 
-    pth = cp.fullpath
+    pth = cp.NativePath
     Clipboard.Clear
     Clipboard.SetText pth
 End Sub
@@ -1851,7 +1839,7 @@ Private Sub mnuProcessFileProps_Click()
         Exit Sub
     End If
 
-    path = cp.fullpath
+    path = cp.NativePath
     fsize = "FileSize: " & FileLen(path) & vbCrLf & String(70, "-") & vbCrLf
 
     path = QuickInfo(path)

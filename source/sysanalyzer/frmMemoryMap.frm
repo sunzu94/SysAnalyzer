@@ -92,7 +92,7 @@ Public Sub ShowDlls(pid As Long) 'x64 ok.
     Set c = pi.GetProcessModules(pid)
     
     For Each cm In c
-        Set li = lv2.AddItem(hpad(cm.HexBase))
+        Set li = lv2.AddItem(hpad(cm.HexBase, IIf(cm.isx64, 16, 8)))
         li.subItems(1) = cm.HexSize
         li.subItems(2) = cm.path
         
@@ -141,7 +141,7 @@ Public Sub ShowMemoryMap(pid As Long) 'now x64 compatiabled...
     
     lv.ListItems.Clear
     For Each cMem In c
-        Set li = lv.AddItem(hpad(cMem.BaseAsHexString))
+        Set li = lv.AddItem(hpad(cMem.BaseAsHexString, IIf(cMem.isx64, 16, 8)))
         li.subItems(1) = pad(Hex(cMem.size))
         li.subItems(2) = cMem.MemTypeAsString()
         li.subItems(3) = cMem.ProtectionAsString()
