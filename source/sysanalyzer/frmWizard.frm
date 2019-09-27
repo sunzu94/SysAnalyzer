@@ -700,7 +700,7 @@ Option Explicit
 '         Place, Suite 330, Boston, MA 02111-1307 USA
 
 Private Type config
-    version As Integer
+    Version As Integer
     sniffer As Byte
     apilog As Byte
     dirwatch As Byte
@@ -967,7 +967,7 @@ End Sub
 
 Sub SetConfigDefaults()
     With cfg
-            .version = 2
+            .Version = 2
             .apilog = 0
             .delay = 30
             .dirwatch = 1
@@ -990,7 +990,7 @@ Sub LoadConfig()
         Open cfgFile For Binary As f
         Get f, , cfg
         Close f
-        If cfg.version <> 2 Then
+        If cfg.Version <> 2 Then
             SetConfigDefaults
             SaveConfig
         End If
@@ -1083,6 +1083,13 @@ Private Sub Form_Load()
     Dim c As Collection
     Dim sample As String
     Dim ip
+    
+    HOMEDIR = App.path
+    If isIde() Then
+        HOMEDIR = fso.GetParentFolder(HOMEDIR)
+        HOMEDIR = fso.GetParentFolder(HOMEDIR)
+        If Not fso.FileExists(HOMEDIR & "\sysanalyzer.exe") Then Debug.Print "bad homedir?: " & HOMEDIR
+    End If
     
     'MsgBox Command
     
@@ -1199,7 +1206,7 @@ Private Sub Form_Load()
     START_TIME = Now
     DebugLogFile = UserDeskTopFolder & "\debug" & LOGFILEEXT
     If fso.FileExists(DebugLogFile) Then fso.DeleteFile DebugLogFile
-    fso.writeFile DebugLogFile, "-------[ SysAnalyzer v" & App.major & "." & App.minor & "." & App.Revision & "  " & START_TIME & " ]-------" & vbCrLf
+    fso.writeFile DebugLogFile, "-------[ SysAnalyzer v" & App.major & "." & App.minor & "." & App.revision & "  " & START_TIME & " ]-------" & vbCrLf
 
     If isAutoRunMode Then cmdStart_Click
     

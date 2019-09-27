@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Begin VB.Form frmAnalyzeProcess 
    Caption         =   "Analyze Process"
    ClientHeight    =   4380
@@ -28,7 +28,7 @@ Begin VB.Form frmAnalyzeProcess
       End
       Begin MSComctlLib.ProgressBar pb 
          Height          =   255
-         Left            =   0
+         Left            =   45
          TabIndex        =   2
          Top             =   0
          Width           =   8895
@@ -39,14 +39,22 @@ Begin VB.Form frmAnalyzeProcess
       End
       Begin MSComctlLib.ProgressBar pb2 
          Height          =   255
-         Left            =   0
+         Left            =   4275
          TabIndex        =   3
          Top             =   300
-         Width           =   8895
-         _ExtentX        =   15690
+         Width           =   4665
+         _ExtentX        =   8229
          _ExtentY        =   450
          _Version        =   393216
          Appearance      =   1
+      End
+      Begin VB.Label Label2 
+         Caption         =   "Label2"
+         Height          =   240
+         Left            =   45
+         TabIndex        =   5
+         Top             =   315
+         Width           =   4200
       End
    End
    Begin VB.ListBox List1 
@@ -179,14 +187,16 @@ Public Function AnalyzeProcess(pid As Long) ', Optional memoryMapOnly As Boolean
     push rep, "File: " & fso.FileNameFromPath(f)
     push rep, "Size: " & FileLen(f) & " Bytes"
     push rep, "MD5: " & hash.HashFile(f)
-    'push rep, "Packer: " & GetPacker(f) & vbCrLf 'peid databases are to old now..
+    'push rep, "Packer: " & GetPacker(f) & vbCrLf 'peid databases are to old now..todo DiE?
     'push rep, "File Properties: " & QuickInfo(f) & vbCrLf
     
         
     pb.value = pb.value + 1
     AddLine "Enumerating loaded dlls.."
     
+    StartBenchMark
     Set col = proc.GetProcessModules(pid)
+    AddLine col.count & " modules loaded in process enum took: " & EndBenchMark
     
     If known.Loaded And known.Ready Then
         'ado.OpenConnection
@@ -197,42 +207,55 @@ Public Function AnalyzeProcess(pid As Long) ', Optional memoryMapOnly As Boolean
     
     Dim dllName As String
     Dim i As Long
+      
+    If known.Loaded And known.Ready Then
+        AddLine "Scanning for known dlls..."
+        StartBenchMark
+        For Each cmod In col
         
-    For Each cmod In col
-    
-        If known.Loaded And known.Ready Then
-            If i = 0 And Right(cmod.path, 3) = "exe" Then
-                DoEvents 'we already took a memory dump of the main exe..
-            Else
-                If known.isFileKnown(cmod.path) <> exact_match Then
-                    AddLine "Unknown or Changed Dll Dumping: " & cmod.HexBase & ": " & cmod.path
-                    push rep, "Dumping: " & cmod.HexBase & vbTab & cmod.path
-                    dllName = fso.FileNameFromPath(cmod.path)
-                    If Len(dllName) = 0 Then dllName = cmod.HexBase & ".dll"
-                    dllName = pFolder & "\" & dllName & ".dmp"
-                    If proc.DumpMemory(pid, cmod.HexBase, cmod.HexSize, dllName) Then  'now x64 safe 9.8.16 oops
-                        qdf.QuickDumpFix dllName
-                        AddLine "Doing String dump.."
-                        doStringDump fso.GetBaseName(dllName), dllName
-                    Else
-                        AddLine "FAILED to dump " & dllName & " x64: " & cmod.isx64 & " pid: " & pid & " Base: " & cmod.HexBase & " size: " & cmod.HexSize
+            If known.Loaded And known.Ready Then
+                If i = 0 And Right(cmod.path, 3) = "exe" Then
+                    DoEvents 'we already took a memory dump of the main exe..
+                Else
+                    If known.isFileKnown(cmod.path) <> exact_match Then
+                        AddLine "Unknown or Changed Dll Dumping: " & fso.FileNameFromPath(cmod.path) & " Base: 0x" & cmod.HexBase & " Sz:" & cmod.HexSize
+                        push rep, "Dumping: " & cmod.HexBase & vbTab & cmod.path
+                        dllName = fso.FileNameFromPath(cmod.path)
+                        If Len(dllName) = 0 Then dllName = cmod.HexBase & ".dll"
+                        dllName = pFolder & "\" & dllName & ".dmp"
+                       
+                        If proc.DumpMemory(pid, cmod.HexBase, cmod.HexSize, dllName) Then  'now x64 safe 9.8.16 oops
+                            qdf.QuickDumpFix dllName
+                            If FileLen(dllName) < 20000000 Then '20mb
+                                AddLine "Doing String dump.."
+                                doStringDump fso.GetBaseName(dllName), dllName
+                            Else
+                                AddLine "Skipping string dump to big"
+                            End If
+                        Else
+                            AddLine "FAILED to dump " & dllName & " x64: " & cmod.isx64 & " pid: " & pid & " Base: " & cmod.HexBase & " size: " & cmod.HexSize
+                        End If
                     End If
                 End If
+            Else
+                'push rep, Hex(cmod.Base) & vbTab & cmod.path
             End If
-        Else
-            'push rep, Hex(cmod.Base) & vbTab & cmod.path
-        End If
-        
-        i = i + 1
-    Next
+            
+            i = i + 1
+        Next
+        AddLine "Scanning for known complete: " & EndBenchMark
+    End If
     
     'If known.Loaded And known.Ready Then ado.CloseConnection
     
     pb.value = pb.value + 1
     
     AddLine "Dumping main process memory"
+    StartBenchMark
     Set cmod = col(1)
     Call proc.DumpMemory(pid, cmod.HexBase, cmod.HexSize, pth)
+    AddLine "Dump complete: " & EndBenchMark
+    
     pb.value = pb.value + 1
 
     If Not fso.FileExists(pth) Then
@@ -264,62 +287,22 @@ Public Function AnalyzeProcess(pid As Long) ', Optional memoryMapOnly As Boolean
     
 End Function
 
-
+'moved to external exe because large x64 mem dumps can take a while to process...
+'line grep of urls, exes etc has been removed...
 Private Sub doStringDump(ByVal baseFileName As String, dmpPath As String)
-    
     On Error Resume Next
-    
-    Dim pth2 As String
-    Dim rawStrings As String
-    Dim config() As String
-    Dim tmp() As String
-    Dim buf() As String
-    Dim extracts() As String
-    
+    Dim pth2 As String, exe As String, pid As Long
+    exe = HOMEDIR & "\strdump.exe"
+    If Not fso.FileExists(exe) Then
+        AddLine "Strdump.exe not found?"
+        Exit Sub
+    End If
     If InStr(baseFileName, ".") > 0 Then baseFileName = fso.GetBaseName(baseFileName)
-    
-    rawStrings = cst.ExtractStrings(dmpPath)
-    buf = Split(rawStrings, vbCrLf)
-    
-    ' format is comma delimited entries, first entry is section name for report
-    ' all other entries are string to find for this section
-    push config(), "Urls,http:,ftp:"
-    push config(), "RegKeys,software" ', CurrentControl, clsid"
-    push config(), "ExeRefs,.exe"
-
-    For j = 0 To UBound(config)
-        c = config(j)
-        c = Trim(c)
-        If Len(c) = 0 Then GoTo nextone
-         
-        tmp = Split(c, ",")
-        If AryIsEmpty(tmp) Then GoTo nextone
-    
-        If UBound(tmp) = 0 Then
-            push rep, "bad format for grep criteria"
-        Else
-            x = Empty
-            For i = 1 To UBound(tmp)
-                x = x & cst.LineGrep(buf, tmp(i))
-            Next
-            If Len(x) > 0 Then
-                push extracts, tmp(0)
-                push extracts, String(50, "-")
-                push extracts, x
-                push extracts, Empty
-            End If
-        End If
-nextone:
-        DoEvents
-    Next
-    
-    push extracts, "Raw Strings: (" & cst.FilteredCount & " lines filtered out)"
-    push extracts, String(50, "-")
-    push extracts, rawStrings
-    
     pth2 = pFolder & "\" & baseFileName & "_strings" & LOGFILEEXT
-    fso.writeFile pth2, Join(extracts, vbCrLf)
-    
+    pid = Shell(exe & " """ & dmpPath & """ """ & pth2 & """", vbHide)
+    If Err.Number <> 0 Or pid = 0 Then
+        AddLine "Failed to start strdump.exe? " & Err.Description
+    End If
 End Sub
 
 Private Sub ScanForRWE(pid As Long, Optional prefix As String = "") 'not x64 compatiabled...
@@ -330,6 +313,7 @@ Private Sub ScanForRWE(pid As Long, Optional prefix As String = "") 'not x64 com
     
     On Error Resume Next
     
+
     AddLine "Loading memory map for pid: " & pid & " Path: " & proc.GetProcessPath(pid)
     
     'If proc.x64.IsProcess_x64(pid) <> r_32bit Then
@@ -337,7 +321,9 @@ Private Sub ScanForRWE(pid As Long, Optional prefix As String = "") 'not x64 com
     '    Exit Sub
     'End If
     
+    StartBenchMark
     Set c = proc.GetMemoryMap(pid)
+    AddLine "GetMemoryMap: " & EndBenchMark & " now scanning..."
     
     If c.count = 0 Then
         AddLine "Failed to load memory map!"
@@ -346,6 +332,7 @@ Private Sub ScanForRWE(pid As Long, Optional prefix As String = "") 'not x64 com
     
     pb2.value = 0
     pb2.max = c.count
+    Label2 = Empty
     
     Dim s As String
     Dim entropy As Single
@@ -358,8 +345,12 @@ Private Sub ScanForRWE(pid As Long, Optional prefix As String = "") 'not x64 com
     DoEvents
     DoEvents
     
+    StartBenchMark
     For Each cMem In c
                     
+        Label2 = "Alloc: " & cMem.AllocBaseAsHexString & " Sz: " & SizeToMB(cMem.size)
+        Label2.Refresh
+        
         If abort Then
             AddLine "User aborted scanning memory map!"
             Exit For
@@ -381,14 +372,14 @@ Private Sub ScanForRWE(pid As Long, Optional prefix As String = "") 'not x64 com
                     s = proc.ReadMemory(cMem.pid, cMem.Base, cMem.size) 'doesnt add that much time (if small)
                     entropy = strEntropy(s) 'helps eliminate noise
                     If entropy > 5.8 Then
-                        AddLine pHex(cMem.Base) & " is RWE but not part of an image..possible injection entropy: " & entropy & "%  size:" & Hex(cMem.size)
+                        AddLine pHex(cMem.Base) & " is RWE but not part of an image..possible injection entropy: " & entropy & "%  size:" & SizeToMB(cMem.size)
                         dmpPath = DumpMemorySection(pid, cMem, "raw_" & prefix)
                         If fso.FileExists(dmpPath) Then AddLine "Memory dump saved as " & dmpPath
                         push rep, List1.list(List1.ListCount - 1)
                     End If
                 Else
                     'notable for its size..
-                    AddLine pHex(cMem.Base) & " is LARGE RWE (" & pHex(cMem.size) & ") but not part of an image dumping..."
+                    AddLine pHex(cMem.Base) & " is LARGE RWE (" & SizeToMB(cMem.size) & ") but not part of an image dumping..."
                     push rep, List1.list(List1.ListCount - 1)
                     dmpPath = DumpMemorySection(pid, cMem, prefix)
                     If fso.FileExists(dmpPath) Then AddLine "Memory dump saved as " & dmpPath
@@ -404,6 +395,7 @@ Private Sub ScanForRWE(pid As Long, Optional prefix As String = "") 'not x64 com
         
     Next
         
+    AddLine "RWE scan complete: " & EndBenchMark
     pb2.value = 0
     cmdAbort.Visible = False
     
@@ -415,7 +407,9 @@ Private Function DumpMemorySection(pid As Long, cMem As CMemory, Optional prefix
     Dim dmpPath As String
 
     dmpPath = pFolder & "\" & prefix & pHex(cMem.Base) & ".mem"
+    Label2 = "Dumping: " & cMem.AllocBaseAsHexString & " sz: " & SizeToMB(cMem.size)
     
+    StartBenchMark
     If proc.DumpProcessMemory(pid, cMem.Base, cMem.size, dmpPath) Then
         AddLine "Memory dump of injection successfully saved"
         AddLine "Doing string dump of memory section.."
@@ -424,6 +418,7 @@ Private Function DumpMemorySection(pid As Long, cMem As CMemory, Optional prefix
     Else
         AddLine "Error saving memory dump: " & Err.Description
     End If
+    AddLine "Dump mem section complete " & EndBenchMark
     
 End Function
 
@@ -433,6 +428,8 @@ End Sub
 
 Private Sub Form_Load()
     On Error Resume Next
+    Label1 = Empty
+    Label2 = Empty
     Me.Icon = frmMain.Icon
     RestoreFormSizeAnPosition Me
     AlwaysOnTop Me
@@ -452,3 +449,54 @@ End Sub
 Private Sub Form_Unload(Cancel As Integer)
     SaveFormSizeAnPosition Me
 End Sub
+
+
+'Private Sub doStringDump(ByVal baseFileName As String, dmpPath As String)
+'
+'    On Error Resume Next
+'
+'    If InStr(baseFileName, ".") > 0 Then baseFileName = fso.GetBaseName(baseFileName)
+'
+'    rawStrings = cst.ExtractStrings(dmpPath)
+'    buf = Split(rawStrings, vbCrLf)
+'
+'    ' format is comma delimited entries, first entry is section name for report
+'    ' all other entries are string to find for this section
+'    push config(), "Urls,http:,ftp:"
+'    push config(), "RegKeys,software" ', CurrentControl, clsid"
+'    push config(), "ExeRefs,.exe"
+'
+'    For j = 0 To UBound(config)
+'        c = config(j)
+'        c = Trim(c)
+'        If Len(c) = 0 Then GoTo nextone
+'
+'        tmp = Split(c, ",")
+'        If AryIsEmpty(tmp) Then GoTo nextone
+'
+'        If UBound(tmp) = 0 Then
+'            push rep, "bad format for grep criteria"
+'        Else
+'            x = Empty
+'            For i = 1 To UBound(tmp)
+'                x = x & cst.LineGrep(buf, tmp(i))
+'            Next
+'            If Len(x) > 0 Then
+'                push extracts, tmp(0)
+'                push extracts, String(50, "-")
+'                push extracts, x
+'                push extracts, Empty
+'            End If
+'        End If
+'nextone:
+'        DoEvents
+'    Next
+'
+'    push extracts, "Raw Strings: (" & cst.FilteredCount & " lines filtered out)"
+'    push extracts, String(50, "-")
+'    push extracts, rawStrings
+'
+'    pth2 = pFolder & "\" & baseFileName & "_strings" & LOGFILEEXT
+'    fso.writeFile pth2, Join(extracts, vbCrLf)
+'
+'End Sub

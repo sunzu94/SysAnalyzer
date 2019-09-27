@@ -62,6 +62,7 @@ Global DirWatchActive As Boolean
 Global isAutoRunMode As Boolean
 Global outputDir As String
 Global LOGFILEEXT As String
+Global HOMEDIR As String
 
 Global Const LANG_US = &H409
 Private Const HWND_NOTOPMOST = -2
@@ -202,6 +203,20 @@ Private Declare Function GetShortPathName Lib "kernel32" Alias "GetShortPathName
 Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 
 Dim childWindows As Collection
+Private startTime As Long
+Private Declare Function GetTickCount Lib "kernel32" () As Long
+
+
+Sub StartBenchMark()
+    startTime = GetTickCount()
+End Sub
+
+Function EndBenchMark() As String
+    Dim endTime As Long, loadTime As Long
+    endTime = GetTickCount()
+    loadTime = endTime - startTime
+    EndBenchMark = loadTime / 1000 & " seconds"
+End Function
 
 Sub LaunchWebPage(url)
     ShellExecute 0, "open", CStr(url), 0, 0, 1
@@ -754,6 +769,52 @@ Function FileExists(path) As Boolean
   If Dir(path, vbHidden Or vbNormal Or vbReadOnly Or vbSystem) <> "" Then FileExists = True
 End Function
 
+Public Function FileSize(fPath As String) As String
+    Dim fsize As Long
+    Dim szName As String
+    On Error GoTo hell
+    
+    fsize = FileLen(fPath)
+    
+    szName = " bytes"
+    If fsize > 1024 Then
+        fsize = fsize / 1024
+        szName = " Kb"
+    End If
+    
+    If fsize > 1024 Then
+        fsize = fsize / 1024
+        szName = " Mb"
+    End If
+    
+    FileSize = fsize & szName
+    
+    Exit Function
+hell:
+    
+End Function
+
+Public Function SizeToMB(fsize As Long) As String
+    Dim szName As String
+    On Error GoTo hell
+    
+    szName = " bytes"
+    If fsize > 1024 Then
+        fsize = fsize / 1024
+        szName = " Kb"
+    End If
+    
+    If fsize > 1024 Then
+        fsize = fsize / 1024
+        szName = " Mb"
+    End If
+    
+    SizeToMB = fsize & szName
+    
+    Exit Function
+hell:
+    
+End Function
 
 
 Function AryIsEmpty(ary) As Boolean
