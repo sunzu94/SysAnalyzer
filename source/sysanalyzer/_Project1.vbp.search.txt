@@ -1,3 +1,4 @@
+samplePath
 event
 homedir
 doStringDump

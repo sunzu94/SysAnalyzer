@@ -63,6 +63,8 @@ Sub Main()
     If cmd.args.Count = 0 Then
         con.WriteLine "Usage: strdump.exe <inFile> [outFile] [/filter /savefilt]"
         con.WriteLine "If outfile is omitted infile.str is default", vbInformation
+        con.WriteLine "Press any key to exit..."
+        If Not IsIde Then con.ReadChar
         doEnd
     End If
     

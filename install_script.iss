@@ -20,6 +20,7 @@ Source: ./dependancy\zlib.dll; DestDir: {app}
 Source: ./dependancy\MSINET.OCX; DestDir: {sys}; Flags: uninsneveruninstall regserver promptifolder
 
 ;
+Source: strDump.exe; DestDir: {app}; Flags: ignoreversion
 Source: virustotal.exe; DestDir: {app}; Flags: ignoreversion
 Source: api_log.dll; DestDir: {app}; Flags: ignoreversion
 Source: enumMutex.dll; DestDir: {app}; Flags: ignoreversion

@@ -49,6 +49,8 @@ Public Function LoadArgs(Optional cmdLine) As Long
     'already strings double quoted strings and honors the boundaries of..
     'does not honor the boundaries of single quoted strings so we convert...
     lpszArgs = CommandLineToArgvAsPtrW(StrPtr(Replace(cmd, "'", """")), nArgs)
+     
+    'MsgBox lpszArgs & " " & Command
     
     If lpszArgs <> 0 Then
     

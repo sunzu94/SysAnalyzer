@@ -1582,11 +1582,8 @@ Public Sub mnuToolItem_Click(index As Integer)
                     End If
                     
                     On Error Resume Next
-                    If isIde() Then
-                        Shell App.path & "\..\..\sysanalyzer.exe" & " """ & samplePath & """", vbNormalFocus
-                    Else
-                        Shell App.path & "\sysanalyzer.exe" & " """ & samplePath & """", vbNormalFocus
-                    End If
+                    If Len(samplePath) > 0 Then samplePath = " """ & samplePath & """"
+                    Shell HOMEDIR & "\sysanalyzer.exe" & samplePath, vbNormalFocus
                     Unload Me
             
         End Select

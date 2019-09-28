@@ -1090,16 +1090,15 @@ Private Sub Form_Load()
         HOMEDIR = fso.GetParentFolder(HOMEDIR)
         If Not fso.FileExists(HOMEDIR & "\sysanalyzer.exe") Then Debug.Print "bad homedir?: " & HOMEDIR
     End If
-    
-    'MsgBox Command
-    
+     
     If IsVistaPlus() Then
         If Not IsProcessElevated() Then
             'If Not MsgBox("Can I elevate to administrator?", vbYesNo) = vbYes Then
                 If Not IsUserAnAdministrator() Then
                     lblAdmin.Caption = "This tool really requires admin privledges"
                 Else
-                    RunElevated App.path & "\sysAnalyzer.exe", essSW_SHOW, , Command
+                    'MsgBox "elevating!"
+                    RunElevated HOMEDIR & "\sysAnalyzer.exe", essSW_SHOW, , Command
                     End
                 End If
             'End If
@@ -1171,11 +1170,12 @@ Private Sub Form_Load()
     LoadUsers
     'Me.Icon = frmMain.Icon 'this would load frmMain to early...
     
-    cmdLine.LoadArgs '"'%ap%\_safe_test1.exe' /delay fart /args 'test 123' /autostart /outDir c:\output" 'sample cmdline for testing...
-    
+    cmdLine.LoadArgs '"'%ap%\_safe_test1.exe' /delay fart /args 'test 123' /autostart /outDir c:\output"  'sample cmdline for testing...
+
     If cmdLine.args.count > 0 Then
-       
-        sample = Replace(cmdLine.args(1), "%ap%", App.path & IIf(isIde(), "\..\..\", ""))
+
+        sample = Replace(cmdLine.args(1), "%ap%", HOMEDIR)
+        sample = Replace(sample, """", Empty)
         
         If fso.FileExists(sample) Then
             txtBinary = sample
@@ -1191,8 +1191,8 @@ Private Sub Form_Load()
                          "Command line usage: '<path to analysis file>' \n\nOptional Arguments:\n    /autostart " & _
                          "\n    /delay <int> \n    /args '<arg string>' \n    /outDir '<output folder>' /n    /ext extension" & _
                          "\n\nNote: All other options can be preconfigured in the GUI which saves " & _
-                         "settings across runs.\n          Just open open UI, configure, then close wizard form to save settings" & _
-                         "\n          Either double or single quotes are fine" _
+                         "settings across runs.\n          Just open open UI, configure, then close wizard form to =" & _
+                         "\n          save settings. Either double or single quotes are fine" _
                    , "\n", vbCrLf), vbInformation
             End
         End If
