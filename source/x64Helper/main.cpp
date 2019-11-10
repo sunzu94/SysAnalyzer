@@ -5,7 +5,12 @@
 #include <tchar.h>
 #include <stdio.h>
 #include <psapi.h>
+#include <string.h>
+#include <wtsapi32.h>
+#include <Shlwapi.h>
 #pragma comment(lib, "psapi") 
+#pragma comment(lib, "Wtsapi32.lib")
+#pragma comment(lib, "Shlwapi.lib") //StrStrI
 
 typedef unsigned int uint;
 
@@ -46,15 +51,15 @@ bool FileExists(char* szPath)
   return rv;
 }
 
-bool isx64Process(int pid){
+bool isx64Process(int pid, bool silent = false){
 	BOOL ret = false;
 	HANDLE hProcess = OpenProcess( PROCESS_QUERY_INFORMATION, FALSE, pid );
 	if (NULL == hProcess){
-		printf("Error: failed to open process..");
+		if(!silent) printf("Error: failed to open process..");
         return false;
 	}
 	if(IsWow64Process(hProcess, &ret)==0){
-		printf("Error: IsWow64Process failed");
+		if(!silent) printf("Error: IsWow64Process failed");
 		ret = FALSE;
 	}
 	CloseHandle(hProcess);
@@ -119,6 +124,34 @@ BOOL EnableSeDebug(void){
 	printf("SeDebug Enabled? %s\n", rv==TRUE ? "true" : "false");
 	return rv;
 };
+
+void ListProcesses(char* match){
+
+	int mode = 0;
+	bool x64 = false;
+    bool show = true;
+	DWORD count = 0;
+	PWTS_PROCESS_INFO p;
+	BOOL result = WTSEnumerateProcesses(WTS_CURRENT_SERVER_HANDLE,0,1,&p,&count);	
+	
+	mode = atoi(match);
+	if(mode != 0){
+		if(mode == 32 || mode == 64){
+			printf("Showing %d bit processes only..\n", mode);
+			match = 0;
+		}
+	}
+
+	for (DWORD i=0; i < count; i++){
+		show=true; 
+		x64 = isx64Process(p->ProcessId,true);
+		if(mode == 32 && x64) show = false;
+		if(mode == 64 && !x64) show = false;
+		if(match) show = StrStrI(p->pProcessName,match) != NULL ? true : false;
+		if(show) printf("%04d  %s\n", p->ProcessId , p->pProcessName);
+		p++;
+	}
+}
 
 int PrintModules( DWORD processID )
 {
@@ -442,62 +475,74 @@ bool IsProcHandleValid( HANDLE hProc )
 int memMap(int pid, char* pth)
 {
 
-	HANDLE hProcess;
-    DWORD cbNeeded;
-	int rv=0;
+	HANDLE hProcess; MEMORY_BASIC_INFORMATION mbi;
+	int rv=0; int i=0; long long va = 0; DWORD modLen=0; FILE* f = 0; DWORD cbNeeded;SIZE_T wErr;
+    bool cntMode = false;
+	char mod[500];
 
     hProcess = OpenProcess( PROCESS_QUERY_INFORMATION |
                             PROCESS_VM_READ | SYNCHRONIZE,
                             FALSE, pid );
+
     if (NULL == hProcess){
-		printf("Error: failed to open process..");
+		printf("Error: failed to open process..\n");
         return 1;
 	}
 
-	MEMORY_BASIC_INFORMATION mbi;
-	long long va = 0;  
-	SIZE_T wErr;
-	FILE* f = fopen(pth, "w");
-    char mod[500];
-	DWORD modLen=0;
-    int i=0;
-
-	if(f==NULL){
-		printf("Error: failed to open file %s", pth);
-        return 1;
+	if(pth){
+		if(strstr(pth,"-c") != 0){
+			cntMode = true; 
+			pth =0;
+		}
+		else{
+			f = fopen(pth, "w");
+			if(f==NULL){
+				printf("Error: failed to open file %s\n", pth);
+				return 1;
+			}
+			fprintf(f, "va, AllocationBase, Size, AllocationProtect, Type, Protect, State, ModuleFileName\r\n");
+		}
 	}
     
-	fprintf(f, "va, AllocationBase, Size, AllocationProtect, Type, Protect, State, ModuleFileName\r\n");
+	if(!cntMode && pth==0)
+		printf("va, AllocationBase, Size, AllocationProtect, Type, Protect, State, ModuleFileName\r\n");
 
 	while(va < 0x00007FFFFFFFFFFF)// x64 User Space Limit
 	{
-		wErr = VirtualQueryEx(hProcess, (LPCVOID)va, &mbi, sizeof(mbi));
+		if(!IsProcHandleValid(hProcess)) break;
+
+		memset(&mbi, 0, sizeof(MEMORY_BASIC_INFORMATION));
+		wErr = VirtualQueryEx(hProcess, (LPCVOID)va, &mbi, sizeof(MEMORY_BASIC_INFORMATION));
+
+		if(mbi.RegionSize < 1) break;
+		if(wErr == 0 || wErr == ERROR_INVALID_PARAMETER) break;
+        if(rv > 8000){printf("Error: To many allocs bug? breaking\n"); break;}
 
 		if(mbi.State != MEM_FREE){
-			mod[0]=0;
-			modLen=0;
-			if(va > 0){
-				modLen = GetModuleFileNameExA(hProcess, (HMODULE)va, mod, 500);
-				if(modLen==0) mod[0]=0;
+			rv++;
+			if(!cntMode){ 
+				mod[0]=0;
+				if(va > 0){
+					modLen = GetModuleFileNameExA(hProcess, (HMODULE)va, mod, 500);
+					if(modLen==0) mod[0]=0;
+				}
+				if(pth)
+					fprintf(f, 
+							/*"%.16llX,%.16llX,%.16llX,%.8lX,%.8lX,%.8lX,%.8lX,%s\r\n",*/
+							"%llX,%llX,%llX,%lX,%lX,%lX,%lX,%s\r\n",
+							va, mbi.AllocationBase, mbi.RegionSize, mbi.AllocationProtect, mbi.Type, mbi.Protect, mbi.State, mod);   
+				else
+					printf(	/*"%.16llX,%.16llX,%.16llX,%.8lX,%.8lX,%.8lX,%.8lX,%s\r\n",*/
+							"%llX,%llX,%llX,%lX,%lX,%lX,%lX,%s\r\n",
+							va, mbi.AllocationBase, mbi.RegionSize, mbi.AllocationProtect, mbi.Type, mbi.Protect, mbi.State, mod); 
 			}
-			fprintf(f, 
-				    /*"%.16llX,%.16llX,%.16llX,%.8lX,%.8lX,%.8lX,%.8lX,%s\r\n",*/
-				    "%llX,%llX,%llX,%lX,%lX,%lX,%lX,%s\r\n",
-				    va, mbi.AllocationBase, mbi.RegionSize, mbi.AllocationProtect, mbi.Type, mbi.Protect, mbi.State, mod);      
 		}
 		
-		if(!IsProcHandleValid(hProcess)) break;
-		if(mbi.RegionSize < 1) break;
 		va += mbi.RegionSize;
-		//printf("%d) %.16llX\r\n", i++, va);
-
-		/*if(va >= 0x000007FFFFFFFFFF) {
-			break;
-		}*/
-
 	}
 
-	fclose(f);
+	if(cntMode) printf("Allocs: %d\n",rv);
+	if(pth) fclose(f);
 	return 0;
 
 }
@@ -511,15 +556,17 @@ void usage(int invalidOptionCount=0){
 	printf("\t/dumpmodule decimal_pid hex_string_base hex_string_size out_file_path\n");
 	printf("\t/dumpprocess decimal_pid out_file_path\n");
 	printf("\t/startwdll exe_path dll_path\n");
-	printf("\t/memmap decimal_pid out_file_path\n");
+	printf("\t/memmap decimal_pid [out_file_path|-c] (pid -32|-64|-1)\n");
 	printf("\t/loadlib file_path [exportToCall [cdecl] ]\n");
+	printf("\t/procs [32|64|strMatch]\n");
+
 	if( IsDebuggerPresent() ) getch();
 	exit(0);
 }
 
 int main(int argc, char* argv[] )
 {
-	uint pid=0;
+	int pid=0;
 	char* dll= 0;
 	char* exp = 0;
 	typedef void (__stdcall *myStdExport)(void);
@@ -638,14 +685,47 @@ int main(int argc, char* argv[] )
 
     // /memmap decimal_pid out_path
 	if(strstr(argv[1],"/memmap") > 0 ){ 
-		if(argc!=4) usage(3);
+		if(argc < 3 || argc > 4 ) usage(3);
 		pid = atoi( argv[2] );
-		dll = strdup(argv[3]);
-		if(FileExists(dll)){
-			printf("Error: out file already exists: %s\n\n",dll);
-			usage();
+		//printf("pid = %d\n",pid);
+		if(argc==4){
+			dll = strdup(argv[3]);
+			if(FileExists(dll)){
+				printf("Error: out file already exists: %s\n\n",dll);
+				usage();
+			}
 		}
-		rv = memMap(pid,dll);
+		if(pid < 1){
+			//printf("in enum pid= %d\n",pid);
+			bool show = true;
+			DWORD count = 0;
+			PWTS_PROCESS_INFO p;
+			BOOL result = WTSEnumerateProcesses(WTS_CURRENT_SERVER_HANDLE,0,1,&p,&count);	
+			for (DWORD i=0; i < count; i++){
+
+				if(pid == -32) 
+					show = !isx64Process(p->ProcessId,true);
+				else if(pid == -64) 
+					show = isx64Process(p->ProcessId,true) ;
+				else 
+					show = true;
+
+				if(show){
+					printf("%6d %4s %30s   ",p->ProcessId, isx64Process(p->ProcessId,true) ? "64":"", p->pProcessName);
+					rv = memMap(p->ProcessId,"-c");
+				}
+				p++;
+			}
+		}else{
+			rv = memMap(pid,dll);
+		}
+		handled = true;
+	}
+
+	if(strstr(argv[1],"/procs") > 0 ){ 
+		if(argc < 2 || argc > 3) usage(2);
+		if(argc==3) dll = strdup(argv[2]);
+		ListProcesses(dll);
 		handled = true;
 	}
 

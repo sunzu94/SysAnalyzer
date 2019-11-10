@@ -1,3 +1,5 @@
+virtualprotect
+protect
 samplePath
 event
 homedir
