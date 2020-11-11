@@ -472,6 +472,7 @@ bool IsProcHandleValid( HANDLE hProc )
 }
 
 //bug fix: had endless loop if process exited after OpenProcess succeeded 7-23-16 dz
+//         some processes could create huge dump file every alloc 0x1000  11-10-19 dz
 int memMap(int pid, char* pth)
 {
 
@@ -479,6 +480,7 @@ int memMap(int pid, char* pth)
 	int rv=0; int i=0; long long va = 0; DWORD modLen=0; FILE* f = 0; DWORD cbNeeded;SIZE_T wErr;
     bool cntMode = false;
 	char mod[500];
+    int MAX_ALLOCS = 25000;
 
     hProcess = OpenProcess( PROCESS_QUERY_INFORMATION |
                             PROCESS_VM_READ | SYNCHRONIZE,
@@ -516,7 +518,7 @@ int memMap(int pid, char* pth)
 
 		if(mbi.RegionSize < 1) break;
 		if(wErr == 0 || wErr == ERROR_INVALID_PARAMETER) break;
-        if(rv > 8000){printf("Error: To many allocs bug? breaking\n"); break;}
+        if(rv > MAX_ALLOCS){printf("Error: To many allocs bug? breaking\n"); break;}
 
 		if(mbi.State != MEM_FREE){
 			rv++;

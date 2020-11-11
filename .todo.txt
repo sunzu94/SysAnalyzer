@@ -1,4 +1,4 @@
-
+HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run
 filterList subtractive filter allow csv for multiple?
 
 shellext copy now has new dependancies add them here as well...

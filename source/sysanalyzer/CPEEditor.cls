@@ -97,8 +97,8 @@ Private Type IMAGEDOSHEADER
 End Type
 
 Private Type IMAGE_SECTION_HEADER
-    nameSec As String * 6
-    PhysicalAddress As Integer
+    nameSec As String * 8
+    'PhysicalAddress As Integer
     VirtualSize As Long
     VirtualAddress As Long
     SizeOfRawData As Long
@@ -221,7 +221,7 @@ Enum eDATA_DIRECTORY
     Import_Address_Table = 12
     Delay_Import_Descriptor = 13
     CLI_Header = 14
-    Reserved = 15
+    reserved = 15
 End Enum
 
 Private Type MungeCurr
@@ -430,7 +430,7 @@ Private Sub LoadSections(fhand As Long, numSections As Integer, Optional section
         Set CSect = New CSection
         With udtSH
             CSect.nameSec = Replace(.nameSec, Chr(0), "")
-            CSect.PhysicalAddress = .PhysicalAddress
+            'CSect.PhysicalAddress = .PhysicalAddress
             CSect.VirtualSize = .VirtualSize
             CSect.VirtualAddress = .VirtualAddress
             CSect.SizeOfRawData = .SizeOfRawData

@@ -1417,6 +1417,7 @@ Private Sub tmrDelayShell_Timer()
     
     If chkWatchDirs.value = 1 Then
         DirWatchCtl True
+        If DirWatchActive Then frmMain.cmdDirWatch.Caption = "Stop Filesystem Monitor"
     Else
         frmMain.SSTab1.TabVisible(6) = False
     End If

@@ -1,3 +1,7 @@
+lvProcessDllList
+DirWatchActive
+dirwatchctl
+ado.
 virtualprotect
 protect
 samplePath

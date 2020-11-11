@@ -55,8 +55,8 @@ Private Type IMAGEDOSHEADER
 End Type
 
 Private Type IMAGE_SECTION_HEADER
-    nameSec As String * 6
-    PhisicalAddress As Integer
+    nameSec As String * 8
+    'PhisicalAddress As Integer
     VirtualSize As Long
     VirtualAddress As Long
     SizeOfRawData As Long
@@ -135,7 +135,7 @@ End Type
 Private Sections() As IMAGE_SECTION_HEADER
 
 
-Function QuickDumpFix(fpath As String) As Boolean
+Function QuickDumpFix(fPath As String) As Boolean
     
     Dim DOSHEADER As IMAGEDOSHEADER
     Dim NTHEADER As IMAGE_NT_HEADERS
@@ -151,12 +151,12 @@ Function QuickDumpFix(fpath As String) As Boolean
     Erase Sections
     f = FreeFile
     
-    If Not FileExists(fpath) Then
-        MsgBox "File not found: " & fpath
+    If Not FileExists(fPath) Then
+        MsgBox "File not found: " & fPath
         Exit Function
     End If
     
-    Open fpath For Binary As f
+    Open fPath For Binary As f
     Get f, , DOSHEADER
     Get f, DOSHEADER.e_lfanew + 1, NTHEADER
     
