@@ -89,14 +89,14 @@ Public Function StartProcessWithDLL(exePath As String, dllPath As String, debugL
     Dim hThread As Long
     Dim writeLen As Long
     Dim b() As Byte
-    Dim buflen As Long
+    Dim bufLen As Long
     
     Const PAGE_READWRITE = 4
     Const CREATE_SUSPENDED = &H4
     Const MEM_COMMIT = &H1000
     
     b() = StrConv(dllPath & Chr(0), vbFromUnicode)
-    buflen = UBound(b) + 1
+    bufLen = UBound(b) + 1
     
     If IsNumeric(exePath) Then
         hProcess = OpenProcess(PROCESS_ALL_ACCESS, False, CLng(exePath))
@@ -109,11 +109,11 @@ Public Function StartProcessWithDLL(exePath As String, dllPath As String, debugL
         push debugLog(), "OpenProcess Handle=" & hProcess
     End If
                 
-    lpdllPath = VirtualAllocEx(hProcess, ByVal 0, buflen, MEM_COMMIT, ByVal PAGE_READWRITE)
+    lpdllPath = VirtualAllocEx(hProcess, ByVal 0, bufLen, MEM_COMMIT, ByVal PAGE_READWRITE)
     push debugLog(), "Remote Allocation base: " & Hex(lpdllPath)
         
-    ret = WriteProcessMemory(hProcess, ByVal lpdllPath, b(0), buflen, writeLen)
-    push debugLog(), "WriteProcessMemory=" & ret & " BufLen=" & buflen & " Bytes Written: " & writeLen
+    ret = WriteProcessMemory(hProcess, ByVal lpdllPath, b(0), bufLen, writeLen)
+    push debugLog(), "WriteProcessMemory=" & ret & " BufLen=" & bufLen & " Bytes Written: " & writeLen
             
     lpfnLoadLib = GetProcAddress(GetModuleHandle("kernel32.dll"), "LoadLibraryA")
     push debugLog(), "LoadLibraryA = " & Hex(lpfnLoadLib)
@@ -133,4 +133,84 @@ Function IsHex(it) As Long
       IsHex = CLng("&H" & it)
     Exit Function
 out:  IsHex = 0
+End Function
+
+Function EnumWMISubscriptions() As Collection 'of CColItem
+    
+    On Error Resume Next
+    Dim c As New Collection, ci As CColItem
+    Dim objWMIService, colItems, n, curType As String
+    
+    Set EnumWMISubscriptions = c
+    Set objWMIService = GetObject("winmgmts:\\.\root\subscription")
+    If objWMIService Is Nothing Then Exit Function
+    
+    curType = "FilterToConsumerBinding"
+    Set colItems = objWMIService.ExecQuery("SELECT * FROM __FilterToConsumerBinding", , 48)
+
+    For Each n In colItems
+        Set ci = New CColItem
+        ci.Name = curType
+        ci.AppendData "Filter:" & n.Filter
+        ci.AppendData "Consumer: " & n.consumer
+        c.Add ci, ci.GenHashCode()
+    Next
+    
+    curType = "EventConsumer"
+    Set colItems = objWMIService.ExecQuery("SELECT * FROM __EventConsumer", , 48)
+
+    For Each n In colItems
+        Set ci = New CColItem
+        ci.Name = curType
+        ci.AppendData "Name: " & n.Name
+        ci.AppendData "ScriptText: " & n.scripttext
+        c.Add ci, ci.GenHashCode()
+    Next
+    
+    curType = "EventFilter"
+    Set colItems = objWMIService.ExecQuery("SELECT * FROM __EventFilter", , 48)
+
+    For Each n In colItems
+        Set ci = New CColItem
+        ci.Name = curType
+        ci.AppendData "Name: " & n.Name
+        ci.AppendData "Query: " & n.Query
+        c.Add ci, ci.GenHashCode()
+    Next
+
+    curType = "IntervalTimerInstruction"
+    Set colItems = objWMIService.ExecQuery("SELECT * FROM __IntervalTimerInstruction", , 48)
+
+    For Each n In colItems
+        Set ci = New CColItem
+        ci.Name = curType
+        ci.AppendData "ID: " & n.id
+        ci.AppendData "IntervalBetweenEvents " & n.intervalbetweenevents
+        c.Add ci, ci.GenHashCode()
+    Next
+ 
+    curType = "ActiveScriptEventConsumer"
+    Set colItems = objWMIService.ExecQuery("SELECT * FROM ActiveScriptEventConsumer", , 48)
+
+    For Each n In colItems
+        Set ci = New CColItem
+        ci.Name = curType
+        ci.AppendData "Name: " & n.Name
+        ci.AppendData "ScriptingEngine: " & n.scriptingengine
+        ci.AppendData "ScriptFileName: " & n.scriptfilename 'can be null
+        ci.AppendData "ScriptText: " & n.scripttext
+        c.Add ci, ci.GenHashCode()
+    Next
+
+    curType = "CommandLineEventConsumer"
+    Set colItems = objWMIService.ExecQuery("SELECT * FROM CommandLineEventConsumer", , 48)
+
+    For Each n In colItems
+        Set ci = New CColItem
+        ci.Name = curType
+        ci.AppendData "Name: " & n.Name
+        ci.AppendData "ExePath: " & n.ExecutablePath
+        c.Add ci, ci.GenHashCode()
+    Next
+    
 End Function

@@ -1,4 +1,5 @@
 VERSION 5.00
+Object = "{3B7C8863-D78F-101B-B9B5-04021C009402}#1.2#0"; "richtx32.ocx"
 Begin VB.Form frmReport 
    Caption         =   "List Data"
    ClientHeight    =   6285
@@ -9,25 +10,20 @@ Begin VB.Form frmReport
    ScaleHeight     =   6285
    ScaleWidth      =   12075
    StartUpPosition =   2  'CenterScreen
-   Begin VB.CommandButton Command2 
-      Caption         =   "Save "
-      Height          =   255
-      Left            =   1740
-      TabIndex        =   2
-      Top             =   0
-      Width           =   1695
-   End
-   Begin VB.CommandButton Command1 
-      Caption         =   "Copy"
-      Height          =   255
-      Left            =   60
-      TabIndex        =   1
-      Top             =   0
-      Width           =   1575
-   End
-   Begin VB.TextBox Text1 
-      BeginProperty Font 
-         Name            =   "Courier New"
+   Begin RichTextLib.RichTextBox Text1 
+      Height          =   5865
+      Left            =   45
+      TabIndex        =   3
+      Top             =   315
+      Width           =   11940
+      _ExtentX        =   21061
+      _ExtentY        =   10345
+      _Version        =   393217
+      Enabled         =   -1  'True
+      ScrollBars      =   3
+      TextRTF         =   $"frmReport.frx":0000
+      BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
+         Name            =   "Courier"
          Size            =   12
          Charset         =   0
          Weight          =   400
@@ -35,13 +31,34 @@ Begin VB.Form frmReport
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      Height          =   5835
+   End
+   Begin RichTextLib.RichTextBox RichTextBox1 
+      Height          =   60
+      Left            =   5040
+      TabIndex        =   2
+      Top             =   1260
+      Width           =   60
+      _ExtentX        =   106
+      _ExtentY        =   106
+      _Version        =   393217
+      Enabled         =   -1  'True
+      TextRTF         =   $"frmReport.frx":007C
+   End
+   Begin VB.CommandButton Command2 
+      Caption         =   "Save "
+      Height          =   255
+      Left            =   1740
+      TabIndex        =   1
+      Top             =   0
+      Width           =   1695
+   End
+   Begin VB.CommandButton Command1 
+      Caption         =   "Copy"
+      Height          =   255
       Left            =   60
-      MultiLine       =   -1  'True
-      ScrollBars      =   3  'Both
       TabIndex        =   0
-      Top             =   300
-      Width           =   11925
+      Top             =   0
+      Width           =   1305
    End
 End
 Attribute VB_Name = "frmReport"
@@ -72,7 +89,7 @@ Attribute VB_Exposed = False
 
 'Used in several projects do not change interface!
 
-Private Declare Sub SetWindowPos Lib "user32" (ByVal Hwnd As Long, ByVal _
+Private Declare Sub SetWindowPos Lib "user32" (ByVal hwnd As Long, ByVal _
     hWndInsertAfter As Long, ByVal x As Long, ByVal y As Long, ByVal cx _
     As Long, ByVal cy As Long, ByVal wFlags As Long)
     
@@ -86,15 +103,15 @@ Function ShowList(list, Optional modal As Boolean = False, Optional saveName As 
     filesaveName = saveName
     
     If topMost Then
-        SetWindowPos Me.Hwnd, HWND_TOPMOST, Me.Left / 15, _
+        SetWindowPos Me.hwnd, HWND_TOPMOST, Me.Left / 15, _
             Me.Top / 15, Me.Width / 15, _
             Me.Height / 15, 0
     End If
     
     If IsArray(list) Then
-        Text1 = Join(list, vbCrLf)
+        Text1.Text = Join(list, vbCrLf)
     Else
-        Text1 = list
+        Text1.Text = list
     End If
     
     On Error Resume Next
@@ -112,26 +129,26 @@ End Function
  
 
 Private Sub Command2_Click()
-    Dim base As String
+    Dim Base As String
     On Error Resume Next
     
     If Len(LOGFILEEXT) = 0 Then LOGFILEEXT = ".txt"
     
     If Len(filesaveName) = 0 Then
-        base = fso.GetBaseName(frmMain.samplePath)
-        base = UserDeskTopFolder & "\" & base & "_" & Format(Now(), "h.nam/pm") & LOGFILEEXT
+        Base = fso.GetBaseName(frmMain.samplePath)
+        Base = UserDeskTopFolder & "\" & Base & "_" & Format(Now(), "h.nam/pm") & LOGFILEEXT
     Else
-        base = UserDeskTopFolder & "\" & filesaveName
+        Base = UserDeskTopFolder & "\" & filesaveName
     End If
     
-    fso.writeFile base, Text1
-    If Err.Number = 0 Then MsgBox "Saved Successfully as:" & vbCrLf & vbCrLf & base
+    fso.writeFile Base, Text1.Text
+    If Err.Number = 0 Then MsgBox "Saved Successfully as:" & vbCrLf & vbCrLf & Base
     
 End Sub
 
 Private Sub Command1_Click()
     Clipboard.Clear
-    Clipboard.SetText Text1
+    Clipboard.SetText Text1.Text
 End Sub
 
 Private Sub Form_Load()

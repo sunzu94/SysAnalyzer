@@ -66,6 +66,9 @@ Dim Pipes1 As Collection
 Dim Pipes2 As Collection
 Dim ChangedPipes As Collection
 
+Dim WMI1 As Collection 'of CColItem
+Dim WMI2 As Collection
+Dim ChangedWMI As Collection
 
 'Dim liProc As ListItem
 'Dim liExplorer As ListItem
@@ -118,7 +121,7 @@ Sub ShowBaseSnap(Optional FirstTabOnly = False)
         Exit Sub
     End If
     DisplayMode = dm_snap1
-    ShowSnapShot Processes1, Ports1, Services1, Mutex1, Tasks1, Pipes1, Drivers1, CReg.Snap1, FirstTabOnly
+    ShowSnapShot Processes1, Ports1, Services1, Mutex1, Tasks1, Pipes1, WMI1, Drivers1, CReg.Snap1, FirstTabOnly
 End Sub
 
 Sub ShowSnap2()
@@ -127,7 +130,7 @@ Sub ShowSnap2()
         Exit Sub
     End If
     DisplayMode = dm_snap2
-    ShowSnapShot Processes2, ports2, Services2, Mutex2, Tasks2, Pipes2, Drivers2, CReg.Snap2
+    ShowSnapShot Processes2, ports2, Services2, Mutex2, Tasks2, Pipes2, WMI2, Drivers2, CReg.Snap2
 End Sub
 
 
@@ -143,9 +146,10 @@ Sub DoSnap1()
     frmMain.lvRegKeys.ListItems.Clear
     frmMain.lvTasks.ListItems.Clear
     frmMain.lvMutex.Clear
+    frmMain.lvWMI.Clear
     
     frmMain.Display = "Taking SnapShot 1"
-    frmMain.pb.max = 9
+    frmMain.pb.max = 10
     frmMain.pb.value = 0
     
     Sleep 100
@@ -191,6 +195,11 @@ Sub DoSnap1()
     
     frmMain.Display = "Enumerating Services..."
     Set Services1 = CProc.EnumServices()
+    frmMain.pb.value = frmMain.pb.value + 1
+    If shutDown Then Exit Sub
+    
+    frmMain.Display = "Enumerating WMI Subscriptions..."
+    Set WMI1 = EnumWMISubscriptions()
     frmMain.pb.value = frmMain.pb.value + 1
     If shutDown Then Exit Sub
     
@@ -242,7 +251,7 @@ Sub DoSnap2()
     
     On Error Resume Next
     
-    frmMain.pb.max = 9
+    frmMain.pb.max = 10
     frmMain.pb.value = 0
     frmMain.Display = "Taking Snapshot 2"
     
@@ -291,6 +300,11 @@ Sub DoSnap2()
     frmMain.pb.value = frmMain.pb.value + 1
     If shutDown Then Exit Sub
 
+    frmMain.Display = "Enumerating WMI Subscriptions..."
+    Set WMI2 = EnumWMISubscriptions()
+    frmMain.pb.value = frmMain.pb.value + 1
+    If shutDown Then Exit Sub
+ 
     frmMain.Display = "Enumerating registry keys..."
     DoEvents
     
@@ -372,6 +386,7 @@ Sub ShowDiffReport()
     Set ChangedMutexes = New Collection
     Set ChangedTasks = New Collection
     Set ChangedPipes = New Collection
+    Set ChangedWMI = New Collection
     
     Dim dd As CProcessDllDiff
     Dim t As CTaskElem
@@ -383,6 +398,7 @@ Sub ShowDiffReport()
     Dim spec As String
     Dim drv As Variant
     Dim svc As New CService
+    Dim ci As CColItem
     
     Dim r() As String
     
@@ -443,15 +459,21 @@ Sub ShowDiffReport()
     'Next
         
     For Each t In Tasks2
-        If Not objKeyExistsInCollection(Tasks1, t.hashCode) Then
-            ChangedTasks.Add t, t.hashCode
+        If Not objKeyExistsInCollection(Tasks1, t.HashCode) Then
+            ChangedTasks.Add t, t.HashCode
+        End If
+    Next
+
+    For Each ci In WMI2
+        If Not objKeyExistsInCollection(WMI1, ci.HashCode) Then
+            ChangedWMI.Add ci, ci.HashCode
         End If
     Next
 
     DiffServices
     
     ShowSnapShot ChangedProcesses, ChangedPorts, ChangedServices, ChangedMutexes, _
-                 ChangedTasks, ChangedPipes, ChangedDrivers, CReg.GetDifferences
+                 ChangedTasks, ChangedPipes, ChangedWMI, ChangedDrivers, CReg.GetDifferences
 
 
 End Sub
@@ -459,9 +481,10 @@ End Sub
 
 Private Sub ShowSnapShot(procs As Collection, ports As Collection, servcs As Collection, _
                         mutexes As Collection, tasks As Collection, _
-                        pipes As Collection, _
+                        pipes As Collection, wmi As Collection, _
                         Optional drivers As Collection, _
-                        Optional regSnap As Collection, Optional FirstTabOnly = False)
+                        Optional regSnap As Collection, _
+                        Optional FirstTabOnly = False)
    
     Dim proc As CProcess
     Dim Port As CProcessPort
@@ -471,6 +494,7 @@ Private Sub ShowSnapShot(procs As Collection, ports As Collection, servcs As Col
     Dim tmp As String
     Dim mm As matchModes
     Dim cme As CMutexElem
+    Dim ci As CColItem
     
     Dim li As ListItem
     Dim fp As FILEPROPERTIE
@@ -481,7 +505,7 @@ Private Sub ShowSnapShot(procs As Collection, ports As Collection, servcs As Col
     
     frmMain.Display = "Showing ShapShot"
     frmMain.pb.value = 0
-    frmMain.pb.max = 9
+    frmMain.pb.max = 10
     
     frmMain.lvProcesses.Clear
     frmMain.lvPorts.ListItems.Clear
@@ -492,13 +516,13 @@ Private Sub ShowSnapShot(procs As Collection, ports As Collection, servcs As Col
     frmMain.lvMutex.Clear
     frmMain.lvTasks.ListItems.Clear
     frmMain.lvServices.ListItems.Clear
-    
+    frmMain.lvWMI.Clear
     
     frmMain.Display = "Loading processes.."
     For Each proc In procs
         mm = not_found
         If known.Ready And known.Loaded And Not FirstTabOnly Then
-            mm = known.isFileKnown(proc.fullpath) 'CProc.GetProcessPath(proc.pid))
+            mm = known.isFileKnown(proc.FullPath) 'CProc.GetProcessPath(proc.pid))
             If known.HideKnownInDisplays And mm = exact_match Then GoTo next_proc
         End If
         'Set li = frmMain.lvProcesses.ListItems.Add(, , pad(proc.pid))
@@ -506,7 +530,7 @@ Private Sub ShowSnapShot(procs As Collection, ports As Collection, servcs As Col
         li.Tag = proc.pid
         li.subItems(1) = pad(proc.ParentPID)
         li.subItems(2) = proc.User & IIf(proc.is64Bit, "  *64 ", Empty)
-        li.subItems(3) = proc.fullpath
+        li.subItems(3) = proc.FullPath
         li.subItems(4) = ServicesForPID(proc.pid, servcs)
         If Len(li.subItems(4)) = 0 Then
             If proc.isAppStorePkg Then
@@ -559,7 +583,12 @@ next_port:
         If shutDown Then Exit Sub
     Next
     
-    
+    frmMain.pb.value = frmMain.pb.value + 1
+    frmMain.Display = "Loading WMI Subscriptions" 'TypeName,Data
+    For Each ci In wmi
+        frmMain.lvWMI.AddItem ci.Name, Len(ci.Data), ci.Data
+        If shutDown Then Exit Sub
+    Next
    
     frmMain.pb.value = frmMain.pb.value + 1
     frmMain.Display = "Loading process dll list.."

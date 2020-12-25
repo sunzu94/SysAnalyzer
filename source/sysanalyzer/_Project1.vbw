@@ -1,9 +1,9 @@
-frmMain = 280, 13, 1150, 827, Z, 72, 52, 969, 724, C
+frmMain = 280, 13, 1150, 827, , 72, 52, 969, 724, C
 CProcessPorts = 88, 88, 1150, 757, 
 CProcessPort = 0, 0, 0, 0, C
 CProcessInfo = 40, 42, 1249, 815, 
 CProcess = 110, 110, 1094, 779, C
-frmReport = 132, 132, 940, 708, , 66, 66, 856, 642, C
+frmReport = 132, 132, 940, 708, Z, 66, 66, 856, 642, C
 CModule = 198, 198, 966, 905, 
 FileProps = -123, 73, 886, 824, 
 CRegDiff = -71, 169, 998, 783, 
@@ -48,3 +48,4 @@ cmdLine = 210, 90, 1174, 930,
 CService = 208, 208, 1235, 849, 
 CIMProcess = 78, 78, 1491, 526, 
 COSInfo = 0, 0, 775, 431, C
+CColItem = 104, 104, 779, 689, C

@@ -15,6 +15,7 @@ Source: ./dependancy\vbDevKit.dll; DestDir: {sys}; Flags: uninsneveruninstall re
 Source: ./dependancy\mscomctl.ocx; DestDir: {sys}; Flags: uninsneveruninstall regserver
 Source: ./dependancy\MSWINSCK.OCX; DestDir: {sys}; Flags: uninsneveruninstall regserver
 Source: ./dependancy\hexed.ocx; DestDir: {sys}; Flags: uninsneveruninstall regserver
+Source: ./dependancy\richtx32.ocx; DestDir: {sys}; Flags: uninsneveruninstall regserver
 Source: ./dependancy\libVT.dll; DestDir: {sys}; Flags: uninsneveruninstall regserver
 Source: ./dependancy\zlib.dll; DestDir: {app}
 Source: ./dependancy\MSINET.OCX; DestDir: {sys}; Flags: uninsneveruninstall regserver promptifolder

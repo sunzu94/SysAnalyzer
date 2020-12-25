@@ -53,20 +53,20 @@ Begin VB.Form frmMain
       Left            =   0
       TabIndex        =   0
       Top             =   405
-      Width           =   11490
-      _ExtentX        =   20267
+      Width           =   12165
+      _ExtentX        =   21458
       _ExtentY        =   9446
       _Version        =   393216
       Style           =   1
-      Tabs            =   11
-      Tab             =   2
-      TabsPerRow      =   11
+      Tabs            =   12
+      TabsPerRow      =   12
       TabHeight       =   520
       ShowFocusRect   =   0   'False
       TabCaption(0)   =   "Running Processes"
       TabPicture(0)   =   "Form1.frx":5C12
-      Tab(0).ControlEnabled=   0   'False
+      Tab(0).ControlEnabled=   -1  'True
       Tab(0).Control(0)=   "lvProcesses"
+      Tab(0).Control(0).Enabled=   0   'False
       Tab(0).ControlCount=   1
       TabCaption(1)   =   "Open Ports"
       TabPicture(1)   =   "Form1.frx":5C2E
@@ -75,11 +75,9 @@ Begin VB.Form frmMain
       Tab(1).ControlCount=   1
       TabCaption(2)   =   "Process Dlls"
       TabPicture(2)   =   "Form1.frx":5C4A
-      Tab(2).ControlEnabled=   -1  'True
-      Tab(2).Control(0)=   "lvProcessDlls"
-      Tab(2).Control(0).Enabled=   0   'False
-      Tab(2).Control(1)=   "lvProcessDllList"
-      Tab(2).Control(1).Enabled=   0   'False
+      Tab(2).ControlEnabled=   0   'False
+      Tab(2).Control(0)=   "lvProcessDllList"
+      Tab(2).Control(1)=   "lvProcessDlls"
       Tab(2).ControlCount=   2
       TabCaption(3)   =   "Loaded Drivers"
       TabPicture(3)   =   "Form1.frx":5C66
@@ -121,11 +119,25 @@ Begin VB.Form frmMain
       Tab(10).ControlEnabled=   0   'False
       Tab(10).Control(0)=   "lvServices"
       Tab(10).ControlCount=   1
+      TabCaption(11)  =   "WMI"
+      TabPicture(11)  =   "Form1.frx":5D46
+      Tab(11).ControlEnabled=   0   'False
+      Tab(11).Control(0)=   "lvWMI"
+      Tab(11).ControlCount=   1
+      Begin sysAnalyzer_2.ucFilterList lvWMI 
+         Height          =   4830
+         Left            =   -74955
+         TabIndex        =   17
+         Top             =   405
+         Width           =   12030
+         _ExtentX        =   21220
+         _ExtentY        =   8520
+      End
       Begin sysAnalyzer_2.ucFilterList lvProcessDllList 
          Height          =   4515
-         Left            =   90
+         Left            =   -74910
          TabIndex        =   16
-         Top             =   495
+         Top             =   795
          Width           =   2985
          _ExtentX        =   5265
          _ExtentY        =   7964
@@ -134,7 +146,7 @@ Begin VB.Form frmMain
          Height          =   4560
          Left            =   -74910
          TabIndex        =   12
-         Top             =   405
+         Top             =   705
          Width           =   10905
          _ExtentX        =   19235
          _ExtentY        =   8043
@@ -143,7 +155,7 @@ Begin VB.Form frmMain
          Height          =   4110
          Left            =   -74955
          TabIndex        =   11
-         Top             =   405
+         Top             =   705
          Width           =   10590
          _ExtentX        =   18680
          _ExtentY        =   7250
@@ -152,7 +164,7 @@ Begin VB.Form frmMain
          Height          =   4875
          Left            =   -74910
          TabIndex        =   9
-         Top             =   405
+         Top             =   705
          Width           =   11310
          _ExtentX        =   19950
          _ExtentY        =   8599
@@ -161,7 +173,7 @@ Begin VB.Form frmMain
          Height          =   4740
          Left            =   -74865
          TabIndex        =   8
-         Top             =   405
+         Top             =   705
          Width           =   10950
          _ExtentX        =   19315
          _ExtentY        =   8361
@@ -170,25 +182,25 @@ Begin VB.Form frmMain
          Height          =   4830
          Left            =   -74955
          TabIndex        =   7
-         Top             =   375
+         Top             =   675
          Width           =   10410
          _ExtentX        =   18362
          _ExtentY        =   8520
       End
       Begin sysAnalyzer_2.ucFilterList lvProcessDlls 
          Height          =   4785
-         Left            =   3150
+         Left            =   -71850
          TabIndex        =   6
-         Top             =   465
+         Top             =   765
          Width           =   8250
          _ExtentX        =   14552
          _ExtentY        =   8440
       End
       Begin sysAnalyzer_2.ucFilterList lvProcesses 
          Height          =   4470
-         Left            =   -74955
+         Left            =   45
          TabIndex        =   5
-         Top             =   420
+         Top             =   720
          Width           =   10140
          _ExtentX        =   17886
          _ExtentY        =   7885
@@ -197,7 +209,7 @@ Begin VB.Form frmMain
          Height          =   4695
          Left            =   -74910
          TabIndex        =   4
-         Top             =   420
+         Top             =   720
          Width           =   11265
          _ExtentX        =   17171
          _ExtentY        =   8281
@@ -206,7 +218,7 @@ Begin VB.Form frmMain
          Height          =   4830
          Left            =   -74910
          TabIndex        =   3
-         Top             =   420
+         Top             =   720
          Width           =   11265
          _ExtentX        =   19870
          _ExtentY        =   8520
@@ -215,7 +227,7 @@ Begin VB.Form frmMain
          Height          =   3975
          Left            =   -75000
          TabIndex        =   1
-         Top             =   330
+         Top             =   630
          Width           =   10215
          _ExtentX        =   18018
          _ExtentY        =   7011
@@ -248,7 +260,7 @@ Begin VB.Form frmMain
          Height          =   4875
          Left            =   -74880
          TabIndex        =   10
-         Top             =   420
+         Top             =   720
          Width           =   11310
          _ExtentX        =   19950
          _ExtentY        =   8599
@@ -610,7 +622,7 @@ Sub cmdDirWatch_Click()
 End Sub
 
 
-Private Sub lvAPILog_MouseUp(Button As Integer, Shift As Integer, X As Single, y As Single)
+Private Sub lvAPILog_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     If Button = 2 Then PopupMenu mnuApiLog
 End Sub
 
@@ -622,13 +634,21 @@ Private Sub lvPorts_ItemClick(ByVal Item As MSComctlLib.ListItem)
     SetProcessMenus activePID
 End Sub
 
-Private Sub lvPorts_MouseUp(Button As Integer, Shift As Integer, X As Single, y As Single)
+Private Sub lvPorts_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     mnuKillAll.Enabled = Not (Len(lvPorts.Filter) = 0)
     If Button = 2 Then PopupMenu mnuProcessesPopup
 End Sub
 
-Private Sub lvProcessDllList_MouseUp(Button As Integer, Shift As Integer, X As Single, y As Single)
+Private Sub lvProcessDllList_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     If Button = 2 Then PopupMenu mnuProcessesPopup
+End Sub
+
+Private Sub lvWMI_DblClick()
+    On Error Resume Next
+    Dim f As frmReport
+    If lvWMI.selItem Is Nothing Then Exit Sub
+    Set f = New frmReport
+    f.ShowList lvWMI.selItem.subItems(2)
 End Sub
 
 Private Sub mnu2016Updates_Click()
@@ -779,8 +799,9 @@ Private Sub Form_Load()
     lvDirWatch.SetColumnHeaders "Action,Size,Path*", "1500,2000,8000"
     lvTasks.SetColumnHeaders "Name,Executable", "4000"
     lvProcessDllList.SetColumnHeaders "pid,cnt,Name*", "600,600,1500"
+    lvWMI.SetColumnHeaders "Name,Size,Data*", "1200,800"
     
-    LvSizeLastColumn lvProcessDllList
+    'LvSizeLastColumn lvProcessDllList
     
     If known.Loaded And known.Ready Then
         mnuAddSelectedDllsToKnown.Enabled = True
@@ -822,7 +843,7 @@ Private Sub Form_Resize()
    
     Dim o As Object
     Dim lv As ListView
-    Dim L As Long
+    Dim l As Long
     
     SSTab1.Width = Me.ScaleWidth - SSTab1.Left
     SSTab1.Height = Me.ScaleHeight - SSTab1.Top - (TitleBarHeight(Me) - 255)
@@ -873,7 +894,7 @@ Private Sub lblTools_Click()
      PopupMenu mnuTools
 End Sub
 
-Private Sub lvDirWatch_MouseUp(Button As Integer, Shift As Integer, X As Single, y As Single)
+Private Sub lvDirWatch_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     If Button = 2 Then PopupMenu mnuDirWatch
 End Sub
 
@@ -881,7 +902,7 @@ Private Sub lvDrivers_ItemClick(ByVal Item As MSComctlLib.ListItem)
     Set liDriver = Item
 End Sub
 
-Private Sub lvDrivers_MouseUp(Button As Integer, Shift As Integer, X As Single, y As Single)
+Private Sub lvDrivers_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     If Button = 2 Then PopupMenu mnuDriversPopup
 End Sub
 
@@ -906,7 +927,7 @@ Private Sub lvRegKeys_ItemClick(ByVal Item As MSComctlLib.ListItem)
     Set liRegMon = Item
 End Sub
 
-Private Sub lvRegKeys_MouseUp(Button As Integer, Shift As Integer, X As Single, y As Single)
+Private Sub lvRegKeys_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     If Button = 2 Then PopupMenu mnuRegMonitor
 End Sub
 
@@ -1360,10 +1381,10 @@ Function GetSystemDataReport(Optional appendClipboard As Boolean = False) As Str
     push ret, lvMutex.GetAllElements
     
     push ret, vbCrLf & "Tasks:"
-    push ret, GetAllElements(lvTasks)
+    push ret, lvTasks.GetAllElements
     
     push ret, vbCrLf & "Monitored Process Dlls:"
-    push ret, GetAllElements(lvProcessDllList)
+    push ret, lvProcessDllList.GetAllElements
     
     push ret, vbCrLf & "Loaded Drivers:"
     push ret, lvDrivers.GetAllElements
@@ -1371,6 +1392,9 @@ Function GetSystemDataReport(Optional appendClipboard As Boolean = False) As Str
     push ret, vbCrLf & "Monitored RegKeys"
     push ret, lvRegKeys.GetAllElements
      
+    push ret, vbCrLf & "WMI Subscriptions"
+    push ret, lvWMI.GetAllElements
+    
     'If SSTab1.TabVisible(5) Then 'these can be to long..
     '    push ret, vbCrLf & "Kernel31 Api Log"
     '    push ret, GetAllElements(lvAPILog)
@@ -1378,7 +1402,7 @@ Function GetSystemDataReport(Optional appendClipboard As Boolean = False) As Str
     
     If SSTab1.TabVisible(6) Then
         push ret, vbCrLf & "DirwatchData"
-        push ret, GetAllElements(lvDirWatch)
+        push ret, lvDirWatch.GetAllElements
     End If
         
     If appendClipboard Then
@@ -1680,7 +1704,7 @@ Private Function RecieveTextMessage(lParam As Long, msg As String) As Boolean
     
 End Function
 
-Private Sub lvProcesses_MouseUp(Button As Integer, Shift As Integer, X As Single, y As Single)
+Private Sub lvProcesses_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     mnuKillAll.Enabled = Not (Len(lvProcesses.Filter) = 0)
     If Button = 2 Then PopupMenu mnuProcessesPopup
 End Sub

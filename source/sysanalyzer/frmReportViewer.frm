@@ -1,6 +1,7 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Object = "{9A143468-B450-48DD-930D-925078198E4D}#1.1#0"; "hexed.ocx"
+Object = "{3B7C8863-D78F-101B-B9B5-04021C009402}#1.2#0"; "richtx32.ocx"
 Begin VB.Form frmReportViewer 
    Caption         =   "Report File Viewer"
    ClientHeight    =   7290
@@ -15,7 +16,7 @@ Begin VB.Form frmReportViewer
    Begin MSComctlLib.ListView lv 
       Height          =   2595
       Left            =   6000
-      TabIndex        =   3
+      TabIndex        =   2
       Top             =   3960
       Visible         =   0   'False
       Width           =   6555
@@ -68,7 +69,7 @@ Begin VB.Form frmReportViewer
    Begin rhexed.HexEd he 
       Height          =   3735
       Left            =   4440
-      TabIndex        =   2
+      TabIndex        =   1
       Top             =   1740
       Visible         =   0   'False
       Width           =   6375
@@ -105,26 +106,6 @@ Begin VB.Form frmReportViewer
          EndProperty
       EndProperty
    End
-   Begin VB.TextBox txtFile 
-      BeginProperty Font 
-         Name            =   "Courier New"
-         Size            =   12
-         Charset         =   0
-         Weight          =   400
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00000000&
-      Height          =   6495
-      HideSelection   =   0   'False
-      Left            =   3840
-      MultiLine       =   -1  'True
-      ScrollBars      =   3  'Both
-      TabIndex        =   1
-      Top             =   540
-      Width           =   9615
-   End
    Begin MSComctlLib.TreeView tv 
       Height          =   6975
       Left            =   60
@@ -155,7 +136,7 @@ Begin VB.Form frmReportViewer
       Caption         =   "All"
       Height          =   315
       Left            =   8010
-      TabIndex        =   4
+      TabIndex        =   3
       Top             =   120
       Width           =   885
    End
@@ -163,7 +144,7 @@ Begin VB.Form frmReportViewer
       Caption         =   "Save Changes"
       Height          =   315
       Left            =   12210
-      TabIndex        =   5
+      TabIndex        =   4
       Top             =   150
       Width           =   1275
    End
@@ -171,7 +152,7 @@ Begin VB.Form frmReportViewer
       Caption         =   "Find"
       Height          =   315
       Left            =   7110
-      TabIndex        =   6
+      TabIndex        =   5
       Top             =   120
       Width           =   855
    End
@@ -187,7 +168,7 @@ Begin VB.Form frmReportViewer
       EndProperty
       Height          =   315
       Left            =   4380
-      TabIndex        =   7
+      TabIndex        =   6
       Top             =   120
       Width           =   2625
    End
@@ -203,7 +184,7 @@ Begin VB.Form frmReportViewer
       EndProperty
       Height          =   315
       Left            =   9210
-      TabIndex        =   9
+      TabIndex        =   8
       Top             =   120
       Width           =   1665
    End
@@ -211,15 +192,37 @@ Begin VB.Form frmReportViewer
       Caption         =   "Replace"
       Height          =   315
       Left            =   10980
-      TabIndex        =   10
+      TabIndex        =   9
       Top             =   150
       Width           =   1155
+   End
+   Begin RichTextLib.RichTextBox txtFile 
+      Height          =   6630
+      Left            =   3825
+      TabIndex        =   10
+      Top             =   540
+      Width           =   9600
+      _ExtentX        =   16933
+      _ExtentY        =   11695
+      _Version        =   393217
+      Enabled         =   -1  'True
+      ScrollBars      =   3
+      TextRTF         =   $"frmReportViewer.frx":0D50
+      BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
+         Name            =   "Courier"
+         Size            =   12
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
    End
    Begin VB.Label Label1 
       Caption         =   "Find"
       Height          =   255
       Left            =   3900
-      TabIndex        =   8
+      TabIndex        =   7
       Top             =   180
       Width           =   435
    End
@@ -290,13 +293,13 @@ Private Sub cmdFind_Click()
     If sSearch <> txtFind Then
         sSearch = txtFind
         lastFind = 0
-        lastFind = InStr(1, txtFile, sSearch, vbTextCompare)
+        lastFind = InStr(1, txtFile.Text, sSearch, vbTextCompare)
         lastFind = lastFind + 1
-        Me.Caption = "Search for: " & txtFind & " - " & occuranceCount(txtFile, txtFind) & " hits"
+        Me.Caption = "Search for: " & txtFind & " - " & occuranceCount(txtFile.Text, txtFind) & " hits"
     Else
-        lastFind = InStr(lastFind, txtFile, sSearch, vbTextCompare)
+        lastFind = InStr(lastFind, txtFile.Text, sSearch, vbTextCompare)
         lastFind = lastFind + 1
-        If lastFind > Len(txtFile) Then
+        If lastFind > Len(txtFile.Text) Then
             sSearch = Empty
             lastFind = 0
         End If
@@ -364,7 +367,7 @@ Private Sub cmdReplace_Click()
         Exit Sub
     End If
     
-    txtFile = Replace(txtFile, txtFind, txtReplace, , , vbTextCompare)
+    txtFile.Text = Replace(txtFile.Text, txtFind, txtReplace, , , vbTextCompare)
     
 End Sub
 
@@ -377,7 +380,7 @@ Private Sub cmdSaveChanges_Click()
     Else
         fPath = dlg.SaveDialog(AllFiles, UserDeskTopFolder, "Save As", , Me.hwnd)
         If Len(fPath) > 0 Then
-            fso.writeFile fPath, txtFile
+            fso.writeFile fPath, txtFile.Text
         End If
     End If
 End Sub
@@ -435,7 +438,7 @@ Sub OpenAnalysisFolder(Optional fPath As String)
     'todo: remove empty folders from treeview
     
     If tv.Nodes.count = 1 Then
-        txtFile = "It doesnt look like you have run an analysis yet"
+        txtFile.Text = "It doesnt look like you have run an analysis yet"
     Else
         pn.Expanded = True
     End If
@@ -872,7 +875,7 @@ Private Sub tv_NodeClick(ByVal Node As MSComctlLib.Node)
     If Node.Image = "text" Then
         he.Visible = False
         lv.Visible = False
-        txtFile = fso.ReadFile(Node.Tag)
+        txtFile.Text = fso.ReadFile(Node.Tag)
         txtFile.Tag = Node.Tag
         txtFile.SetFocus
     ElseIf Node.Image = "binary2" Then
