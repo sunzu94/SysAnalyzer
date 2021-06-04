@@ -139,14 +139,14 @@ Function EnumWMISubscriptions() As Collection 'of CColItem
     
     On Error Resume Next
     Dim c As New Collection, ci As CColItem
-    Dim objWMIService, colItems, n, curType As String
+    Dim objwmiservice, colItems, n, curType As String
     
     Set EnumWMISubscriptions = c
-    Set objWMIService = GetObject("winmgmts:\\.\root\subscription")
-    If objWMIService Is Nothing Then Exit Function
+    Set objwmiservice = GetObject("winmgmts:\\.\root\subscription")
+    If objwmiservice Is Nothing Then Exit Function
     
     curType = "FilterToConsumerBinding"
-    Set colItems = objWMIService.ExecQuery("SELECT * FROM __FilterToConsumerBinding", , 48)
+    Set colItems = objwmiservice.ExecQuery("SELECT * FROM __FilterToConsumerBinding", , 48)
 
     For Each n In colItems
         Set ci = New CColItem
@@ -154,10 +154,11 @@ Function EnumWMISubscriptions() As Collection 'of CColItem
         ci.AppendData "Filter:" & n.Filter
         ci.AppendData "Consumer: " & n.consumer
         c.Add ci, ci.GenHashCode()
+        AddProperties ci, n, curType
     Next
     
     curType = "EventConsumer"
-    Set colItems = objWMIService.ExecQuery("SELECT * FROM __EventConsumer", , 48)
+    Set colItems = objwmiservice.ExecQuery("SELECT * FROM __EventConsumer", , 48)
 
     For Each n In colItems
         Set ci = New CColItem
@@ -165,10 +166,11 @@ Function EnumWMISubscriptions() As Collection 'of CColItem
         ci.AppendData "Name: " & n.Name
         ci.AppendData "ScriptText: " & n.scripttext
         c.Add ci, ci.GenHashCode()
+        AddProperties ci, n, curType
     Next
     
     curType = "EventFilter"
-    Set colItems = objWMIService.ExecQuery("SELECT * FROM __EventFilter", , 48)
+    Set colItems = objwmiservice.ExecQuery("SELECT * FROM __EventFilter", , 48)
 
     For Each n In colItems
         Set ci = New CColItem
@@ -176,10 +178,11 @@ Function EnumWMISubscriptions() As Collection 'of CColItem
         ci.AppendData "Name: " & n.Name
         ci.AppendData "Query: " & n.Query
         c.Add ci, ci.GenHashCode()
+        AddProperties ci, n, curType
     Next
 
     curType = "IntervalTimerInstruction"
-    Set colItems = objWMIService.ExecQuery("SELECT * FROM __IntervalTimerInstruction", , 48)
+    Set colItems = objwmiservice.ExecQuery("SELECT * FROM __IntervalTimerInstruction", , 48)
 
     For Each n In colItems
         Set ci = New CColItem
@@ -187,10 +190,11 @@ Function EnumWMISubscriptions() As Collection 'of CColItem
         ci.AppendData "ID: " & n.id
         ci.AppendData "IntervalBetweenEvents " & n.intervalbetweenevents
         c.Add ci, ci.GenHashCode()
+        AddProperties ci, n, curType
     Next
  
     curType = "ActiveScriptEventConsumer"
-    Set colItems = objWMIService.ExecQuery("SELECT * FROM ActiveScriptEventConsumer", , 48)
+    Set colItems = objwmiservice.ExecQuery("SELECT * FROM ActiveScriptEventConsumer", , 48)
 
     For Each n In colItems
         Set ci = New CColItem
@@ -200,10 +204,11 @@ Function EnumWMISubscriptions() As Collection 'of CColItem
         ci.AppendData "ScriptFileName: " & n.scriptfilename 'can be null
         ci.AppendData "ScriptText: " & n.scripttext
         c.Add ci, ci.GenHashCode()
+        AddProperties ci, n, curType
     Next
 
     curType = "CommandLineEventConsumer"
-    Set colItems = objWMIService.ExecQuery("SELECT * FROM CommandLineEventConsumer", , 48)
+    Set colItems = objwmiservice.ExecQuery("SELECT * FROM CommandLineEventConsumer", , 48)
 
     For Each n In colItems
         Set ci = New CColItem
@@ -211,6 +216,37 @@ Function EnumWMISubscriptions() As Collection 'of CColItem
         ci.AppendData "Name: " & n.Name
         ci.AppendData "ExePath: " & n.ExecutablePath
         c.Add ci, ci.GenHashCode()
+        AddProperties ci, n, curType
     Next
     
 End Function
+
+Sub AddProperties(cc As CColItem, currentInstance, Optional currentClass)
+    On Error Resume Next
+    Dim p, c, v
+    
+    For Each p In currentInstance.Properties_
+        If Not p.IsArray Then
+            cc.AddProperty p.Name & ": " & p.value
+        Else
+            c = 0
+            For Each v In p.value
+                cc.AddProperty p.Name & "[" & c & "]: " & v
+                c = c + 1
+            Next
+        End If
+    Next
+    
+    For Each p In currentInstance.SystemProperties_
+        If Not p.IsArray Then
+            cc.AddProperty p.Name & ": " & p.value
+        Else
+            c = 0
+            For Each v In p.value
+                cc.AddProperty p.Name & "[" & c & "]: " & v
+                c = c + 1
+            Next
+        End If
+    Next
+   
+End Sub

@@ -16,6 +16,8 @@ Option Explicit
 Public Name As String
 Public Data As String
 Public HashCode As String
+Public Properties As New Collection
+Public PropertySize As Long
 
 Function GenHashCode() As String
     HashCode = hash.HashString(Name & Data)
@@ -29,3 +31,17 @@ Sub AppendData(x, Optional seperator = vbCrLf)
         Data = Data & seperator & x
     End If
 End Sub
+
+Sub AddProperty(value As String)
+    Properties.Add value
+    PropertySize = PropertySize + Len(value)
+End Sub
+
+Function PropertyStr()
+    On Error Resume Next
+    Dim x() As String, xx
+    For Each xx In Properties
+        push x, xx
+    Next
+    PropertyStr = Join(x, vbCrLf)
+End Function

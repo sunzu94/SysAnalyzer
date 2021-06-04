@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.1#0"; "MSCOMCTL.OCX"
 Object = "{BDC217C8-ED16-11CD-956C-0000C04E4C0A}#1.1#0"; "TABCTL32.OCX"
 Begin VB.Form frmMain 
    Caption         =   "SysAnalyzer"
@@ -59,14 +59,14 @@ Begin VB.Form frmMain
       _Version        =   393216
       Style           =   1
       Tabs            =   12
+      Tab             =   11
       TabsPerRow      =   12
       TabHeight       =   520
       ShowFocusRect   =   0   'False
       TabCaption(0)   =   "Running Processes"
       TabPicture(0)   =   "Form1.frx":5C12
-      Tab(0).ControlEnabled=   -1  'True
+      Tab(0).ControlEnabled=   0   'False
       Tab(0).Control(0)=   "lvProcesses"
-      Tab(0).Control(0).Enabled=   0   'False
       Tab(0).ControlCount=   1
       TabCaption(1)   =   "Open Ports"
       TabPicture(1)   =   "Form1.frx":5C2E
@@ -121,12 +121,13 @@ Begin VB.Form frmMain
       Tab(10).ControlCount=   1
       TabCaption(11)  =   "WMI"
       TabPicture(11)  =   "Form1.frx":5D46
-      Tab(11).ControlEnabled=   0   'False
+      Tab(11).ControlEnabled=   -1  'True
       Tab(11).Control(0)=   "lvWMI"
+      Tab(11).Control(0).Enabled=   0   'False
       Tab(11).ControlCount=   1
       Begin sysAnalyzer_2.ucFilterList lvWMI 
          Height          =   4830
-         Left            =   -74955
+         Left            =   45
          TabIndex        =   17
          Top             =   405
          Width           =   12030
@@ -198,7 +199,7 @@ Begin VB.Form frmMain
       End
       Begin sysAnalyzer_2.ucFilterList lvProcesses 
          Height          =   4470
-         Left            =   45
+         Left            =   -74955
          TabIndex        =   5
          Top             =   720
          Width           =   10140
@@ -645,10 +646,12 @@ End Sub
 
 Private Sub lvWMI_DblClick()
     On Error Resume Next
-    Dim f As frmReport
+    Dim f As frmReport, ci As CColItem, props As String
     If lvWMI.selItem Is Nothing Then Exit Sub
     Set f = New frmReport
-    f.ShowList lvWMI.selItem.subItems(2)
+    Set ci = lvWMI.selItem.Tag
+    props = "Properties: " & vbCrLf & String(50, "-") & vbCrLf & ci.PropertyStr
+    f.ShowList lvWMI.selItem.subItems(4) & vbCrLf & vbCrLf & props
 End Sub
 
 Private Sub mnu2016Updates_Click()
@@ -799,7 +802,7 @@ Private Sub Form_Load()
     lvDirWatch.SetColumnHeaders "Action,Size,Path*", "1500,2000,8000"
     lvTasks.SetColumnHeaders "Name,Executable", "4000"
     lvProcessDllList.SetColumnHeaders "pid,cnt,Name*", "600,600,1500"
-    lvWMI.SetColumnHeaders "Name,Size,Data*", "1200,800"
+    lvWMI.SetColumnHeaders "Name,Size,Props,PropSize,Data*", "1200,800,800,800"
     
     'LvSizeLastColumn lvProcessDllList
     

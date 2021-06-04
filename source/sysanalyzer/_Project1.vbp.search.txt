@@ -1,3 +1,5 @@
+lvWMI
+wmi
 lvProcessDllList
 DirWatchActive
 dirwatchctl

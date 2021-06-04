@@ -586,7 +586,8 @@ next_port:
     frmMain.pb.value = frmMain.pb.value + 1
     frmMain.Display = "Loading WMI Subscriptions" 'TypeName,Data
     For Each ci In wmi
-        frmMain.lvWMI.AddItem ci.Name, Len(ci.Data), ci.Data
+        Set li = frmMain.lvWMI.AddItem(ci.Name, Len(ci.Data), ci.Properties.count, ci.PropertySize, ci.Data)
+        Set li.Tag = ci
         If shutDown Then Exit Sub
     Next
    
