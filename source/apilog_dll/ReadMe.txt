@@ -13,5 +13,11 @@ the VB project in the \injector folder is a standalone
 dll inject test app built to debug this library. You can find a compiled
 version in the main installation directory as api_logger.exe
 
+to generate hook stubs you can use the sclog parse_h.exe
+
+https://github.com/dzzie/sclog/tree/master/parse_h
+https://github.com/dzzie/MAP/tree/master/sc_log
+
+
 
 
