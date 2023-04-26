@@ -70,12 +70,18 @@ Private Sub Class_Initialize()
     '[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon]
     '"Userinit"="C:\\WINDOWS\\system32\\userinit.exe,C:\\WINDOWS\\system32\\bad.exe,"
     'and  HKLM\Software\Microsoft\Windows NT\CurrentVersion\Windows\Load,AppInit_DLLs
+    'HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\Windows NT\CurrentVersion\Windows
     push HKLM_singleval, "\Software\Microsoft\Windows NT\CurrentVersion\Windows,AppInit_DLLs"
     push HKLM_singleval, "\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon,Userinit"
     push HKLM_singleval, "Software\Microsoft\Windows NT\CurrentVersion\Winlogon,shell"      'Nymaim
     
     push HKCU_singleval, "Software\Microsoft\Windows NT\CurrentVersion\Winlogon,shell"      'Nymaim
     
+    'todo: bho
+        'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Browser Helper Objects\{1FD49718-1D00-4B19-AF5F-070AF6D5D54C}                  | 112.0.1722.58   | C:\Program Files (x86)\Microsoft\Edge\Application\112.0.1722.58\BHO\ie_to_edge_bho_64.dll |
+        'HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Explorer\Browser Helper Objects\{EA801577-E6AD-4BD5-8F71-4BE0154331A4}      | 4.3.1.0         | C:\Program Files\Classic Shell\ClassicIEDLL_64.dll
+        '| Microsoft Url Search Hook | HKEY_USERS\S-1-5-21-4077927433-3452193458-1429507160-1001\SOFTWARE\Microsoft\Internet Explorer\URLSearchHooks\{CFBFAE00-17A6-11D0-99CB-00C04FD64497} | 11.0.19041.2846 | C:\Windows\System32\ieframe.dll
+  
 End Sub
 
 Sub Reset()

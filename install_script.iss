@@ -43,7 +43,7 @@ Source: WinPcap_4_1_2.exe; DestDir: {app}
 Source: loadlib.exe; DestDir: {app}
 Source: ShellExt.exe; DestDir: {app}
 Source: x64Helper.exe; DestDir: {app}
-Source: goat.html; DestDir: {app}
+;Source: goat.html; DestDir: {app}
 
 [Dirs]
 
