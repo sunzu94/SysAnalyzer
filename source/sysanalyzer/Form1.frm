@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.1#0"; "MSCOMCTL.OCX"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
 Object = "{BDC217C8-ED16-11CD-956C-0000C04E4C0A}#1.1#0"; "TABCTL32.OCX"
 Begin VB.Form frmMain 
    Caption         =   "SysAnalyzer"
@@ -491,21 +491,6 @@ Begin VB.Form frmMain
       Begin VB.Menu mnuHelpFile 
          Caption         =   "Help File"
       End
-      Begin VB.Menu mnuSpacer33 
-         Caption         =   "-"
-      End
-      Begin VB.Menu mnuTrainingVideo1 
-         Caption         =   "Original Training Video (2005)"
-      End
-      Begin VB.Menu mnuUpdatesVideo 
-         Caption         =   "Updates Video (2013)"
-      End
-      Begin VB.Menu mnu2016Updates 
-         Caption         =   "Updates Video (2016)"
-      End
-      Begin VB.Menu mnuApiLoggerVideo 
-         Caption         =   "Api Logger Video"
-      End
    End
 End
 Attribute VB_Name = "frmMain"
@@ -654,13 +639,6 @@ Private Sub lvWMI_DblClick()
     f.ShowList lvWMI.selItem.subItems(4) & vbCrLf & vbCrLf & props
 End Sub
 
-Private Sub mnu2016Updates_Click()
-    LaunchWebPage "https://www.youtube.com/watch?v=ICeF5QI_kaA"
-End Sub
-
-Private Sub mnuApiLoggerVideo_Click()
-    LaunchWebPage "https://www.youtube.com/watch?v=SqdGjihhDoU"
-End Sub
 
 Private Sub mnuClearDirWatch_Click()
     If MsgBox("Are you sure all data will be lost?", vbYesNo) = vbYes Then
@@ -738,9 +716,7 @@ Private Sub mnuStringSearch_Click()
     If activePID <> 0 Then frmDeepMemScan.InitilizeFor activePID
 End Sub
 
-Private Sub mnuTrainingVideo1_Click()
-    LaunchWebPage "https://www.youtube.com/watch?v=OPXwKChdO4c"
-End Sub
+
 
 Private Sub mnuTurnOffApiLogging_Click()
     
@@ -846,7 +822,7 @@ Private Sub Form_Resize()
    
     Dim o As Object
     Dim lv As ListView
-    Dim l As Long
+    Dim L As Long
     
     SSTab1.Width = Me.ScaleWidth - SSTab1.Left
     SSTab1.Height = Me.ScaleHeight - SSTab1.Top - (TitleBarHeight(Me) - 255)
@@ -1281,11 +1257,6 @@ End Sub
 
 Private Sub mnuStealthInjScan_Click()
     frmInjectionScan.StealthInjectionScan
-End Sub
-
-
-Private Sub mnuUpdatesVideo_Click()
-    LaunchWebPage "https://www.youtube.com/watch?v=4twR8xtVWPk"
 End Sub
 
 Private Sub tmrCountDown_Timer()

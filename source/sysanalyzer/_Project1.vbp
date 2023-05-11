@@ -71,7 +71,7 @@ HelpContextID="0"
 CompatibleMode="0"
 MajorVer=2
 MinorVer=10
-RevisionVer=342
+RevisionVer=343
 AutoIncrementVer=1
 ServerSupportFiles=0
 VersionCompanyName="blah.com"
@@ -96,4 +96,7 @@ MaxNumberOfThreads=1
 AutoRefresh=1
 
 [fastBuild]
-fullPath=D:\_code\SysAnalyzer\sysAnalyzer.exe
+fullPath=D:\_code\iDef\SysAnalyzer\sysAnalyzer.exe
+
+[BigProjectManager]
+showAtStartup=False
